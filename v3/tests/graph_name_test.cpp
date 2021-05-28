@@ -1,0 +1,29 @@
+#include "../classical/graph_name.hpp"
+#include <stdio.h>
+
+int main() {
+  graph_name_t* n_1 = new graph_name(6);
+  printf("*new graph_name(6): "); n_1->print();
+
+  graph_name_t* n_2 = n_1->copy();
+
+  n_1->merge(5);
+  printf("\nmerge 5:            "); n_1->print();
+
+  n_1->split(3);
+  printf("\nsplit 3:            "); n_1->print();
+
+  n_1->split(0);
+  printf("\nsplit 0:            "); n_1->print();
+
+  printf("\ncopy*:              "); n_2->print();
+
+  n_1->merge(3);
+  printf("\nmerge 3:            "); n_1->print();
+
+  if (n_1->equal(n_2)) {
+     printf("\ninitial copy equal to previous graph\n");
+  } else {
+    printf("\ninitial copy not equal to previous graph\n");
+  }
+}
