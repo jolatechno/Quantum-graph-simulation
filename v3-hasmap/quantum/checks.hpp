@@ -9,7 +9,7 @@
 const long double probability_tolerance = 1e-5;
 
 bool full_check(state_t* s) {
-	auto data = s->graphs().data;
+	auto data = s->graphs()/*.data*/;
 	auto end = data.end();
 	long double probability = 0;
 
@@ -46,7 +46,7 @@ bool full_check(state_t* s) {
 }
 
 bool check(state_t* s) {
-	auto data = s->graphs().data;
+	auto data = s->graphs()/*.data*/;
 	auto end = data.end();
 	long double probability = 0;
 

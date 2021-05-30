@@ -1,14 +1,15 @@
 #pragma once
 
 #include <stdio.h>
+#include <string>
 
 /* forward declaration of the node_t type */
 typedef class node node_t;
 
 /* node class */
 class node {
-private:
-  /* node type enum */
+public:
+	/* node type enum */
 	typedef enum node_type {
 		element_t,
 		pair_t,
@@ -16,16 +17,17 @@ private:
 		right_t,
 	} node_type_t;
 
+private:
 	/* type and node variables */
-	node_type_t type;
+	node_type_t type_;
 	int element_;
-	node_t* left_right_;
-	node_t* left_;
+	node_t* left_or_single_;
 	node_t* right_;
+	std::string hash_;
 	bool _has_most_left_zero = false;
 
 	/* private constructor */
-	node(node_t* left_right) : left_right_(left_right) {}
+	node(node_t* n) : left_or_single_(n) {}
 
 	/* for debuging */
 	void print_w_paraenthesis();
@@ -33,7 +35,7 @@ public:
 	/* normal constructors */
 	node(node_t* left, node_t* right);
 	node(int n) : element_(n) {
-		type = element_t;
+		type_ = element_t;
 		_has_most_left_zero = n == 0;
 	}
 
@@ -43,12 +45,22 @@ public:
 		return this;
 	}
 
+	/* getters */
+	node_type_t const &type() const { return type_; }
+	int integer_name() const { return element_; }
+	node_t* const &left_node() const { return left_or_single_; }
+	node_t* const &right_node() const { return right_; }
+	node_t* const &single_node() const { return left_or_single_; }
+
+	/* hasher */
+	std::string const &hash() const { return hash_; }
+
 	/* for debuging */
 	void print();
 
 	/* comparators */
-	bool inline equal(node_t* other);
-	bool inline const &has_most_left_zero() { return _has_most_left_zero; }
+	bool inline equal(node_t* other) const;
+	bool inline const &has_most_left_zero() const { return _has_most_left_zero; }
 
 	/* split */
 	node_t* left();
@@ -56,26 +68,20 @@ public:
 };
 
 /* comparator */
-bool node::equal(node_t* other) {
+bool node::equal(node_t* other) const {
 	/* check if types match */
-	if (type != other->type)
+	if (type_ != other->type_)
 		return false;
 
-	switch(type) {
+	switch(type_) {
 		case element_t:
-		{
 			return element_ == other->element_;
-		}
 
 		case pair_t:
-		{
-			return left_->equal(other->left_) && right_->equal(other->right_);
-		}
+			return left_or_single_->equal(other->left_or_single_) && right_->equal(other->right_);
 
 		default:
-		{
-			return left_right_->equal(other->left_right_);
-		}
+			return left_or_single_->equal(other->left_or_single_);
 	}
 }
 
@@ -83,12 +89,12 @@ bool node::equal(node_t* other) {
 node::node(node_t* left, node_t* right) {
 	_has_most_left_zero = left->has_most_left_zero() || right->has_most_left_zero();
 
-	if (left->type == left_t && right->type == right_t) {
-		if (left->left_right_->equal(right->left_right_))
-			*this = *left->left_right_;
+	if (left->type_ == left_t && right->type_ == right_t) {
+		if (left->left_or_single_->equal(right->left_or_single_))
+			*this = *left->left_or_single_;
 	} else {
-		type = pair_t;
-		left_ = left;
+		type_ = pair_t;
+		left_or_single_ = left;
 		right_ = right;
 	}
 }
@@ -96,12 +102,12 @@ node::node(node_t* left, node_t* right) {
 /* left */
 node_t* node::left() {
 	/* split a node pair */
-	if (type == pair_t)
-		return left_;
+	if (type_ == pair_t)
+		return left_or_single_;
 
 	/* create a new left node */
 	node_t* left = new node(this);
-	left->type = left_t;
+	left->type_ = left_t;
 	left->_has_most_left_zero = _has_most_left_zero;
 	return left;
 }
@@ -109,18 +115,18 @@ node_t* node::left() {
 /* right */
 node_t* node::right() {
 	/* split a node pair */
-	if (type == pair_t)
+	if (type_ == pair_t)
 		return right_;
 
 	/* create a new left node */
 	node_t* right = new node(this);
-	right->type = right_t;
+	right->type_ = right_t;
 	return right;
 }
 
 /* debuging */
 void node::print_w_paraenthesis() {
-	switch(type) {
+	switch(type_) {
 		case element_t:
 		{
 			printf("%d", element_);
@@ -130,7 +136,7 @@ void node::print_w_paraenthesis() {
 		case pair_t:
 		{
 			printf("(");
-			left_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf("∧");
 			right_->print_w_paraenthesis();
 			printf(")");
@@ -139,14 +145,14 @@ void node::print_w_paraenthesis() {
 
 		case left_t:
 		{
-			left_right_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf(".l");
 			return;
 		}
 
 		default:
 		{
-			left_right_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf(".r");
 			return;
 		}
@@ -154,7 +160,7 @@ void node::print_w_paraenthesis() {
 }
 
 void node::print() {
-	switch(type) {
+	switch(type_) {
 		case element_t:
 		{
 			printf("%d", element_);
@@ -163,7 +169,7 @@ void node::print() {
 
 		case pair_t:
 		{
-			left_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf("∧");
 			right_->print_w_paraenthesis();
 			return;
@@ -171,14 +177,14 @@ void node::print() {
 
 		case left_t:
 		{
-			left_right_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf(".l");
 			return;
 		}
 
 		case right_t:
 		{
-			left_right_->print_w_paraenthesis();
+			left_or_single_->print_w_paraenthesis();
 			printf(".r");
 			return;
 		}

@@ -14,5 +14,8 @@ test-full: test
 verbose:
 	$(eval U_CFLAGS+=-DVERBOSE)
 
+gprof:
+	$(eval U_CFLAGS+=-pg)
+
 $(targets):
-	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS)

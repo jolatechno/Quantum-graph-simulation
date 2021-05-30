@@ -35,9 +35,9 @@ public:
 	}
 
 	/* size operator */
-	size_t inline size() {
+	size_t inline size() const {
 		return name_->size();
-	}
+	};
 
 	/* copy opperator */
 	graph_t inline *copy() {
@@ -59,6 +59,8 @@ public:
 	std::vector<unsigned int> inline const &right() const { return right_; };
 	graph_name_t inline const *name() const { return name_; };
 
+	/* hasher */
+	std::string hash() const;
 
 	/* randomizer */
 	void randomize(unsigned int n);
@@ -68,7 +70,7 @@ public:
 	void print();
 
 	/* comparators */
-  bool inline equal(graph_t* other);
+  bool inline equal(graph_t* other) const;
 
   /* split and merge */
   /* split_merge type enum */
@@ -89,7 +91,7 @@ public:
 };
 
 /* comparator */
-bool graph::equal(graph_t* other) {
+bool graph::equal(graph_t* other) const {
 	/* check if the  number of nodes match */
 	if (size() != other->size())
     	return false;
@@ -104,6 +106,29 @@ bool graph::equal(graph_t* other) {
 
 	 /* check if names match */
 	return name_->equal(other->name_);
+}
+
+/* hasher */
+std::string graph::hash() const {
+	std::string h = "";
+
+	/* left hash */
+	for (auto l : left_)
+   	h.push_back('\0' + 1 + l % 255);
+
+  /* separator */
+  h.push_back('\0');
+
+  /* right hash */
+  for (auto r : right_)
+   	h.push_back('\0' + 1 + r % 255);
+
+  /* separator */
+  h.push_back('\0');
+
+  /* names hash */
+
+  return h;
 }
 
 /* usefull functions */
