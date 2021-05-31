@@ -24,8 +24,8 @@ int main() {
   printf("\nhashes are: %ld %ld\n", n_1->hash(), n_2->hash());
 
   if (n_1->hash() == n_2->hash()) {
-     printf("initial copy equal to previous graph\n");
+     printf("initial copy's hash equal to previous graph's hash\n");
   } else {
-    printf("initial copy not equal to previous graph\n");
+    printf("initial copy's hash not equal to previous graph's hash\n");
   }
 }

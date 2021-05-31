@@ -16,7 +16,7 @@ int main() {
     split_merge = get_split_merge(g);
     g->split_merge(split_merge);
 
-    if (!g->equal(c)){
+    if (g->hash() != c->hash() /*!g->equal(c)*/){
       c->print(); printf("\n");
       g->print(); printf("\n");
       return -2;

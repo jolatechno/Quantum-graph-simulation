@@ -72,10 +72,12 @@ loop:
 
     printf("\ncopy*:            "); g_2->print();
 
-    if (g_1->equal(g_2)) {
-       printf("\ninitial copy equal to previous graph\n");
+    printf("\nhashes are: %ld %ld\n", g_1->hash(), g_2->hash());
+
+    if (g_1->hash() == g_2->hash() /*g_1->equal(g_2)*/) {
+       printf("\ninitial copy's hash equal to previous graph's hash\n");
     } else {
-      printf("\ninitial copy not equal to previous graph\n");
+      printf("\ninitial copy's hash not equal to previous graph's hash\n");
     }
   }
 }
