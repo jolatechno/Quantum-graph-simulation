@@ -8,9 +8,6 @@ all: $(targets)
 test:
 	$(eval U_CFLAGS+=-DTEST)
 
-test-full: test
-	$(eval U_CFLAGS+=-DFULL)
-
 verbose:
 	$(eval U_CFLAGS+=-DVERBOSE)
 

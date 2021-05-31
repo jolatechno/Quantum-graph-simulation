@@ -27,7 +27,6 @@ private:
 
 	// checker
 	friend bool check(state_t* s);
-	friend bool full_check(state_t* s);
 
 public:
 	// single graph constructor 
@@ -58,10 +57,14 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_split_merge_all(bool step, bool split_merge);
-	void step_split_merge_all() { step_split_merge_all(true, true); }
-	void step_all() { step_split_merge_all(true, false); }
-	void split_merge_all() { step_split_merge_all(false, true); }
+	void step_split_merge_all(bool step, bool split_merge, bool reversed);
+	void inline step_split_merge_all() { step_split_merge_all(true, true, false); }
+	void inline step_all() { step_split_merge_all(true, false, false); }
+	void inline split_merge_all() { step_split_merge_all(false, true, false); }
+	void inline reversed_split_merge_step() {
+		split_merge_all();
+		step_split_merge_all(false, false, true);
+	}
 
 	// for debugging 
 	void print();
@@ -136,7 +139,7 @@ std::pair<long double, long double> state::size_stat() {
 }
 
 // dynamic 
-void state::step_split_merge_all(bool step, bool split_merge) {
+void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
 	tbb::concurrent_unordered_multimap<size_t, graph_w_proba_t> buff;
 	buff.swap(graphs_);
 
@@ -147,6 +150,9 @@ void state::step_split_merge_all(bool step, bool split_merge) {
   	{
   		if (step)
   			it.first->step();
+
+  		if (reversed)
+  			it.first->reversed_step();
 
   		if (split_merge) {
   			auto split_merge = get_split_merge(it.first);

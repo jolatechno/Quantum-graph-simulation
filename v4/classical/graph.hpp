@@ -62,7 +62,7 @@ public:
 	graph_name_t inline const *name() const { return name_; };
 
 	// hasher 
-	size_t hash() const;
+	size_t inline hash() const;
 
 	// randomizer 
 	void randomize(unsigned int n);
@@ -89,6 +89,10 @@ public:
   	void inline step() {
   		rotate_once_right(right_);
   		rotate_once_left(left_);
+  	}
+  	void inline reversed_step() {
+  		rotate_once_right(left_);
+  		rotate_once_left(right_);
   	}
 };
 

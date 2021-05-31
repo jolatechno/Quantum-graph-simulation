@@ -24,17 +24,10 @@ int main() {
         printf("%ld graph of size %Lf±%Lf at the %dth iteration\n", s->graphs().size(), avg, std_dev, i);
 
         #ifdef TEST
-            #ifdef FULL
-                    printf("checking graphs in fulls...\n");
-                    if (!full_check(s))
-                        return -1;
-                    printf("...OK\n");
-            #else
-                printf("checking graphs...\n");
-                if (!check(s))
-                    return -1;
-                printf("...OK\n");
-            #endif
+            printf("checking graphs...\n");
+            if (!check(s))
+                return -1;
+            printf("...OK\n");
         #endif
 
         printf("\nstep_split_merge_all() ...\n"); s->step_split_merge_all();
