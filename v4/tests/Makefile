@@ -1,5 +1,5 @@
 U_CXX=$(CXX) -std=c++2a
-U_CFLAGS=$(CFLAGS) -fopenmp -ltbb
+U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
 
 targets=$(basename $(wildcard **.cpp))
 

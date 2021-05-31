@@ -56,33 +56,32 @@ bool check(state_t* s) {
 
     	//iterate over all graphs
     	range = data.equal_range(it->first);
-		for(auto jt = range.first; jt != range.second; ++jt)
-        	if (!check_zero(jt->second.second)) {
-        		//add probability
-				probability += std::norm(jt->second.second);
+		for(auto jt = range.first; jt != range.second; ++jt) {
+			//add probability
+			probability += std::norm(jt->second.second);
 
-				//check if a probability is under zero
-				if (check_zero(jt->second.second)) {
-					printf("probability is zero!!\n");
+			//check if a probability is under zero
+			if (check_zero(jt->second.second)) {
+				printf("probability is zero!!\n");
+				return false;
+			}
+
+			//check graph
+			if (!graph_checker(jt->second.first))
+				return false;
+
+        	// next iterator
+        	auto kt = jt;
+        	++kt;
+
+			//check for equal graphs
+			for (; kt != range.second; ++kt)
+				if (kt->second.first->equal(jt->second.first)) {
+					printf("two graphs equal!!\n");
 					return false;
 				}
-
-				//check graph
-				if (!graph_checker(jt->second.first))
-					return false;
-
-        		// next iterator
-        		auto kt = jt;
-        		++kt;
-
-				//check for equal graphs
-				for (; kt != range.second; ++kt)
-					if (kt->second.first->equal(jt->second.first)) {
-						printf("two graphs equal!!\n");
-						return false;
-					}
-        	}
         }
+    }
 
 	//check for probability
 	if (probability > 1 + probability_tolerance || probability < 1 - probability_tolerance) {

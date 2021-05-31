@@ -16,14 +16,16 @@ int main() {
   n_1->split(0);
   printf("\nsplit 0:            "); n_1->print();
 
-  printf("\ncopy*:              "); n_2->print();
-
   n_1->merge(3);
   printf("\nmerge 3:            "); n_1->print();
 
-  if (n_1->equal(n_2)) {
-     printf("\ninitial copy equal to previous graph\n");
+  printf("\ncopy*:              "); n_2->print();
+
+  printf("\nhashes are: %ld %ld\n", n_1->hash(), n_2->hash());
+
+  if (n_1->hash() == n_2->hash()) {
+     printf("initial copy equal to previous graph\n");
   } else {
-    printf("\ninitial copy not equal to previous graph\n");
+    printf("initial copy not equal to previous graph\n");
   }
 }

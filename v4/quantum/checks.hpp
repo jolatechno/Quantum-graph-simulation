@@ -29,11 +29,11 @@ bool full_check(state_t* s) {
 			return false;
 
 		//check for equal graphs
-		for (auto jt = data.begin(); jt != it; ++jt)
+		/*for (auto jt = data.begin(); jt != it; ++jt)
 			if (it->second.first->equal(jt->second.first)) {
 				printf("two graphs equal!!\n");
 				return false;
-			}
+			}*/
 	}
 
 	//check for probability
@@ -50,39 +50,28 @@ bool check(state_t* s) {
 	auto end = data.end();
 	long double probability = 0;
 
-	//iterate over all keys
-	decltype(data.equal_range("")) range;
-    for(auto it = data.begin(); it != data.end(); it = range.second) {
+	//iterate over all graphs
+    for(auto it = data.begin(); it != data.end(); ++it) {
+    	//add probability
+    	probability += std::norm(it->second.second);
+
+    	//check if a probability is under zero
+		if (check_zero(it->second.second)) {
+			printf("probability is zero!!\n");
+			return false;
+		}
+
+		//check graph
+		if (!graph_checker(it->second.first))
+			return false;
 
     	//iterate over all graphs
-    	range = data.equal_range(it->first);
-		for(auto jt = range.first; jt != range.second; ++jt)
-        	if (!check_zero(jt->second.second)) {
-        		//add probability
-				probability += std::norm(jt->second.second);
+    	if (data.count(it->first) != 1) {
+			printf("two graphs with the same hash!!\n");
+			return false;
+		}
 
-				//check if a probability is under zero
-				if (check_zero(jt->second.second)) {
-					printf("probability is zero!!\n");
-					return false;
-				}
-
-				//check graph
-				if (!graph_checker(jt->second.first))
-					return false;
-
-        		// next iterator
-        		auto kt = jt;
-        		++kt;
-
-				//check for equal graphs
-				for (; kt != range.second; ++kt)
-					if (kt->second.first->equal(jt->second.first)) {
-						printf("two graphs equal!!\n");
-						return false;
-					}
-        	}
-        }
+    }
 
 	//check for probability
 	if (probability > 1 + probability_tolerance || probability < 1 - probability_tolerance) {

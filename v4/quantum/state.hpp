@@ -19,7 +19,7 @@ public:
 
 private:
 	// main list 
-	tbb::concurrent_unordered_multimap<std::string, graph_w_proba_t> graphs_;
+	tbb::concurrent_unordered_multimap<size_t, graph_w_proba_t> graphs_;
 
 	// parameters
 	std::complex<long double> non_merge_ = -1;
@@ -74,7 +74,7 @@ void state::reduce_all() {
 	#endif
 
 	// Select the correct type for calling the equal_range function
-    decltype(graphs_.equal_range("")) range;
+    decltype(graphs_.equal_range(0)) range;
 
     // iterate through multimap's elements (by key)
 	#pragma omp parallel
@@ -137,7 +137,7 @@ std::pair<long double, long double> state::size_stat() {
 
 // dynamic 
 void state::step_split_merge_all(bool step, bool split_merge) {
-	tbb::concurrent_unordered_multimap<std::string, graph_w_proba_t> buff;
+	tbb::concurrent_unordered_multimap<size_t, graph_w_proba_t> buff;
 	buff.swap(graphs_);
 
 	#pragma omp parallel
