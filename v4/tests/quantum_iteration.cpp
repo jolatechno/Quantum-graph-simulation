@@ -18,7 +18,7 @@ int main() {
     state_t* s = new state(g_1);
 	s->set_params(M_PI_4, M_PI_2);
 
-    for (int i = 1; i < 10; ++i) {
+    for (int i = 1; i < 9; ++i) {
 
         auto [avg, std_dev] = s->size_stat();
         printf("%ld graph of size %Lf±%Lf at the %dth iteration\n", s->graphs().size(), avg, std_dev, i);

@@ -7,7 +7,7 @@
 #include "../classical/graph.hpp"
 #include "../classical/rules.hpp"
 #include "rules.hpp"
-#include <boost/unordered_map.hpp>
+#include <tbb/concurrent_unordered_map.h>
 
 // forward definition of the state type
 typedef class state state_t;
@@ -19,7 +19,7 @@ public:
 
 private:
 	// main list 
-	boost::unordered_multimap<std::string, graph_w_proba_t> graphs_;
+	tbb::concurrent_unordered_multimap<std::string, graph_w_proba_t> graphs_;
 
 	// parameters
 	std::complex<long double> non_merge_ = -1;
@@ -77,45 +77,42 @@ void state::reduce_all() {
     decltype(graphs_.equal_range("")) range;
 
     // iterate through multimap's elements (by key)
-    auto const end = graphs_.end();
 	#pragma omp parallel
 	#pragma omp single
-    for(auto it = graphs_.begin(); it != end; it = range.second) {
+    for(auto it = graphs_.begin(); it != graphs_.end(); it = range.second) {
         // Get the range of the current key
         range = graphs_.equal_range(it->first);
 
         // save the range
-        auto jt = range.first;
+        auto const jt = range.first;
         const auto local_end = range.second;
+        
+        // next iterator
+        auto kt = jt;
+        ++kt;
 
-        // Now print out that whole range
+        // Now sum out that whole range
 		#pragma omp task
-        for(; jt != local_end; ++jt)
-        	if (!check_zero(jt->second.second)) {
-        		// next iterator
-        		auto kt = jt;
-        		++kt;
-
-        		//accumulator
-        		auto acc = it->second.second;
-				auto last_it = jt;
-
-				//check for equal graphs
-				for (; kt != local_end; ++kt)
-					if (kt->second.first->equal(jt->second.first)) {
-						acc += kt->second.second;
-						kt->second.second = acc;
-						last_it->second.second = 0;
-						last_it = kt;
-					}
-        	}
+        for(; kt != local_end; ++kt)
+        	jt->second.second += kt->second.second;
     }
 
-    for(auto it = graphs_.begin(); it != graphs_.end();)
-    	if (check_zero(it->second.second)) {
-    		it = graphs_.erase(it);
-    	} else
-    		++it;
+    #ifdef VERBOSE
+		printf("erasing graphs...\n");
+	#endif
+
+    /* erase zero probability graphs */
+    for(auto it = graphs_.begin(); it != graphs_.end();) {
+    	/* range of similar graphs to delete */
+    	range = graphs_.equal_range(it->first);
+    	auto start = range.first;
+
+    	/* if the first graphgs has a zero probability, erase the whole rang */
+    	if (!check_zero(it->second.second))
+    		++start;
+
+    	it = graphs_.unsafe_erase(start, range.second);
+    }
 }
 
 //reader
@@ -140,7 +137,7 @@ std::pair<long double, long double> state::size_stat() {
 
 // dynamic 
 void state::step_split_merge_all(bool step, bool split_merge) {
-	boost::unordered_multimap<std::string, graph_w_proba_t> buff;
+	tbb::concurrent_unordered_multimap<std::string, graph_w_proba_t> buff;
 	buff.swap(graphs_);
 
 	#pragma omp parallel
@@ -163,7 +160,6 @@ void state::step_split_merge_all(bool step, bool split_merge) {
 			  	g_->split_merge(inter.first);
 
 			  	//add graph
-			  	#pragma omp critical
 			  	insert_temp(g_, it.second * inter.second);
 			}
 			// update the probability of the graph without split or merge 
@@ -172,7 +168,6 @@ void state::step_split_merge_all(bool step, bool split_merge) {
   		}
   		
   		//add graph
-		#pragma omp critical
 		insert_temp(it.first, it.second);
   	}
 }
