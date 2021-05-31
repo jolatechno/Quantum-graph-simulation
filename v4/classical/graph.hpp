@@ -92,24 +92,6 @@ public:
   	}
 };
 
-// comparator 
-/*bool graph::equal(graph_t* other) const {
-	// check if the  number of nodes match 
-	if (size() != other->size())
-    	return false;
-
-	// check positions of left going particules 
-	if (left_ != other->left_)
-		return false;
-
-	// check positions of right going particules 
-	if (right_ != other->right_)
-		return false;
-
-	 // check if names match 
-	return name_->equal(other->name_);
-}*/
-
 // hasher 
 size_t graph::hash() const {
 	size_t h = 0;
@@ -376,3 +358,21 @@ void graph::print() {
 		printf("|%c|-", r);
 	}
 }
+
+// comparator 
+/*bool graph::equal(graph_t* other) const {
+	// check if the  number of nodes match 
+	if (size() != other->size())
+    	return false;
+
+	// check positions of left going particules 
+	if (left_ != other->left_)
+		return false;
+
+	// check positions of right going particules 
+	if (right_ != other->right_)
+		return false;
+
+	 // check if names match 
+	return name_->equal(other->name_);
+}*/
