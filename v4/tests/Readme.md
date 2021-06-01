@@ -19,3 +19,4 @@ Des _flags_ peuvent etre ajouté avant les autres targets de compilation:
  - _graph\_test_ et _state\_test_: Permet de tester la dynamique (classique et quantique respectivement) sur un graphs aléatoire ou entré dans la console.
  - _injectivity\_test_ : Verifie la bijectivité de la dynamique classique.
  - _quantum\_iteration_: Itere le cas quantique.
+ - _quantum\_injectivity\_test_: opere 4 iterations du cas quantique puis autant d'iterations inverse pour verifier que l'on retourne bien à l'etat de depart.

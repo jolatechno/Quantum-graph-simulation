@@ -20,6 +20,10 @@ private:
 	std::vector<unsigned int> left_;
 	std::vector<unsigned int> right_;
 
+	// hash
+	size_t mutable hash_ = 0;
+	bool mutable hashed_ = false;
+
 	// useful functions 
 	void overflow_left(std::vector<unsigned int>& pos);
 	void overflow_right(std::vector<unsigned int>& pos);
@@ -87,10 +91,14 @@ public:
 
   	// step function 
   	void inline step() {
+  		hashed_ = false;
+
   		rotate_once_right(right_);
   		rotate_once_left(left_);
   	}
   	void inline reversed_step() {
+  		hashed_ = false;
+
   		rotate_once_right(left_);
   		rotate_once_left(right_);
   	}
@@ -98,27 +106,31 @@ public:
 
 // hasher 
 size_t graph::hash() const {
-	size_t h = 0;
+	if (hashed_)
+		return hash_;
+
+	hash_ = 0;
 	boost::hash<unsigned int> hasher;
 
 	// left hash 
 	for (auto &l : left_)
-		boost::hash_combine(h, hasher(l));
+		boost::hash_combine(hash_, hasher(l));
 
   // separator 
-  boost::hash_combine(h, separator);
+  boost::hash_combine(hash_, separator);
 
   // right hash 
   for (auto &r : right_)
-   	boost::hash_combine(h, hasher(r));
+   	boost::hash_combine(hash_, hasher(r));
 
   // separator 
-  boost::hash_combine(h, separator);
+  boost::hash_combine(hash_, separator);
 
   // name hash 
-  boost::hash_combine(h, name_->hash());
+  boost::hash_combine(hash_, name_->hash());
 
-  return h;
+  hashed_ = true;
+  return hash_;
 }
 
 // usefull functions 
@@ -164,6 +176,8 @@ void graph::rotate_once_right(std::vector<unsigned int>& pos) {
 
 // split merge 
 void graph::split_merge(std::vector<split_merge_t>& split_merge) {
+	hashed_ = false;
+
 	if (left_.size() == 0 ||
 	right_.size() == 0 ||
 	split_merge.size() == 0)
@@ -255,6 +269,8 @@ void graph::split_merge(std::vector<split_merge_t>& split_merge) {
 
 // randomize function 
 void graph::randomize() {
+	hashed_ = false;
+
 	// clear both vector 
 	left_.clear();
 	right_.clear();
@@ -288,6 +304,8 @@ void graph::randomize() {
 
 // randomize with a set number of particules going each ways 
 void graph::randomize(unsigned int n) {
+	hashed_ = false;
+
 	// clear both vector 
 	left_.clear();
 	right_.clear();
