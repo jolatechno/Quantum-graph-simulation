@@ -28,7 +28,7 @@ std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
 
 		if (*left_it == *right_it) {
 			/* check for split */
-			split_merge.push_back(std::pair<unsigned int, graph::split_merge_type_t>((*left_it), graph->split_t));
+			split_merge.push_back({(*left_it), graph->split_t});
 
 			/* check for last split */
 			if (*right_it == last_idx)
@@ -40,9 +40,9 @@ std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
 			/* chedk for merges */
 			if (*left_it == *right_it - 1)
 				if (left_it == last_left) {
-					split_merge.push_back(std::pair<unsigned int, graph::split_merge_type_t>((*left_it), graph->merge_t));
+					split_merge.push_back({(*left_it), graph->merge_t});
 				} else if (*(left_it + 1) != *right_it)
-					split_merge.push_back(std::pair<unsigned int, graph::split_merge_type_t>((*left_it), graph->merge_t));
+					split_merge.push_back({(*left_it), graph->merge_t});
 
 			++left_it;
 		} else
@@ -52,7 +52,7 @@ std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
 	if (!first_or_last_split)
 		if (*last_left == last_idx &&
 		graph->right()[0] == 0)
-			split_merge.push_back(std::pair<unsigned int, graph::split_merge_type_t>(last_idx, graph->merge_t));
+			split_merge.push_back({last_idx, graph->merge_t});
 
 	return split_merge;
 }

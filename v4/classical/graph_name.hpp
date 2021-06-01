@@ -15,6 +15,10 @@ private:
 	std::vector<node_t> node_buff_;
 	std::vector<int> trash_collection_;
 
+	// hash
+	size_t mutable hash_ = 0;
+	bool mutable hashed_ = false;
+
 	int push_to_buffer(node_t &n) {
 		if (trash_collection_.empty()) {
 			node_buff_.push_back(n);
@@ -58,14 +62,18 @@ public:
 	}
 
 	//hasher
-	size_t hash() {
-		size_t h = 0;
+	size_t inline hash() const {
+		if (hashed_)
+			return hash_;
+
+		hash_ = 0;
 
 		/* combine all nodes hash */
 		for (auto &n : nodes_)
-			boost::hash_combine(h, n.hash());
+			boost::hash_combine(hash_, n.hash());
 
-		return h;
+		hashed_ = true;
+		return hash_;
 	}
 
 	// split and merge 
@@ -75,8 +83,9 @@ public:
 
 // split merge
 bool inline graph_name::split(unsigned int idx) {
-	node_t node = nodes_[idx];
+	hashed_ = false;
 
+	node_t node = nodes_[idx];
 	if (node.is_pair()) {
 		// read indexes
 		int const left_idx = node.left_idx();
@@ -103,16 +112,18 @@ bool inline graph_name::split(unsigned int idx) {
 	int buff_idx = push_to_buffer(node);
 
 	// add left node
-	nodes_[idx] = node_t(buff_idx, point_l_idx, node_buff_);
+	nodes_[idx] = node_t(buff_idx, node, point_l_idx);
 
 	// add right node
 	nodes_.insert(nodes_.begin() + idx + 1,
-		node_t(buff_idx, point_r_idx, node_buff_));
+		node_t(buff_idx, node, point_r_idx));
 	
 	return false;
 }
 
 void inline graph_name::merge(unsigned int idx) {
+	hashed_ = false;
+
 	// destination idx
 	unsigned int right_idx = (idx + 1) % size();
 	auto left = nodes_[idx];
@@ -139,7 +150,7 @@ void inline graph_name::merge(unsigned int idx) {
 	int const left_idx = push_to_buffer(left);
 	int const right_idx_ = push_to_buffer(right);
 
-	nodes_[right_idx] = node_t(left_idx, right_idx_, node_buff_);
+	nodes_[right_idx] = node_t(left_idx, left, right_idx_, right);
 	nodes_.erase(nodes_.begin() + idx);
 }
 

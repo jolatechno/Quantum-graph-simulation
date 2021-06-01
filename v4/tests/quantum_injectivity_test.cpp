@@ -68,7 +68,7 @@ loop:
 		state_t* s = new state(g_1);
 		s->set_params(M_PI_4, M_PI_4);
 
-		int n_iter = 4;
+		int n_iter = 5;
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_split_merge_all();

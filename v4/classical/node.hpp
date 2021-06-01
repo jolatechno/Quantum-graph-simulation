@@ -21,25 +21,32 @@ private:
 public:
 
 	// constructors
-	node(int n) : left_idx__or_element_(n), right_idx__or_type_(element_idx) {
-		hash_ = boost::hash<int>{}(n);
+	node(int n) :
+		left_idx__or_element_(n), right_idx__or_type_(element_idx) {
+
+		hash_ = n;
+		boost::hash_combine(hash_, element_idx);
+		
 		has_most_left_zero_ = n == 0;
 	}
 
-	node(int const left_idx, int const right_idx__or_type, std::vector<node_t> const &node_buff) : left_idx__or_element_(left_idx), right_idx__or_type_(right_idx__or_type) {
-		boost::hash_combine(hash_, node_buff[left_idx].hash_);
+	node(int const idx, node_t const &other, int const type) :
+		left_idx__or_element_(idx), right_idx__or_type_(type) {
 
-		// check if right_idx__or_type is an index or a type
-		if (right_idx__or_type >= 0) {
-			boost::hash_combine(hash_, node_buff[right_idx__or_type].hash_);
-			has_most_left_zero_ = node_buff[left_idx].has_most_left_zero_ || node_buff[right_idx__or_type].has_most_left_zero_;
-		} else {
-			boost::hash_combine(hash_, right_idx__or_type);
+		boost::hash_combine(hash_, other.hash_);
+		boost::hash_combine(hash_, type);
 
-			// check for most left zero
-			if (is_left())
-				has_most_left_zero_ = node_buff[left_idx].has_most_left_zero_;
-		}
+		// check for most left zero
+		if (is_left())
+			has_most_left_zero_ = other.has_most_left_zero_;
+	}
+
+	node(int const left_idx, node_t const &left, int const right_idx, node_t const &right) :
+		left_idx__or_element_(left_idx), right_idx__or_type_(right_idx){
+
+		boost::hash_combine(hash_, left.hash_);
+		boost::hash_combine(hash_, right.hash_);
+		has_most_left_zero_ = left.has_most_left_zero_ || right.has_most_left_zero_;
 	}
 
 	// getters

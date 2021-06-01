@@ -11,7 +11,7 @@
 
 // forward declaration of the graph_t type 
 typedef class graph graph_t;
-size_t const separator = boost::hash<int>{}(-1); 
+size_t const separator = -1; 
 
 class graph {
 private:
@@ -114,20 +114,21 @@ size_t graph::hash() const {
 
 	// left hash 
 	for (auto &l : left_)
-		boost::hash_combine(hash_, hasher(l));
+		boost::hash_combine(hash_, l);
 
-  // separator 
-  boost::hash_combine(hash_, separator);
+ 	 // separator 
+  	boost::hash_combine(hash_, separator);
 
-  // right hash 
-  for (auto &r : right_)
-   	boost::hash_combine(hash_, hasher(r));
+  	// right hash 
+  	for (auto &r : right_)
+   		boost::hash_combine(hash_, r);
 
-  // separator 
-  boost::hash_combine(hash_, separator);
+  	// separator 
+  	boost::hash_combine(hash_, separator);
 
-  // name hash 
-  boost::hash_combine(hash_, name_->hash());
+  	// name hash 
+  	boost::hash_combine(hash_, name_->hash());
+		
 
   hashed_ = true;
   return hash_;
@@ -176,12 +177,12 @@ void graph::rotate_once_right(std::vector<unsigned int>& pos) {
 
 // split merge 
 void graph::split_merge(std::vector<split_merge_t>& split_merge) {
-	hashed_ = false;
-
 	if (left_.size() == 0 ||
 	right_.size() == 0 ||
 	split_merge.size() == 0)
 		return;
+	
+	hashed_ = false;
 
 	// check for last merge 
 	auto last_split_merge = split_merge.end() - 1;
