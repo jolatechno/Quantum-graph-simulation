@@ -148,7 +148,7 @@ std::pair<long double, long double> state::size_stat() {
 
 // dynamic 
 void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
-	/*tbb::concurrent_unordered_multimap<size_t, graph_w_proba_t>*/graph_map_t buff;
+	graph_map_t buff;
 	buff.swap(graphs_);
 
 	#pragma omp parallel
@@ -195,7 +195,7 @@ void state::print() {
 	  	} else {
 	  		printf("%Lf - i%Lf   ", std::real(mag), -std::imag(mag));
 	  	}
-	  	/*it.first*/graph->print();
+	  	graph->print();
 	  	printf("\n");
 	}
 }

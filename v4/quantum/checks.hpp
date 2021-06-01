@@ -16,16 +16,16 @@ bool check(state_t* s) {
 	//iterate over all graphs
     for(auto it = data.begin(); it != data.end(); ++it) {
     	//add probability
-    	probability += std::norm(it->second/*.second*/);
+    	probability += std::norm(it->second);
 
     	//check if a probability is under zero
-		if (check_zero(it->second/*.second*/)) {
+		if (check_zero(it->second)) {
 			printf("probability is zero!!\n");
 			return false;
 		}
 
 		//check graph
-		if (!graph_checker(it->/*second.*/first))
+		if (!graph_checker(it->first))
 			return false;
 
     	//iterate over all graphs

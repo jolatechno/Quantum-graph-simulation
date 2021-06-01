@@ -1,5 +1,11 @@
 # Quantum-graph-simulation/v3-hashmap/test
 
+## Requirement
+
+ - **_libboost-dev_** pour des fonction de hashage.
+ - **_libtbb-dev_** (partie de **openapi** d'intel) pour les `concurrent_unordered_multimap` qui sont des `unordered_multimap` thread-safe.
+ - **_libomp-dev_** pour profiter du parallelisme.
+
 ## Compilation
 
 Pour compiler un ficher **_fichier_.cpp** il suffit d'utiliser `make fichier`.
@@ -9,7 +15,6 @@ Pour compiler un ficher **_fichier_.cpp** il suffit d'utiliser `make fichier`.
 Des _flags_ peuvent etre ajouté avant les autres targets de compilation:
 
  - _test_ : Ajoute une etape de test à _quantum\_iteration_.
- - _test-full_ : Ajoute une etape de test sans optimisation, mais plus certaine à _quantum\_iteration_.
  - _verbose_: ajoute certain print de debugage.
 
 ### Programmes:

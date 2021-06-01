@@ -2,7 +2,7 @@
 
 ## Compilation
 
-Les fichier `main` à compiler sont dans [./v3-hasmap/tests/](./v4/tests/).
+Les fichier `main` à compiler sont dans [./v4/tests/](./v4/tests/).
 
 ## Notes
 
