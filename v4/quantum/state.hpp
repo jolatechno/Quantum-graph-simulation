@@ -84,41 +84,15 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-	// Select the correct type for calling the equal_range function
-    decltype(graphs_.equal_range(0)) range;
-
-    // iterate through multimap's elements (by key)
-	#pragma omp parallel
-	#pragma omp single
-    for(auto it = graphs_.begin(); it != graphs_.end(); it = range.second) {
-        // Get the range of the current key
-        range = graphs_.equal_range(it->first);
-
-        // save the range
-        auto const jt = range.first;
-        const auto local_end = range.second;
-        
-        // next iterator
-        auto kt = jt;
-        ++kt;
-
-        // Now sum out that whole range
-		#pragma omp task
-        for(; kt != local_end; ++kt)
-        	jt->second += kt->second;
-    }
-
-    #ifdef VERBOSE
-		printf("erasing graphs...\n");
-	#endif
-
-    /* erase zero probability graphs */
     for(auto it = graphs_.begin(); it != graphs_.end();) {
-    	/* range of similar graphs to delete */
-    	range = graphs_.equal_range(it->first);
+    	// range of similar graphs to delete
+    	auto range = graphs_.equal_range(it->first);
     	auto start = range.first;
 
-    	/* if the first graphgs has a zero probability, erase the whole range */
+    	for(auto jt = std::next(it); jt != range.second; ++jt)
+        	it->second += jt->second;
+
+    	// if the first graphgs has a zero probability, erase the whole range
     	if (!check_zero(it->second))
     		++start;
 
