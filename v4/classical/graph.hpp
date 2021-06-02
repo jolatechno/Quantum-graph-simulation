@@ -30,8 +30,8 @@ private:
 	void rotate_once_right(std::vector<unsigned int>& pos);
 
 public:
-	std::vector<unsigned int> left;
-	std::vector<unsigned int> right;
+	std::vector<unsigned int> mutable left;
+	std::vector<unsigned int> mutable right;
 
 	// normal constructors 
 	graph(int n) {
@@ -68,24 +68,6 @@ public:
 	// hasher 
 	size_t inline hash() const;
 
-	// add particules
-	void inline add_left(unsigned int n) {
-		left.push_back(n);
-		std::inplace_merge(left.begin(), left.end() - 1, left.end());
-	}
-	void inline add_left(std::vector<unsigned int> n) {
-		left.insert(left.end(), n.begin(), n.end());
-		std::inplace_merge(left.begin(), left.end() - n.size(), left.end());
-	}
-	void inline add_right(int n) {
-		right.push_back(n);
-		std::inplace_merge(right.begin(), right.end() - 1, right.end());
-	}
-	void inline add_right(std::vector<unsigned int> n) {
-		right.insert(right.end(), n.begin(), n.end());
-		std::inplace_merge(right.begin(), right.end() - n.size(), right.end());
-	}
-
 	// randomizer 
 	void randomize(unsigned int n);
 	void randomize();
@@ -101,11 +83,14 @@ public:
   typedef enum op_type {
 		split_t,
 		merge_t,
+		erase_t,
+		create_t,
 	} op_type_t;
 	// typedef of the pair of an index and a op_type 
   	typedef std::pair<unsigned int, op_type_t> op_t;
   	// functions 
   	void inline split_merge(std::vector<op_t>& split_merge); //indexes have to be sorted !!
+  	void inline erase_create(std::vector<op_t>& erase_create); //indexes have to be sorted !!
 
   	// step function 
   	void inline step() {
@@ -126,6 +111,10 @@ public:
 size_t graph::hash() const {
 	if (hashed_)
 		return hash_;
+
+	// save memory 
+	left.shrink_to_fit();
+	right.shrink_to_fit();
 
 	hash_ = 0;
 	boost::hash<unsigned int> hasher;
@@ -195,7 +184,7 @@ void graph::rotate_once_right(std::vector<unsigned int>& pos) {
 
 // split merge 
 void graph::split_merge(std::vector<op_t>& split_merge) {
-	if (split_merge.empty())
+	if (split_merge.empty() || left.empty() || right.empty())
 		return;
 	
 	hashed_ = false;
@@ -228,13 +217,13 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 		} else
 			name_->merge(pos);
 
-	// move particules
+	// move left particules
 	auto const split_merge_begin = split_merge.rend();
 	int displacement = total_displacement;
 	auto split_merge_it = split_merge.rbegin();
-	for (auto &leftit : left | std::ranges::views::reverse) {
+	for (auto &left_it : left | std::ranges::views::reverse) {
 		// check if there are any nodes left
-		for (;split_merge_it->first >= leftit && split_merge_it != split_merge_begin; ++split_merge_it)
+		for (;split_merge_it->first >= left_it && split_merge_it != split_merge_begin; ++split_merge_it)
 			// check if the node is split or merged
 			if (split_merge_it->second == split_t) {
 					--displacement; // decrement the displacement 
@@ -245,13 +234,14 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 		if (split_merge_it == split_merge_begin && displacement == 0)
 			break;
 
-		leftit += displacement;
+		left_it += displacement;
 	}
 
+	// move right particules
 	split_merge_it = split_merge.rbegin();
-	for (auto &rightit : right | std::ranges::views::reverse) {
+	for (auto &right_it : right | std::ranges::views::reverse) {
 		// check if there are any nodes left
-		for (;split_merge_it->first > rightit && split_merge_it != split_merge_begin; ++split_merge_it)
+		for (;split_merge_it->first > right_it && split_merge_it != split_merge_begin; ++split_merge_it)
 			// check if the node is split or merged
 			if (split_merge_it->second == split_t) {
 					--total_displacement; // decrement the displacement 
@@ -263,7 +253,7 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 			break;
 
 		//increment position
-		rightit += total_displacement;
+		right_it += total_displacement;
 	}
 
 	// finish first split 
@@ -271,6 +261,72 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 		rotate_once_left(left);
 		rotate_once_left(right);
 	}
+}
+
+void inline graph::erase_create(std::vector<op_t>& erase_create) {
+	auto const erase_create_begin = erase_create.rend();
+
+	// add and remove left particules
+	auto erase_create_it = erase_create.rbegin();
+	int left_idx = left.size() - 1;
+	if (!left.empty())
+		for (; erase_create_it < erase_create_begin; ++erase_create_it)
+			if (erase_create_it->second == create_t) {
+				// find the position to insert
+				for (; left[left_idx] >= erase_create_it->first && left_idx >= 0; --left_idx) {}
+
+				if (left_idx < 0)
+					break;
+
+				// insert
+				left.insert(left.begin() + left_idx + 1, erase_create_it->first);
+					
+			} else {
+				// find the particule to erase 
+				for (; left[left_idx] > erase_create_it->first && left_idx >= 0; --left_idx) {}
+
+				if (left_idx < 0)
+					break;
+
+				// erase
+				left.erase(left.begin() + left_idx);
+				--left_idx;
+			}
+
+	// add the particule at the begin
+	for (; erase_create_it < erase_create_begin; ++erase_create_it)
+		left.insert(left.begin(), erase_create_it->first);
+
+	// add and remove right particules
+	erase_create_it = erase_create.rbegin();
+	int right_idx = right.size() - 1;
+	if (!right.empty())
+		for (; erase_create_it < erase_create_begin; ++erase_create_it)
+			if (erase_create_it->second == create_t) {
+				// find the position to insert
+				for (; right[right_idx] >= erase_create_it->first && right_idx >= 0; --right_idx) {}
+
+				if (right_idx < 0)
+					break;
+
+				// insert
+				right.insert(right.begin() + right_idx + 1, erase_create_it->first);
+
+			} else {
+				// find the particule to erase 
+				for (; right[right_idx] > erase_create_it->first && right_idx >= 0; --right_idx) {}
+
+				if (right_idx < 0)
+					break;
+
+				// erase
+				right.erase(right.begin() + right_idx);
+				--right_idx;
+			}
+
+	// add the particule at the begin
+	for (; erase_create_it < erase_create_begin; ++erase_create_it)
+		right.insert(right.begin(), erase_create_it->first);
 }
 
 // randomize function 
@@ -302,10 +358,6 @@ void graph::randomize() {
 		right.push_back(x);
 		x += 1 + (unsigned int)distribution(generator);
 	}
-
-	// save memory 
-	left.shrink_to_fit();
-	right.shrink_to_fit();
 }
 
 // randomize with a set number of particules going each ways 
@@ -340,17 +392,13 @@ void graph::randomize(unsigned int n) {
 		x_max = size() - x - (n - i - 1);
 		x += 1 + (unsigned int)distribution(generator)%(x_max - 1);
 	}
-
-	// save memory 
-	left.shrink_to_fit();
-	right.shrink_to_fit();
 }
 
 // debuging 
 void graph::print() {
 	// iterate through particules positions 
-	auto leftit = left.begin();
-	auto rightit = right.begin();
+	auto left_it = left.begin();
+	auto right_it = right.begin();
 
 	// node list 
 	auto nodes = name_->nodes();
@@ -359,26 +407,26 @@ void graph::print() {
 		char l = ' ';
 
 		// if there is any left particules left 
-		if (leftit < left.end())
+		if (left_it < left.end())
 			// check if there is a particule at the left port 
-			if (*leftit == i) {
+			if (*left_it == i) {
 				l = '<';
 
 				// iterate left iterator
-				++leftit;
+				++left_it;
 			}
 
 		// right character 
 		char r = ' ';
 
 		// if there is any right particules left 
-		if (rightit < right.end())
+		if (right_it < right.end())
 			// check if there is a particule at the right port 
-			if (*rightit == i) {
+			if (*right_it == i) {
 				r = '>';
 
 				// iterate right iterator
-				++rightit;
+				++right_it;
 			}
 
 		printf("-|%c|", l);

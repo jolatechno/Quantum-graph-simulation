@@ -17,17 +17,16 @@ int main() {
       graph_t* c = g->copy();
 
       g->step();
-      auto split_merge = get_split_merge(g);
-      g->split_merge(split_merge);
+      g->reversed_step();
+      split_merge(g);
 
       graph_t* c2 = g->copy();
 
-      split_merge = get_split_merge(c2);
-      c2->split_merge(split_merge);
-      c2->reversed_step();
+      split_merge(c2);
+      erase_create(c2);
+      erase_create(c2);
 
-
-      if (c2->hash() != c->hash() /*!g->equal(c)*/){
+      if (c->hash() != c2->hash() /*!g->equal(c)*/){
         c2->print(); printf("\n");
         c->print(); printf("\n");
         throw;

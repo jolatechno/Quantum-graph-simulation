@@ -5,6 +5,7 @@
 #include <utility> //for pairs
 #include <complex> //for complex
 #include "../classical/graph.hpp"
+#include "../classical/rules.hpp"
 #include <tbb/concurrent_vector.h>
 
 bool inline check_zero(const std::complex<long double>& mag) {
@@ -28,7 +29,7 @@ std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std
 	std::complex<long double> proba = 1;
 
 	for (int i = 0; i < split_merge.size(); ++i) {
-		long double sign = 1 - 2*split_merge[i].second;
+		long double sign = 1 - 2*(split_merge[i].second % 2);
 
 		/* i_th bit of subset_numb */
 		if (subset_numb%2) {
@@ -86,6 +87,39 @@ auto split_merge_all(std::complex<long double>& non_merge, std::complex<long dou
 	};
 }
 
+// split merge a graph
+auto erase_create_all(std::complex<long double>& non_create, std::complex<long double>& create) {
+	return [&](graph_t* g) {
+		auto erase_create = get_erase_create(g);
+		tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>> graphs;
+
+		#pragma omp parallel
+		{
+			#pragma omp task
+		  	{
+		  		// update the probability of the graph without split or merge 
+				auto [_, mag_no_erase_create] = subset(erase_create, 0, non_create, create);
+				graphs.push_back({g, mag_no_erase_create});
+		  	}
+
+			// add all graphs that actually have some split ot merge 
+			const int n_max = num_subset(erase_create);
+			for (int j = 1; j < n_max; ++j)
+			#pragma omp task
+			{
+				graph_t* g_ = g->copy();
+
+				auto [split_merge_list, mag_erase_create] = subset(erase_create, j, non_create, create);
+				g_->erase_create(split_merge_list);
+				graphs.push_back({g_, mag_erase_create});
+			}
+		}
+
+		return graphs;
+	};
+}
+
+//step and split merge
 auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](graph_t* g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
@@ -98,6 +132,29 @@ auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::co
 	return [&](graph_t* g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		auto graphs_ = split_merge_all_(g);
+
+		#pragma parallel
+		for (auto & [graph, _] : graphs_)
+		#pragma task
+			graph->reversed_step();
+		
+		return graphs_;
+	};
+}
+
+//step and erase create
+auto step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+	return [&](graph_t* g) {
+		auto const erase_create_all_ = erase_create_all(non_merge, merge);
+		g->step();
+		return erase_create_all_(g);
+	};
+}
+
+auto reversed_step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+	return [&](graph_t* g) {
+		auto const erase_create_all_ = erase_create_all(non_merge, merge);
+		auto graphs_ = erase_create_all_(g);
 
 		#pragma parallel
 		for (auto & [graph, _] : graphs_)

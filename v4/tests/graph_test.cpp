@@ -58,19 +58,67 @@ random:
 loop:
     graph_t* g_2 = g_1->copy();
 
+    //--------------
+
+    g_1->step();
+    printf("\n\nstep():           "); g_1->print();
+
+    //---
+
+    g_1->reversed_step();
+    printf("\nreversed_step():  "); g_1->print();
+
+    //--------------
+
     auto split_merge = get_split_merge(g_1);
-    printf("\n"); print_split_merge(split_merge); printf("\n");
+    printf("\n\n"); print_split_merge(split_merge);
 
     g_1->split_merge(split_merge);
     printf("\nmerge_split():    "); g_1->print();
+
+    //---
 
     split_merge = get_split_merge(g_1);
+    printf("\n"); print_split_merge(split_merge);
 
-    printf("\n"); print_split_merge(split_merge); printf("\n");
     g_1->split_merge(split_merge);
     printf("\nmerge_split():    "); g_1->print();
 
-    printf("\ncopy*:            "); g_2->print();
+    //--------------
+
+    auto erase_create = get_erase_create(g_1);
+    printf("\n\n"); print_erase_create(erase_create);
+    
+    g_1->erase_create(erase_create);
+    printf("\nerase_create():   "); g_1->print();
+
+    printf("\n\nleft: ");
+    for (auto &l : g_1->left)
+      printf("%d, ", l);
+    printf("\nright: ");
+    for (auto &l : g_1->right)
+      printf("%d, ", l);
+    printf("\n");
+
+    //---
+
+    erase_create = get_erase_create(g_1);
+    printf("\n"); print_erase_create(erase_create);
+    
+    g_1->erase_create(erase_create);
+    printf("\nerase_create():   "); g_1->print();
+
+    printf("\n\nleft: ");
+    for (auto &l : g_1->left)
+      printf("%d, ", l);
+    printf("\nright: ");
+    for (auto &l : g_1->right)
+      printf("%d, ", l);
+    printf("\n");
+
+    //--------------
+
+    printf("\n\ncopy*:            "); g_2->print();
 
     printf("\nhashes are: %ld %ld\n", g_1->hash(), g_2->hash());
 

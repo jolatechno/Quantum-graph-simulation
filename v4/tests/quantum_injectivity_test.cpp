@@ -67,6 +67,7 @@ loop:
 
 		state_t* s = new state(g_1);
 	    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+
 	    auto rule = step_split_merge_all(non_merge, merge);
 	    auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
 
@@ -83,13 +84,11 @@ loop:
 					printf("\nstate is not OK\n");
 			#endif
 		}
+
+		//----
 		
-		if (n_iter <= 2) {
-			printf("\nafter %d step_merge_split():\n", n_iter); s->print();
-		} else {
-			auto [avg, std_dev] = s->size_stat();
-        	printf("%ld graph of size %Lf±%Lf after %d step_merge_split()\n", s->graphs().size(), avg, std_dev, n_iter);
-		}
+		auto [avg, std_dev] = s->size_stat();
+        printf("%ld graph of size %Lf±%Lf after %d step_merge_split()\n", s->graphs().size(), avg, std_dev, n_iter);
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(reversed_rule);
@@ -103,6 +102,42 @@ loop:
 			#endif
 		}
 
-		printf("\nafter %d reversed_merge_split_step():\n", n_iter); s->print();
+		printf("\nafter %d reversed_step_merge_split():\n", n_iter); s->print();
+
+		//--------------------------
+
+		auto rule_ = step_erase_create_all(non_merge, merge);
+	    auto reversed_rule_ = reversed_step_erase_create_all(non_merge, merge);
+
+		for (int i = 0; i < n_iter; ++i) {
+			s->step_all(rule_);
+			s->reduce_all();
+
+			#ifdef TEST
+				if (check(s)) {
+					printf("\nstate is OK\n");
+				} else
+					printf("\nstate is not OK\n");
+			#endif
+		}
+
+		//----
+		
+		auto [avg_, std_dev_] = s->size_stat();
+        printf("%ld graph of size %Lf±%Lf after %d step_erase_create_all()\n", s->graphs().size(), avg_, std_dev_, n_iter);
+
+		for (int i = 0; i < n_iter; ++i) {
+			s->step_all(reversed_rule_);
+			s->reduce_all();
+
+			#ifdef TEST
+				if (check(s)) {
+					printf("\nstate is OK\n");
+				} else
+					printf("\nstate is not OK\n");
+			#endif
+		}
+
+		printf("\nafter %d reversed_step_erase_create_all():\n", n_iter); s->print();
 	}
 }

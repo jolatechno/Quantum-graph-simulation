@@ -3,6 +3,7 @@
 #include "node.hpp"
 #include <vector>
 #include <stdio.h>
+#include <algorithm>
 #include <boost/functional/hash.hpp>
 
 // forward declaration of the graph_t type 
