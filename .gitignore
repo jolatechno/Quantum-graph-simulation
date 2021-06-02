@@ -33,3 +33,6 @@
 
 # results
 *.txt
+
+#swap
+*.swp

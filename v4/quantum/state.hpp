@@ -139,6 +139,13 @@ void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
   		if (split_merge) {
   			auto split_merge = get_split_merge(graph);
 
+  			#pragma omp task
+  			{
+  				// update the probability of the graph without split or merge 
+				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
+				graphs_.insert({graph, mag * mag_no_split_merge});
+  			}
+
 			// add all graphs that actually have some split ot merge 
 			const int n_max = num_subset(split_merge);
 			#pragma omp taskloop
@@ -151,13 +158,10 @@ void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
 			  	//add graph
 			  	graphs_.insert({g_, mag * mag_split_merge});
 			}
-			// update the probability of the graph without split or merge 
-			auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
-			mag *= mag_no_split_merge;
-  		}
-  		
-  		//add graph
-		graphs_.insert({graph, mag});
+			
+  		} else
+	  		//add graph
+			graphs_.insert({graph, mag});
   	}
 }
 

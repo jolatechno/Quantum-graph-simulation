@@ -605,43 +605,39 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 
 \begin{lstlisting}[style=CStyle]
 	//...
-	void step_split_merge_all(bool step, bool split_merge, bool reversed) {
+	void step_split_merge_all() {
 		graph_map_t buff;
 		buff.swap(graphs_);
 
 		#pragma omp parallel
 		#pragma omp single
-	  	for (auto & [graph, mag] : buff)
+		for (auto & [graph, mag] : buff)
 		#pragma omp task
 	  	{
-	  		if (step)
-	  			graph->step();
-
-	  		if (reversed)
-	  			graph->reversed_step();
-
-	  		if (split_merge) {
-	  			auto split_merge = get_split_merge(graph);
-
-				// add all graphs that actually have some split ot merge 
-				const int n_max = num_subset(split_merge);
-				#pragma omp taskloop
-				for (int j = 1; j < n_max; ++j) {
-					graph_t* g_ = graph->copy();
-
-					auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
-				  	g_->split_merge(split_merge_list);
-
-				  	//add graph
-				  	graphs_.insert({g_, mag * mag_split_merge});
-				}
-				// update the probability of the graph without split or merge 
-				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
-				mag *= mag_no_split_merge;
-	  		}
 	  		
-	  		//add graph
-			graphs_.insert({graph, mag});
+	  		graph->step(); //graph->reversed_step(); for reversed_split_merge_step_all()
+
+	  		auto split_merge = get_split_merge(graph);
+
+	  		#pragma omp task
+	  		{
+	  			// update the probability of the graph without split or merge 
+				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
+				graphs_.insert({graph, mag * mag_no_split_merge});
+	  		}
+
+	  		// add all graphs that actually have some split ot merge 
+	  		const int n_max = num_subset(split_merge);
+	  		#pragma omp taskloop
+	  		for (int j = 1; j < n_max; ++j) {
+	  			graph_t* g_ = graph->copy();
+
+	  			auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
+	  			g_->split_merge(split_merge_list);
+
+	  			//add graph
+	  			graphs_.insert({g_, mag * mag_split_merge});
+	  		}
 	  	}
 	}
 	//...
