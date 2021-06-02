@@ -18,8 +18,7 @@ int main() {
     graph_t* g_0 = g->copy();
 
     for (int i = n_iteration - 1; i >= 0; --i) {
-      auto split_merge = get_split_merge(g);
-      g->split_merge(split_merge);
+      split_merge(g);
       g->reversed_step();
       sizes[i] += g->size() / n_iter;
     }
@@ -28,8 +27,7 @@ int main() {
 
     for (int i = n_iteration + 1; i < 2*n_iteration + 1; ++i) {
       g_0->step();
-      auto split_merge = get_split_merge(g_0);
-      g_0->split_merge(split_merge);
+      split_merge(g_0);
       sizes[i] += g_0->size() / n_iter;
     }
   }

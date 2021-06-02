@@ -2,12 +2,13 @@
 
 #include <vector>
 #include <utility>
+#include <functional>
 #include <complex> //for complex
 #include <string>
 #include "../classical/graph.hpp"
-#include "../classical/rules.hpp"
 #include "rules.hpp"
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 
 // forward definition of the state type
 typedef class state state_t;
@@ -35,10 +36,6 @@ private:
 	// main list 
 	graph_map_t graphs_;
 
-	// parameters
-	std::complex<long double> non_merge_ = -1;
-	std::complex<long double> merge_ = 0;
-
 	// checker
 	friend bool check(state_t* s);
 
@@ -55,21 +52,10 @@ public:
 	//reader
 	std::pair<long double, long double> size_stat();
 
-	// setter 
-	void set_params(long double teta, long double phi) {
-		// compute amplitude 
-		non_merge_ = std::cos(teta);
-		merge_ = std::polar(std::sin(teta), phi);
-	}
-
 	void reduce_all();
 
 	// dynamic 
-	void step_split_merge_all(bool step, bool split_merge, bool reversed);
-	void inline step_split_merge_all() { step_split_merge_all(true, true, false); }
-	void inline step_all() { step_split_merge_all(true, false, false); }
-	void inline split_merge_all() { step_split_merge_all(false, true, false); }
-	void inline reversed_split_merge_step() { step_split_merge_all(false, true, true); }
+	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule);
 
 	// for debugging 
 	void print();
@@ -117,7 +103,7 @@ std::pair<long double, long double> state::size_stat() {
 }
 
 // dynamic 
-void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
+void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -126,47 +112,12 @@ void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
   	for (auto & [graph, mag] : buff)
 	#pragma omp task
   	{
-  		if (step)
-  			graph->step();
-
-  		if (split_merge) {
-  			auto split_merge = get_split_merge(graph);
-
-  			#pragma omp task
-  			{
-  				// update the probability of the graph without split or merge 
-				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
-
-				// need to copy the graph if we do the reversed step
-				if(reversed) {
-					graph_t* g_ = graph->copy();
-					g_->reversed_step();
-					graphs_.insert({g_, mag * mag_no_split_merge});
-				} else
-					graphs_.insert({graph, mag * mag_no_split_merge});
-				
-  			}
-
-			// add all graphs that actually have some split ot merge 
-			const int n_max = num_subset(split_merge);
-			for (int j = 1; j < n_max; ++j)
-			#pragma omp task
-			{
-				graph_t* g_ = graph->copy();
-
-				auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
-			  	g_->split_merge(split_merge_list);
-
-			  	if (reversed)
-  					g_->reversed_step();
-
-			  	//add graph
-			  	graphs_.insert({g_, mag * mag_split_merge});
-			}
-			
-  		} else
-	  		//add graph
-			graphs_.insert({graph, mag});
+  		auto graphs = rule(graph);
+  		for (auto & [graph_, mag_] : graphs)
+  		#pragma task
+  		{
+  			graphs_.insert({graph_, mag_ * mag});
+  		}
   	}
 }
 

@@ -16,7 +16,8 @@ int main() {
     g_1->randomize(3);
 
     state_t* s = new state(g_1);
-	s->set_params(M_PI_4, M_PI_2);
+    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+    auto rule = step_split_merge_all(non_merge, merge);
 
     for (int i = 1; i < 11; ++i) {
 
@@ -30,7 +31,7 @@ int main() {
             printf("...OK\n");
         #endif
 
-        printf("\nstep_split_merge_all() ...\n"); s->step_split_merge_all();
+        printf("\nstep_split_merge_all() ...\n"); s->step_all(rule);
 
         //if (i % 3 == 0) {
             printf("reduce_all() ...\n\n"); s->reduce_all(); printf("\n");

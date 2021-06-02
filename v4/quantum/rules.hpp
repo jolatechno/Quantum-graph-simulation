@@ -5,6 +5,7 @@
 #include <utility> //for pairs
 #include <complex> //for complex
 #include "../classical/graph.hpp"
+#include <tbb/concurrent_vector.h>
 
 bool inline check_zero(const std::complex<long double>& mag) {
 	const long double double_tolerance = 1e-30;
@@ -15,15 +16,15 @@ bool inline check_zero(const std::complex<long double>& mag) {
 
 /* count the number of subsets */
 template<class T>
-int num_subset(std::vector<T> const &vect) {
+int static num_subset(std::vector<T> const &vect) {
 	return pow(2, vect.size());
 }
 
 /* create a subset and a probability from the subset indice */
-std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(std::vector<graph::split_merge_t>& split_merge, int subset_numb,
+std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
 	std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	
-	std::vector<graph::split_merge_t> res;
+	std::vector<graph::op_t> res;
 	std::complex<long double> proba = 1;
 
 	for (int i = 0; i < split_merge.size(); ++i) {
@@ -46,12 +47,63 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 	return {res, proba};
 }
 
-std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(std::vector<graph::split_merge_t>& split_merge, int subset_numb,
-	long double teta, long double phi) {
+//to create a reversible dynamic
+std::pair<std::complex<long double>, std::complex<long double>> unitary(long double teta, long double phi) {
+	std::complex<long double> non_merge_ = std::cos(teta);
+	std::complex<long double> merge_ = std::polar(std::sin(teta), phi);
+	return {non_merge_, merge_};
+} 
 
-	/* compute amplitudes */
-	std::complex<long double> non_merge = std::cos(teta);
-	std::complex<long double> merge = std::polar(std::sin(teta), phi);
+// split merge a graph
+auto split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+	return [&](graph_t* g) {
+		auto split_merge = get_split_merge(g);
+		tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>> graphs;
 
-	return subset(split_merge, subset_numb, non_merge, merge);
+		#pragma omp parallel
+		{
+			#pragma omp task
+		  	{
+		  		// update the probability of the graph without split or merge 
+				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge, merge);
+				graphs.push_back({g, mag_no_split_merge});
+		  	}
+
+			// add all graphs that actually have some split ot merge 
+			const int n_max = num_subset(split_merge);
+			for (int j = 1; j < n_max; ++j)
+			#pragma omp task
+			{
+				graph_t* g_ = g->copy();
+
+				auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge, merge);
+				g_->split_merge(split_merge_list);
+				graphs.push_back({g_, mag_split_merge});
+			}
+		}
+
+		return graphs;
+	};
+}
+
+auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+	return [&](graph_t* g) {
+		auto const split_merge_all_ = split_merge_all(non_merge, merge);
+		g->step();
+		return split_merge_all_(g);
+	};
+}
+
+auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+	return [&](graph_t* g) {
+		auto const split_merge_all_ = split_merge_all(non_merge, merge);
+		auto graphs_ = split_merge_all_(g);
+
+		#pragma parallel
+		for (auto & [graph, _] : graphs_)
+		#pragma task
+			graph->reversed_step();
+		
+		return graphs_;
+	};
 }

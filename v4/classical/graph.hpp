@@ -18,8 +18,6 @@ class graph {
 private:
 	// variables 
 	graph_name_t* name_;
-	std::vector<unsigned int> left_;
-	std::vector<unsigned int> right_;
 
 	// hash
 	size_t mutable hash_ = 0;
@@ -32,12 +30,15 @@ private:
 	void rotate_once_right(std::vector<unsigned int>& pos);
 
 public:
+	std::vector<unsigned int> left;
+	std::vector<unsigned int> right;
+
 	// normal constructors 
 	graph(int n) {
 		name_ = new graph_name(n);
 	}
 
-	graph(int n, std::vector<unsigned int> left, std::vector<unsigned int> right) : left_(left), right_(right) {
+	graph(int n, std::vector<unsigned int> left, std::vector<unsigned int> right) : left(left), right(right) {
 		name_ = new graph_name(n);
 	}
 
@@ -51,23 +52,39 @@ public:
 		// just copy the vectors 
 		graph_t* this_copy = new graph(0);
 		this_copy->name_ = name_->copy();
-		this_copy->left_ = left_;
-		this_copy->right_ = right_;
+		this_copy->left = left;
+		this_copy->right = right;
 
 		// save memory 
-		left_.shrink_to_fit();
-		right_.shrink_to_fit();
+		left.shrink_to_fit();
+		right.shrink_to_fit();
 	
 		return this_copy;
 	}
 
 	// getters 
-	std::vector<unsigned int> inline const &left() const { return left_; };
-	std::vector<unsigned int> inline const &right() const { return right_; };
 	graph_name_t inline const *name() const { return name_; };
 
 	// hasher 
 	size_t inline hash() const;
+
+	// add particules
+	void inline add_left(unsigned int n) {
+		left.push_back(n);
+		std::inplace_merge(left.begin(), left.end() - 1, left.end());
+	}
+	void inline add_left(std::vector<unsigned int> n) {
+		left.insert(left.end(), n.begin(), n.end());
+		std::inplace_merge(left.begin(), left.end() - n.size(), left.end());
+	}
+	void inline add_right(int n) {
+		right.push_back(n);
+		std::inplace_merge(right.begin(), right.end() - 1, right.end());
+	}
+	void inline add_right(std::vector<unsigned int> n) {
+		right.insert(right.end(), n.begin(), n.end());
+		std::inplace_merge(right.begin(), right.end() - n.size(), right.end());
+	}
 
 	// randomizer 
 	void randomize(unsigned int n);
@@ -81,27 +98,27 @@ public:
 
   // split and merge 
   // split_merge type enum 
-  typedef enum split_merge_type {
+  typedef enum op_type {
 		split_t,
 		merge_t,
-	} split_merge_type_t;
-	// typedef of the pair of an index and a split_merge_type 
-  	typedef std::pair<unsigned int, split_merge_type_t> split_merge_t;
+	} op_type_t;
+	// typedef of the pair of an index and a op_type 
+  	typedef std::pair<unsigned int, op_type_t> op_t;
   	// functions 
-  	void inline split_merge(std::vector<split_merge_t>& split_merge); //indexes have to be sorted !!
+  	void inline split_merge(std::vector<op_t>& split_merge); //indexes have to be sorted !!
 
   	// step function 
   	void inline step() {
   		hashed_ = false;
 
-  		rotate_once_right(right_);
-  		rotate_once_left(left_);
+  		rotate_once_right(right);
+  		rotate_once_left(left);
   	}
   	void inline reversed_step() {
   		hashed_ = false;
 
-  		rotate_once_right(left_);
-  		rotate_once_left(right_);
+  		rotate_once_right(left);
+  		rotate_once_left(right);
   	}
 };
 
@@ -114,14 +131,14 @@ size_t graph::hash() const {
 	boost::hash<unsigned int> hasher;
 
 	// left hash 
-	for (auto &l : left_)
+	for (auto &l : left)
 		boost::hash_combine(hash_, l);
 
  	 // separator 
   	boost::hash_combine(hash_, separator);
 
   	// right hash 
-  	for (auto &r : right_)
+  	for (auto &r : right)
    		boost::hash_combine(hash_, r);
 
   	// separator 
@@ -177,16 +194,16 @@ void graph::rotate_once_right(std::vector<unsigned int>& pos) {
 }
 
 // split merge 
-void graph::split_merge(std::vector<split_merge_t>& split_merge) {
+void graph::split_merge(std::vector<op_t>& split_merge) {
 	if (split_merge.empty())
 		return;
 	
 	hashed_ = false;
 
 	// check for last merge
-	if (split_merge.back() == split_merge_t(size() - 1, merge_t)) {
+	if (split_merge.back() == op_t(size() - 1, merge_t)) {
 		name_->merge(size() - 1);
-		overflow_right(left_);	
+		overflow_right(left);	
 		split_merge.pop_back();
 	}
 		
@@ -215,9 +232,9 @@ void graph::split_merge(std::vector<split_merge_t>& split_merge) {
 	auto const split_merge_begin = split_merge.rend();
 	int displacement = total_displacement;
 	auto split_merge_it = split_merge.rbegin();
-	for (auto &left_it : left_ | std::ranges::views::reverse) {
+	for (auto &leftit : left | std::ranges::views::reverse) {
 		// check if there are any nodes left
-		for (;split_merge_it->first >= left_it && split_merge_it != split_merge_begin; ++split_merge_it)
+		for (;split_merge_it->first >= leftit && split_merge_it != split_merge_begin; ++split_merge_it)
 			// check if the node is split or merged
 			if (split_merge_it->second == split_t) {
 					--displacement; // decrement the displacement 
@@ -228,13 +245,13 @@ void graph::split_merge(std::vector<split_merge_t>& split_merge) {
 		if (split_merge_it == split_merge_begin && displacement == 0)
 			break;
 
-		left_it += displacement;
+		leftit += displacement;
 	}
 
 	split_merge_it = split_merge.rbegin();
-	for (auto &right_it : right_ | std::ranges::views::reverse) {
+	for (auto &rightit : right | std::ranges::views::reverse) {
 		// check if there are any nodes left
-		for (;split_merge_it->first > right_it && split_merge_it != split_merge_begin; ++split_merge_it)
+		for (;split_merge_it->first > rightit && split_merge_it != split_merge_begin; ++split_merge_it)
 			// check if the node is split or merged
 			if (split_merge_it->second == split_t) {
 					--total_displacement; // decrement the displacement 
@@ -246,13 +263,13 @@ void graph::split_merge(std::vector<split_merge_t>& split_merge) {
 			break;
 
 		//increment position
-		right_it += total_displacement;
+		rightit += total_displacement;
 	}
 
 	// finish first split 
 	if (first_split) {
-		rotate_once_left(left_);
-		rotate_once_left(right_);
+		rotate_once_left(left);
+		rotate_once_left(right);
 	}
 }
 
@@ -261,8 +278,8 @@ void graph::randomize() {
 	hashed_ = false;
 
 	// clear both vector 
-	left_.clear();
-	right_.clear();
+	left.clear();
+	right.clear();
 
 	// random genearator 
 	unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -275,20 +292,20 @@ void graph::randomize() {
 	
 	// generate left values 
 	while (x < x_max) {
-		left_.push_back(x);
+		left.push_back(x);
 		x += 1 + (unsigned int)distribution(generator);
 	}
 
 	// generate right values 
 	x = ((unsigned int)distribution(generator))%x_max;
 	while (x < x_max) {
-		right_.push_back(x);
+		right.push_back(x);
 		x += 1 + (unsigned int)distribution(generator);
 	}
 
 	// save memory 
-	left_.shrink_to_fit();
-	right_.shrink_to_fit();
+	left.shrink_to_fit();
+	right.shrink_to_fit();
 }
 
 // randomize with a set number of particules going each ways 
@@ -296,8 +313,8 @@ void graph::randomize(unsigned int n) {
 	hashed_ = false;
 
 	// clear both vector 
-	left_.clear();
-	right_.clear();
+	left.clear();
+	right.clear();
 
 	// random genearator 
 	unsigned seed = std::chrono::steady_clock::now().time_since_epoch().count();
@@ -310,7 +327,7 @@ void graph::randomize(unsigned int n) {
 
 	// generate left values 
 	for (int i = 0; i < n; i++) {
-		left_.push_back(x);
+		left.push_back(x);
 		x_max = size() - x - (n - i - 1);
 		x += 1 + (unsigned int)distribution(generator)%(x_max - 1);
 	}
@@ -319,21 +336,21 @@ void graph::randomize(unsigned int n) {
 	x_max = size() - n;
 	x = ((unsigned int)distribution(generator))%x_max;
 	for (int i = 0; i < n; i++) {
-		right_.push_back(x);
+		right.push_back(x);
 		x_max = size() - x - (n - i - 1);
 		x += 1 + (unsigned int)distribution(generator)%(x_max - 1);
 	}
 
 	// save memory 
-	left_.shrink_to_fit();
-	right_.shrink_to_fit();
+	left.shrink_to_fit();
+	right.shrink_to_fit();
 }
 
 // debuging 
 void graph::print() {
 	// iterate through particules positions 
-	auto left_it = left_.begin();
-	auto right_it = right_.begin();
+	auto leftit = left.begin();
+	auto rightit = right.begin();
 
 	// node list 
 	auto nodes = name_->nodes();
@@ -342,26 +359,26 @@ void graph::print() {
 		char l = ' ';
 
 		// if there is any left particules left 
-		if (left_it < left_.end())
+		if (leftit < left.end())
 			// check if there is a particule at the left port 
-			if (*left_it == i) {
+			if (*leftit == i) {
 				l = '<';
 
 				// iterate left iterator
-				++left_it;
+				++leftit;
 			}
 
 		// right character 
 		char r = ' ';
 
 		// if there is any right particules left 
-		if (right_it < right_.end())
+		if (rightit < right.end())
 			// check if there is a particule at the right port 
-			if (*right_it == i) {
+			if (*rightit == i) {
 				r = '>';
 
 				// iterate right iterator
-				++right_it;
+				++rightit;
 			}
 
 		printf("-|%c|", l);
@@ -377,11 +394,11 @@ void graph::print() {
     	return false;
 
 	// check positions of left going particules 
-	if (left_ != other->left_)
+	if (left != other->left)
 		return false;
 
 	// check positions of right going particules 
-	if (right_ != other->right_)
+	if (right != other->right)
 		return false;
 
 	 // check if names match 

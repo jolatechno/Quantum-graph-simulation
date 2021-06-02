@@ -464,43 +464,36 @@ To get the list of all indeces of splits and merges, we iterate through both the
 \begin{lstlisting}[style=CStyle]
 /* function to get all split and merges */
 std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
-	std::vector<graph::split_merge_t> split_merge;
+	std::vector<graph::op_t> split_merge;
 
-	/* definition of left_it, right_it, last_left, last_right ... */
-	
+	unsigned int const last_idx = graph->size() - 1;
+
+	auto left_it = graph->left().begin();
+	auto right_it = graph->right().begin();
 	bool first_or_last_split = *left_it == *right_it && *left_it == 0;
-	while (true) {
-		/* check if there are any particules left after iterating */
-		if (right_it > last_right ||
-		left_it > last_left)
-			break;
+	first_or_last_split |= graph->left().back() == last_idx && graph->right().back() == last_idx;
 
+	while (right_it < right_end = graph->right().end() && left_it < graph->left().end())
 		if (*left_it == *right_it) {
-			/* check for split */
-			split_merge.push_back({(*left_it), graph->split_t});
-
-			/* check for last split */
-			if (*right_it == last_idx)
-				first_or_last_split = true;
+			// check for split
+			split_merge.push_back({*left_it, graph->split_t});
 
 			++right_it;
 			++left_it;
 		} else if (*left_it < *right_it) {
-			/* chedk for merges */
+			// chedk for merges
 			if (*left_it == *right_it - 1)
-				if (left_it == last_left) {
-					split_merge.push_back({(*left_it), graph->merge_t});
+				if (left_it == graph->left().end() - 1) {
+					split_merge.push_back({*left_it, graph->merge_t});
 				} else if (*(left_it + 1) != *right_it)
-					split_merge.push_back({(*left_it), graph->merge_t});
+					split_merge.push_back({*left_it, graph->merge_t});
 
 			++left_it;
 		} else
 			++right_it;
-	}
 		
 	if (!first_or_last_split)
-		if (*last_left == last_idx &&
-		graph->right()[0] == 0)
+		if (graph->left().back() == last_idx && graph->right()[0] == 0)
 			split_merge.push_back({last_idx, graph->merge_t});
 
 	return split_merge;
@@ -536,47 +529,6 @@ class state {
 	//..
 \end{lstlisting}
 
-\subsubsection{subset of splist and merges}
-
-We first need to know the number of possible graphs from the lists of splits and merges:
-
-\begin{lstlisting}[style=CStyle]
-template<class T>
-int num_subset(std::vector<T> const &vect) {
-	return pow(2, vect.size());
-}
-\end{lstlisting}
-
-We can then associate a number between 0 and "num\_subset" to a certain compositions of all the splits and merges (by seeing the nth binary ditgit of this number as enabling the nth split or merge) :
-
-\begin{lstlisting}[style=CStyle]
-std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(std::vector<graph::split_merge_t>& split_merge, int subset_numb,
-	std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	
-	std::vector<graph::split_merge_t> res;
-	std::complex<long double> proba = 1;
-
-	for (int i = 0; i < split_merge.size(); ++i) {
-		long double sign = 1 - 2*split_merge[i].second;
-
-		/* i_th bit of subset_numb */
-		if (subset_numb%2) {
-			/* add opperation to res */
-			res.push_back(split_merge[i]);
-
-			/* get proba */
-			proba *= std::complex<long double>(merge.real(), sign*merge.imag());
-		} else
-			proba *= sign*non_merge;
-
-
-		subset_numb /= 2;
-	}
-
-	return {res, proba};
-}
-\end{lstlisting}
-
 \subsubsection{reduce\_all()}
 
 \begin{lstlisting}[style=CStyle]
@@ -599,11 +551,13 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 	//...
 \end{lstlisting}
 
-\subsubsection{step\_split\_merge\_all() and reversed\_split\_merge\_step\_all()}
+\subsubsection{step\_all()}
+
+We pass a function "rule" that returns a vector of graphs and magnitude obtained from a single graph.
 
 \begin{lstlisting}[style=CStyle]
 	//...
-	void step_split_merge_all() {
+	void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule) {
 		graph_map_t buff;
 		buff.swap(graphs_);
 
@@ -611,39 +565,15 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 		#pragma omp single
 		for (auto & [graph, mag] : buff)
 		#pragma omp task
-	  	{
-	  		
-	  		graph->step(); //not present for reversed_split_merge_step_all()
-
-	  		auto split_merge = get_split_merge(graph);
-
-	  		#pragma omp task
-	  		{
-	  			// update the probability of the graph without split or merge 
-				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
-				
-				// copy and graph->reversed_step() befor insert for reversed_split_merge_step_all()
-				graphs_.insert({graph, mag * mag_no_split_merge});
-	  		}
-
-	  		// add all graphs that actually have some split ot merge 
-	  		const int n_max = num_subset(split_merge);
-	  		for (int j = 1; j < n_max; ++j)
-	  		#pragma omp task
-	  		{
-	  			graph_t* g_ = graph->copy();
-
-	  			auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
-	  			
-	  			// graph->reversed_step() befor insert for reversed_split_merge_step_all()
-	  			g_->split_merge(split_merge_list); 
-
-	  			//add graph
-	  			graphs_.insert({g_, mag * mag_split_merge});
-	  		}
-	  	}
+		{
+			auto graphs = rule(graph);
+			for (auto & [graph_, mag_] : graphs)
+			#pragma task
+	  			graphs_.insert({graph_, mag_ * mag});
+		}
 	}
 	//...
+}
 \end{lstlisting}
 
 \subsubsection{source of errors}

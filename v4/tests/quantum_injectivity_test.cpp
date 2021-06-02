@@ -66,12 +66,14 @@ random:
 loop:
 
 		state_t* s = new state(g_1);
-		s->set_params(M_PI_4, M_PI_4);
+	    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+	    auto rule = step_split_merge_all(non_merge, merge);
+	    auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
 
 		int n_iter = 5;
 
 		for (int i = 0; i < n_iter; ++i) {
-			s->step_split_merge_all();
+			s->step_all(rule);
 			s->reduce_all();
 
 			#ifdef TEST
@@ -90,7 +92,7 @@ loop:
 		}
 
 		for (int i = 0; i < n_iter; ++i) {
-			s->reversed_split_merge_step();
+			s->step_all(reversed_rule);
 			s->reduce_all();
 
 			#ifdef TEST
