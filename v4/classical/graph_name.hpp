@@ -12,8 +12,8 @@ class graph_name {
 private:
 	// node list 
 	std::vector<node_t> nodes_;
-	std::vector<node_t> node_buff_;
-	std::vector<int> trash_collection_;
+	std::vector<node_t> mutable node_buff_;
+	std::vector<int> mutable trash_collection_;
 
 	// hash
 	size_t mutable hash_ = 0;
@@ -35,11 +35,20 @@ public:
 	// normal constructors 
 	graph_name(unsigned int size) {
 		for (int i = 0; i < size; ++i)
-			nodes_.push_back(node(i));
+			nodes_.emplace_back(i);
 	}
 
 	// getters
 	std::vector<node_t> const &nodes() const { return nodes_; }
+
+	// memory managment
+	void inline reserve(int Dsize) {
+		if (Dsize > 0) {
+			nodes_.reserve(size() + Dsize);
+		} else
+			nodes_.shrink_to_fit();
+		
+	}
 
 	// size operator 
 	size_t inline size() const {
@@ -65,6 +74,10 @@ public:
 	size_t inline hash() const {
 		if (hashed_)
 			return hash_;
+
+		// memory managment at hashing time
+		trash_collection_.shrink_to_fit();
+		node_buff_.shrink_to_fit();
 
 		hash_ = 0;
 
@@ -115,8 +128,7 @@ bool inline graph_name::split(unsigned int idx) {
 	nodes_[idx] = node_t(buff_idx, node, point_l_idx);
 
 	// add right node
-	nodes_.insert(nodes_.begin() + idx + 1,
-		node_t(buff_idx, node, point_r_idx));
+	nodes_.emplace(nodes_.begin() + idx + 1, buff_idx, node, point_r_idx);
 	
 	return false;
 }

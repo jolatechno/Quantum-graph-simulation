@@ -8,6 +8,7 @@
 #include <chrono>
 #include <algorithm>    // std::rotate
 #include <boost/functional/hash.hpp>
+#include<ranges>
 
 // forward declaration of the graph_t type 
 typedef class graph graph_t;
@@ -177,88 +178,75 @@ void graph::rotate_once_right(std::vector<unsigned int>& pos) {
 
 // split merge 
 void graph::split_merge(std::vector<split_merge_t>& split_merge) {
-	if (left_.size() == 0 ||
-	right_.size() == 0 ||
-	split_merge.size() == 0)
+	if (split_merge.empty())
 		return;
 	
 	hashed_ = false;
 
-	// check for last merge 
-	auto last_split_merge = split_merge.end() - 1;
-	int last_idx = size() - 1;
-	if ((*last_split_merge).first == last_idx &&
-	(*last_split_merge).second == merge_t) {
-		name_->merge(last_idx);
-
-		overflow_right(left_);
-		
+	// check for last merge
+	if (split_merge.back() == split_merge_t(size() - 1, merge_t)) {
+		name_->merge(size() - 1);
+		overflow_right(left_);	
 		split_merge.pop_back();
-
-		--last_split_merge;
-		--last_idx;
 	}
 		
 	// check for first element split 
 	bool first_split = false;
 
-	// split and merge names 
 	// and calculating max displacement 
 	int total_displacement = 0;
-	for (auto split_merge_it = split_merge.rbegin(); split_merge_it != split_merge.rend(); ++split_merge_it)
-		if ((*split_merge_it).second == split_t) {
-			first_split |= name_->split((*split_merge_it).first) && (*split_merge_it).first == 0;
-
+	for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
+		if (type == split_t) {
 			++total_displacement;
-		} else {
-			name_->merge((*split_merge_it).first);
+		} else
 			--total_displacement;
-		}
 
-	// move particules 
+	// reserve space for nodes
+	name_->reserve(total_displacement);
+
+	// split and merge names
+	for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
+		if (type == split_t) {
+			first_split |= name_->split(pos);
+		} else
+			name_->merge(pos);
+
+	// move particules
+	auto const split_merge_begin = split_merge.rend();
 	int displacement = total_displacement;
-	auto split_merge_it = last_split_merge;
-	for (auto left_it = left_.rbegin(); left_it != left_.rend(); ++left_it) {
-		// check if there are any nodes left 
-		while (split_merge_it >= split_merge.begin()) {
-			// check if the node is split or merged 
-			if ((*split_merge_it).first >= *left_it) {
-				if ((*split_merge_it).second == split_t) {
+	auto split_merge_it = split_merge.rbegin();
+	for (auto &left_it : left_ | std::ranges::views::reverse) {
+		// check if there are any nodes left
+		for (;split_merge_it->first >= left_it && split_merge_it != split_merge_begin; ++split_merge_it)
+			// check if the node is split or merged
+			if (split_merge_it->second == split_t) {
 					--displacement; // decrement the displacement 
 				} else
-					++displacement; // decrement the displacement 
-				--split_merge_it;
-			} else
-				break;
+					++displacement; // decrement the displacement
 
-		}
-
-		if (split_merge_it == split_merge.begin() && displacement == 0)
+		//check if we can exit
+		if (split_merge_it == split_merge_begin && displacement == 0)
 			break;
 
-		*left_it += displacement;
+		left_it += displacement;
 	}
 
-	split_merge_it = last_split_merge;
-	for (auto right_it = right_.rbegin(); right_it != right_.rend(); ++right_it) {
-		// check if there are any nodes left 
-		while (split_merge_it >= split_merge.begin()) {
-			// check if the node is split or merged 
-			if ((*split_merge_it).first > *right_it) {
-				if ((*split_merge_it).second == split_t) {
+	split_merge_it = split_merge.rbegin();
+	for (auto &right_it : right_ | std::ranges::views::reverse) {
+		// check if there are any nodes left
+		for (;split_merge_it->first > right_it && split_merge_it != split_merge_begin; ++split_merge_it)
+			// check if the node is split or merged
+			if (split_merge_it->second == split_t) {
 					--total_displacement; // decrement the displacement 
 				} else
-					++total_displacement; // decrement the displacement 
-				--split_merge_it;
-			} else
-				break;
+					++total_displacement; // decrement the displacement
 
-		}
-
-		if (split_merge_it == split_merge.begin() && total_displacement == 0)
+		//check if we can exit
+		if (split_merge_it == split_merge_begin && total_displacement == 0)
 			break;
 
-		*right_it += total_displacement;
+		//increment position
+		right_it += total_displacement;
 	}
 
 	// finish first split 

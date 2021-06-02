@@ -69,10 +69,7 @@ public:
 	void inline step_split_merge_all() { step_split_merge_all(true, true, false); }
 	void inline step_all() { step_split_merge_all(true, false, false); }
 	void inline split_merge_all() { step_split_merge_all(false, true, false); }
-	void inline reversed_split_merge_step() {
-		split_merge_all();
-		step_split_merge_all(false, false, true);
-	}
+	void inline reversed_split_merge_step() { step_split_merge_all(false, true, true); }
 
 	// for debugging 
 	void print();
@@ -86,17 +83,16 @@ void state::reduce_all() {
 
     for(auto it = graphs_.begin(); it != graphs_.end();) {
     	// range of similar graphs to delete
-    	auto range = graphs_.equal_range(it->first);
-    	auto start = range.first;
+    	auto upper = graphs_.equal_range(it->first).second;
 
-    	for(auto jt = std::next(it); jt != range.second; ++jt)
+    	for(auto jt = std::next(it); jt != upper; ++jt)
         	it->second += jt->second;
 
     	// if the first graphgs has a zero probability, erase the whole range
     	if (!check_zero(it->second))
-    		++start;
-
-    	it = graphs_.unsafe_erase(start, range.second);
+    		++it;
+    	
+    	it = graphs_.unsafe_erase(it, upper);
     }
 }
 
@@ -133,9 +129,6 @@ void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
   		if (step)
   			graph->step();
 
-  		if (reversed)
-  			graph->reversed_step();
-
   		if (split_merge) {
   			auto split_merge = get_split_merge(graph);
 
@@ -143,17 +136,29 @@ void state::step_split_merge_all(bool step, bool split_merge, bool reversed) {
   			{
   				// update the probability of the graph without split or merge 
 				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
-				graphs_.insert({graph, mag * mag_no_split_merge});
+
+				// need to copy the graph if we do the reversed step
+				if(reversed) {
+					graph_t* g_ = graph->copy();
+					g_->reversed_step();
+					graphs_.insert({g_, mag * mag_no_split_merge});
+				} else
+					graphs_.insert({graph, mag * mag_no_split_merge});
+				
   			}
 
 			// add all graphs that actually have some split ot merge 
 			const int n_max = num_subset(split_merge);
-			#pragma omp taskloop
-			for (int j = 1; j < n_max; ++j) {
+			for (int j = 1; j < n_max; ++j)
+			#pragma omp task
+			{
 				graph_t* g_ = graph->copy();
 
 				auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
 			  	g_->split_merge(split_merge_list);
+
+			  	if (reversed)
+  					g_->reversed_step();
 
 			  	//add graph
 			  	graphs_.insert({g_, mag * mag_split_merge});

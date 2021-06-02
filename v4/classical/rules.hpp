@@ -9,10 +9,6 @@
 std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
 	std::vector<graph::split_merge_t> split_merge;
 
-	if (graph->left().size() == 0 ||
-	graph->right().size() == 0)
-		return split_merge;
-
 	auto last_left = graph->left().end() - 1;
 	auto last_right = graph->right().end() - 1;
 	unsigned int last_idx = graph->size() - 1;

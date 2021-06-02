@@ -4,7 +4,11 @@
 #include <stdio.h>
 
 int main() {
-  for (int j = 0; j < 1000; ++j) {
+  #pragma omp parallel
+  #pragma omp single
+  for (int j = 0; j < 1000; ++j)
+  #pragma omp task
+  {
     
     graph_t* g = new graph(10);
 
@@ -26,11 +30,11 @@ int main() {
       if (c2->hash() != c->hash() /*!g->equal(c)*/){
         c2->print(); printf("\n");
         c->print(); printf("\n");
-        return -2;
+        throw;
       }
 
       if (!graph_checker(g))
-        return -1;
+        throw;
     }
   }
     

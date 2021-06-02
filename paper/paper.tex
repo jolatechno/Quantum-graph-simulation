@@ -59,7 +59,7 @@ This was tested on arround 10k graphs, for chich the particules position were ra
 
 To check that our graph dynamic is unitary, we can check that computing an arbitrary amount of steps on an arbitrary initial state (incrissing drasticly the number of graphs), and then apply the same number of reversed step, and we check that we get back the state we started with.\\
 
-Even including floating points errors, we can esaily do this test with around 5 steps, obtain around 200k graphs after the 5 forward iteration, and comme back to the same step within 0.001\% error in the magnitude.
+Even including floating points errors, we can esaily do this test with around 5 steps, obtain around 7M graphs after the 5 forward iteration, and comme back to the same step within $10^{-6}$ error in the magnitude.
 
 \section{Implementation}
 
@@ -230,8 +230,7 @@ Since we use trash collection to manage memory, we need to implement a collectio
 		nodes_[idx] = node_t(buff_idx, node, point_l_idx);
 
 		// add right node
-		nodes_.insert(nodes_.begin() + idx + 1,
-			node_t(buff_idx, node, point_r_idx));
+		nodes_.emplace(nodes_.begin() + idx + 1, buff_idx, node, point_r_idx);
 		
 		return false;
 	}
@@ -355,60 +354,61 @@ To implement the reverse stpe we simply exchange the roles of "left" and "right"
 \begin{lstlisting}[style=CStyle]
 	//...
 	void split_merge(std::vector<split_merge_t>& split_merge) {
-		/* first check if there are any split or merges */
+		if (split_merge.empty())
+			return;
 		
 		hashed_ = false;
 
-		// check for last merge 
-		/* ... */
-		if (last_merge()) {
-			name_->merge(last_idx);
-			overflow_right(left_);
+		// check for last merge
+		if (split_merge.back() == split_merge_t(size() - 1, merge_t)) {
+			name_->merge(size() - 1);
+			overflow_right(left_);	
 			split_merge.pop_back();
-			/* ... */
 		}
 			
 		// check for first element split 
 		bool first_split = false;
 
-		// split and merge names 
 		// and calculating max displacement 
 		int total_displacement = 0;
-		for (auto split_merge_it = split_merge.rbegin(); split_merge_it != split_merge.rend(); ++split_merge_it)
-			if ((*split_merge_it).second == split_t) {
-				first_split |= name_->split((*split_merge_it).first) && (*split_merge_it).first == 0;
-
+		for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
+			if (type == split_t) {
 				++total_displacement;
-			} else {
-				name_->merge((*split_merge_it).first);
+			} else
 				--total_displacement;
-			}
 
-		// move particules 
+		// reserve space for nodes
+		name_->reserve(total_displacement);
+
+		// split and merge names
+		for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
+			if (type == split_t) {
+				first_split |= name_->split(pos);
+			} else
+				name_->merge(pos);
+
+		// move particules
+		auto const split_merge_begin = split_merge.rend();
 		int displacement = total_displacement;
-		auto split_merge_it = last_split_merge;
-		for (auto left_it = left_.rbegin(); left_it != left_.rend(); ++left_it) {
-			// check if there are any nodes left 
-			while (split_merge_it >= split_merge.begin()) {
-				// check if the node is split or merged 
-				if ((*split_merge_it).first >= *left_it) {
-					if ((*split_merge_it).second == split_t) {
+		auto split_merge_it = split_merge.rbegin();
+		for (auto &left_it : left_ | std::ranges::views::reverse) {
+			// check if there are any nodes left
+			for (;split_merge_it->first >= left_it && split_merge_it != split_merge_begin; ++split_merge_it)
+				// check if the node is split or merged
+				if (split_merge_it->second == split_t) {
 						--displacement; // decrement the displacement 
 					} else
-						++displacement; // decrement the displacement 
-					--split_merge_it;
-				} else
-					break;
+						++displacement; // decrement the displacement
 
-			}
-
-			if (split_merge_it == split_merge.begin() && displacement == 0)
+			//check if we can exit
+			if (split_merge_it == split_merge_begin && displacement == 0)
 				break;
 
-			*left_it += displacement;
+			left_it += displacement;
 		}
+	
 
-		/* we than do the exact same thing with particule going to the right, rplacing ">=" at line 48 by a ">" */
+		/* we than do the exact same thing with particule going to the right, rplacing ">=" at line 42 by a ">" */
 		
 		// finish first split 
 		if (first_split) {
@@ -465,8 +465,6 @@ To get the list of all indeces of splits and merges, we iterate through both the
 /* function to get all split and merges */
 std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
 	std::vector<graph::split_merge_t> split_merge;
-
-	/* first check if there are any particules to check */
 
 	/* definition of left_it, right_it, last_left, last_right ... */
 	
@@ -585,18 +583,18 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 	//...
 	void reduce_all() {
 		for(auto it = graphs_.begin(); it != graphs_.end();) {
-    	// range of similar graphs to delete
-    	auto range = graphs_.equal_range(it->first);
-    	auto start = range.first;
+			// range of similar graphs to delete
+			auto upper = graphs_.equal_range(it->first).second;
 
-    	for(auto jt = std::next(it); jt != range.second; ++jt)
-        	it->second += jt->second;
+			for(auto jt = std::next(it); jt != upper; ++jt)
+		    	it->second += jt->second;
 
-    	// if the first graphgs has a zero probability, erase the whole range
-    	if (!check_zero(it->second))
-    		++start;
-
-    	it = graphs_.unsafe_erase(start, range.second);
+			// if the first graphgs has a zero probability, erase the whole range
+			if (!check_zero(it->second))
+				++it;
+			
+			it = graphs_.unsafe_erase(it, upper);
+		}
 	}
 	//...
 \end{lstlisting}
@@ -615,7 +613,7 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 		#pragma omp task
 	  	{
 	  		
-	  		graph->step(); //graph->reversed_step(); for reversed_split_merge_step_all()
+	  		graph->step(); //not present for reversed_split_merge_step_all()
 
 	  		auto split_merge = get_split_merge(graph);
 
@@ -623,17 +621,22 @@ std::pair<std::vector<graph::split_merge_t>, std::complex<long double>> subset(s
 	  		{
 	  			// update the probability of the graph without split or merge 
 				auto [_, mag_no_split_merge] = subset(split_merge, 0, non_merge_, merge_);
+				
+				// copy and graph->reversed_step() befor insert for reversed_split_merge_step_all()
 				graphs_.insert({graph, mag * mag_no_split_merge});
 	  		}
 
 	  		// add all graphs that actually have some split ot merge 
 	  		const int n_max = num_subset(split_merge);
-	  		#pragma omp taskloop
-	  		for (int j = 1; j < n_max; ++j) {
+	  		for (int j = 1; j < n_max; ++j)
+	  		#pragma omp task
+	  		{
 	  			graph_t* g_ = graph->copy();
 
 	  			auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge_, merge_);
-	  			g_->split_merge(split_merge_list);
+	  			
+	  			// graph->reversed_step() befor insert for reversed_split_merge_step_all()
+	  			g_->split_merge(split_merge_list); 
 
 	  			//add graph
 	  			graphs_.insert({g_, mag * mag_split_merge});

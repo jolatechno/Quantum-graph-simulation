@@ -74,10 +74,12 @@ loop:
 			s->step_split_merge_all();
 			s->reduce_all();
 
-			if (check(s)) {
-				printf("\nstate is OK\n");
-			} else
-				printf("\nstate is not OK\n");
+			#ifdef TEST
+				if (check(s)) {
+					printf("\nstate is OK\n");
+				} else
+					printf("\nstate is not OK\n");
+			#endif
 		}
 		
 		if (n_iter <= 2) {
@@ -91,10 +93,12 @@ loop:
 			s->reversed_split_merge_step();
 			s->reduce_all();
 
-			if (check(s)) {
-				printf("\nstate is OK\n");
-			} else
-				printf("\nstate is not OK\n");
+			#ifdef TEST
+				if (check(s)) {
+					printf("\nstate is OK\n");
+				} else
+					printf("\nstate is not OK\n");
+			#endif
 		}
 
 		printf("\nafter %d reversed_merge_split_step():\n", n_iter); s->print();
