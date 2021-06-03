@@ -86,11 +86,17 @@ public:
   	void inline erase_create(std::vector<op_t>& erase_create); //indexes have to be sorted !!
 
   	// step function 
-  	void inline step();
+  	void inline step() {
+  		hashed_ = false;
+
+  		std::rotate(left.begin(), left.begin() + 1, left.end());
+		std::rotate(right.rbegin(), right.rbegin() + 1, right.rend());
+  	}
   	void inline reversed_step() {
-  		std::swap(left, right);
-  		step();
-  		std::swap(left, right);
+  		hashed_ = false;
+  		
+  		std::rotate(left.rbegin(), left.rbegin() + 1, left.rend());
+		std::rotate(right.begin(), right.begin() + 1, right.end());
   	}
 };
 
@@ -128,20 +134,6 @@ size_t graph::hash() const {
 
   hashed_ = true;
   return hash_;
-}
-
-//step
-void inline graph::step() {
-	hashed_ = false;
-
-	// step right particules
-	bool previous = right.back();
-	for (int i = 0; i < size(); ++i)
-		swap(right[i], previous);
-
-	previous = left[0];
-	for (int i = size() - 1; i >= 0; --i)
-		swap(left[i], previous);
 }
 
 // split merge 

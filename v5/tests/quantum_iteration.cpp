@@ -8,7 +8,7 @@
 #include <cmath>
 
 int main() {
-    graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
+    graph_t* g_1 = new graph({true, false, false, true, true},  {true, false, true, false, true});
 
     /*graph_t* g_1 = new graph(7);
     g_1->randomize();*/
@@ -17,9 +17,9 @@ int main() {
 
     state_t* s = new state(g_1);
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
-    auto rule = /*step_split_merge_all*/step_erase_create_all(non_merge, merge);
+    auto rule = /*step_split_merge_all*/split_merge_step_erase_create_all/**/(non_merge, merge);
 
-    for (int i = 1; i < 11; ++i) {
+    for (int i = 1; i < 5; ++i) {
 
         printf("%ld graph", s->graphs().size());
         #ifdef VERBOSE
