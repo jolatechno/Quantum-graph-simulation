@@ -8,16 +8,16 @@
 #include <cmath>
 
 #define RULE "split_merge_step_erase_create_all"; //"step_split_merge_all" //"step_erase_create_all"
-#define SIZE 4
+#define SIZE 5
 #define N_ITER 3
 
 int main() {
     auto rule_ = RULE;
 
-    graph_t* g_1 = new graph(5, {0, 3},  {0, 2, 4});
-
+    graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
+    
     /*graph_t* g_1 = new graph(SIZE);
-    g_1->randomize(2);*/
+    g_1->randomize();*/
 
     state_t* s = new state(g_1);
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);

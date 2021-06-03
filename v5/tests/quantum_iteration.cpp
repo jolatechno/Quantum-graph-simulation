@@ -8,11 +8,10 @@
 #include <cmath>
 
 int main() {
-    graph_t* g_1 = new graph(5, {0, 3},  {0, 2, 4});
+    graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
 
-    /*graph_t* g_1 = new graph(4);
-    //g_1->randomize();
-    g_1->randomize(3);*/
+    /*graph_t* g_1 = new graph(7);
+    g_1->randomize();*/
 
     print(g_1);
 
