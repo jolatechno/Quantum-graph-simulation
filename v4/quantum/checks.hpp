@@ -4,12 +4,12 @@
 #include "rules.hpp"
 #include "../classical/checks.hpp"
 
-const long double probability_tolerance = 1e-5;
+const double probability_tolerance = 1e-5;
 
 bool check(state_t* s) {
 	auto data = s->graphs();
 	auto end = data.end();
-	long double probability = 0;
+	double probability = 0;
 
 	//iterate over all graphs
     for(auto it = data.begin(); it != data.end(); ++it) {
@@ -35,7 +35,7 @@ bool check(state_t* s) {
 
 	//check for probability
 	if (probability > 1 + probability_tolerance || probability < 1 - probability_tolerance) {
-		printf("probability not equal 1 (%Lf)!!\n", probability);
+		printf("probability not equal 1 (%f)!!\n", probability);
 		return false;
 	}
 

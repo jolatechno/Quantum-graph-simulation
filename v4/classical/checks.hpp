@@ -4,7 +4,7 @@
 
 /* to check */
 bool inline graph_checker(graph_t* graph) {
-	int size = graph->size();
+	short int size = graph->size();
 
 	if (graph->left[0] < 0)  {
 		printf("\nparticules going left 0 > %d\n", graph->left[0]);

@@ -16,7 +16,7 @@ int main() {
 	while (true) {
 		printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
-		std::vector<unsigned int> left, right;
+		std::vector<unsigned short int> left, right;
 		graph_t* g_1;
 		int n = 0;
 

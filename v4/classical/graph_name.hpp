@@ -11,31 +11,31 @@ private:
 	// node list 
 	std::vector<node_t> nodes_;
 	std::vector<node_t> mutable node_buff_;
-	std::vector<int> mutable trash_collection_;
+	std::vector<short int> mutable trash_collection_;
 
 	// hash
 	size_t mutable hash_ = 0;
 	bool mutable hashed_ = false;
 
-	int push_to_buffer(node_t &n) {
+	short int push_to_buffer(node_t &n) {
 		if (trash_collection_.empty()) {
 			node_buff_.push_back(n);
 			return node_buff_.size() - 1;
 		}
 
-		int buff_idx = trash_collection_.back();
+		short int buff_idx = trash_collection_.back();
 		trash_collection_.pop_back();
 		node_buff_[buff_idx] = n;
 		return buff_idx;
 	}
 
 	// debugging
-	friend void print(graph_name_t const *name, int n);
+	friend void print(graph_name_t const *name, short int n);
 
 public:
 	// normal constructors 
-	graph_name(unsigned int size) {
-		for (int i = 0; i < size; ++i)
+	graph_name(unsigned short int size) {
+		for (short int i = 0; i < size; ++i)
 			nodes_.emplace_back(i);
 	}
 
@@ -43,7 +43,7 @@ public:
 	std::vector<node_t> const &nodes() const { return nodes_; }
 
 	// memory managment
-	void inline reserve(int Dsize) {
+	void inline reserve(short int Dsize) {
 		if (Dsize > 0) {
 			nodes_.reserve(size() + Dsize);
 		} else
@@ -87,19 +87,19 @@ public:
 	}
 
 	// split and merge 
-  	bool inline split(unsigned int idx);
-  	void inline merge(unsigned int idx);
+  	bool inline split(unsigned short int idx);
+  	void inline merge(unsigned short int idx);
 };
 
 // split merge
-bool inline graph_name::split(unsigned int idx) {
+bool inline graph_name::split(unsigned short int idx) {
 	hashed_ = false;
 
 	node_t node = nodes_[idx];
 	if (node.is_pair()) {
 		// read indexes
-		int const left_idx = node.left_idx();
-		int const right_idx = node.right_idx();
+		short int const left_idx = node.left_idx();
+		short int const right_idx = node.right_idx();
 
 		// add left node
 		nodes_[idx] = node_buff_[left_idx];
@@ -119,7 +119,7 @@ bool inline graph_name::split(unsigned int idx) {
 	}
 
 	// add current node to buffer
-	int buff_idx = push_to_buffer(node);
+	short int buff_idx = push_to_buffer(node);
 
 	// add left node
 	nodes_[idx] = node_t(buff_idx, node, point_l_idx);
@@ -130,17 +130,17 @@ bool inline graph_name::split(unsigned int idx) {
 	return false;
 }
 
-void inline graph_name::merge(unsigned int idx) {
+void inline graph_name::merge(unsigned short int idx) {
 	hashed_ = false;
 
 	// destination idx
-	unsigned int right_idx = (idx + 1) % size();
+	unsigned short int right_idx = (idx + 1) % size();
 	auto left = nodes_[idx];
 	auto right = nodes_[right_idx];
 
 	if (left.is_left() && right.is_right()) {
-		int const left_left = left.left_idx();
-		int const right_left = right.left_idx();
+		short int const left_left = left.left_idx();
+		short int const right_left = right.left_idx();
 
 		if (node_buff_[left_left].hash() == node_buff_[right_left].hash()) {
 			// trash collect
@@ -156,8 +156,8 @@ void inline graph_name::merge(unsigned int idx) {
 	}
 
 	//add node
-	int const left_idx = push_to_buffer(left);
-	int const right_idx_ = push_to_buffer(right);
+	short int const left_idx = push_to_buffer(left);
+	short int const right_idx_ = push_to_buffer(right);
 
 	nodes_[right_idx] = node_t(left_idx, left, right_idx_, right);
 	nodes_.erase(nodes_.begin() + idx);
@@ -168,12 +168,12 @@ void inline graph_name::merge(unsigned int idx) {
 //---------------------------------------------------------
 
 // debuging
-void print(graph_name_t const *name, int n) {
+void print(graph_name_t const *name, short int n) {
 	print(name->nodes_[n], name->node_buff_);
 }
 
 void print(graph_name_t const *name) {
-	for (int i = 0; i < name->size(); i++) {
+	for (short int i = 0; i < name->size(); i++) {
 		printf("-");
 		print(name, i);
 		printf("-");

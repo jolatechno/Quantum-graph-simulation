@@ -20,11 +20,11 @@ public:
 	} op_type_t;
 
 	// typedef of the pair of an index and a op_type 
-  	typedef std::pair<unsigned int, op_type_t> op_t;
+  	typedef std::pair<unsigned short int, op_type_t> op_t;
 
   	// particules positions
-  	std::vector<unsigned int> mutable left;
-	std::vector<unsigned int> mutable right;
+  	std::vector<unsigned short int> mutable left;
+	std::vector<unsigned short int> mutable right;
 
 private:
 	// variables 
@@ -35,18 +35,18 @@ private:
 	bool mutable hashed_ = false;
 
 	// useful functions 
-	void overflow_left(std::vector<unsigned int>& pos);
-	void overflow_right(std::vector<unsigned int>& pos);
-	void rotate_once_left(std::vector<unsigned int>& pos);
-	void rotate_once_right(std::vector<unsigned int>& pos);
+	void overflow_left(std::vector<unsigned short int>& pos);
+	void overflow_right(std::vector<unsigned short int>& pos);
+	void rotate_once_left(std::vector<unsigned short int>& pos);
+	void rotate_once_right(std::vector<unsigned short int>& pos);
 
 public:
 	// normal constructors 
-	graph(int n) {
+	graph(short int n) {
 		name_ = new graph_name(n);
 	}
 
-	graph(int n, std::vector<unsigned int> left, std::vector<unsigned int> right) : left(left), right(right) {
+	graph(short int n, std::vector<unsigned short int> left, std::vector<unsigned short int> right) : left(left), right(right) {
 		name_ = new graph_name(n);
 	}
 
@@ -77,7 +77,7 @@ public:
 	size_t inline hash() const;
 
 	// randomizer 
-	void randomize(unsigned int n);
+	void randomize(unsigned short int n);
 	void randomize();
 
 	// comparators 
@@ -137,7 +137,7 @@ size_t graph::hash() const {
 }
 
 // usefull functions 
-void graph::overflow_left(std::vector<unsigned int>& pos) {
+void graph::overflow_left(std::vector<unsigned short int>& pos) {
 	if (pos.size() == 0)
 		return;
 
@@ -145,7 +145,7 @@ void graph::overflow_left(std::vector<unsigned int>& pos) {
 	std::rotate(pos.begin(), pos.begin() + 1, pos.end());
 }
 
-void graph::overflow_right(std::vector<unsigned int>& pos) {
+void graph::overflow_right(std::vector<unsigned short int>& pos) {
 	if (pos.size() == 0)
 		return;
 
@@ -153,7 +153,7 @@ void graph::overflow_right(std::vector<unsigned int>& pos) {
 	pos[0] = 0;
 }
 
-void graph::rotate_once_left(std::vector<unsigned int>& pos) {
+void graph::rotate_once_left(std::vector<unsigned short int>& pos) {
 	if (pos.size() == 0)
 		return;
 
@@ -165,7 +165,7 @@ void graph::rotate_once_left(std::vector<unsigned int>& pos) {
 		overflow_left(pos);
 }
 
-void graph::rotate_once_right(std::vector<unsigned int>& pos) {
+void graph::rotate_once_right(std::vector<unsigned short int>& pos) {
 	if (pos.size() == 0)
 		return;
 
@@ -195,7 +195,7 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 	bool first_split = false;
 
 	// and calculating max displacement 
-	int total_displacement = 0;
+	short int total_displacement = 0;
 	for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
 		if (type == split_t) {
 			++total_displacement;
@@ -214,7 +214,7 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 
 	// move left particules
 	auto const split_merge_begin = split_merge.rend();
-	int displacement = total_displacement;
+	short int displacement = total_displacement;
 	auto split_merge_it = split_merge.rbegin();
 	for (auto &left_it : left | std::ranges::views::reverse) {
 		// check if there are any nodes left
@@ -263,7 +263,7 @@ void inline graph::erase_create(std::vector<op_t>& erase_create) {
 
 	// add and remove left particules
 	auto erase_create_it = erase_create.rbegin();
-	int left_idx = left.size() - 1;
+	short int left_idx = left.size() - 1;
 	if (!left.empty())
 		for (; erase_create_it < erase_create_begin; ++erase_create_it)
 			if (erase_create_it->second == create_t) {
@@ -294,7 +294,7 @@ void inline graph::erase_create(std::vector<op_t>& erase_create) {
 
 	// add and remove right particules
 	erase_create_it = erase_create.rbegin();
-	int right_idx = right.size() - 1;
+	short int right_idx = right.size() - 1;
 	if (!right.empty())
 		for (; erase_create_it < erase_create_begin; ++erase_create_it)
 			if (erase_create_it->second == create_t) {
@@ -338,8 +338,8 @@ void graph::randomize() {
 	std::exponential_distribution<double> distribution(1);
 
 	// useful variables 
-	unsigned int x_max = size();
-	unsigned int x = ((unsigned int)distribution(generator))%x_max;
+	unsigned short int x_max = size();
+	unsigned short int x = ((unsigned int)distribution(generator))%x_max;
 	
 	// generate left values 
 	while (x < x_max) {
@@ -356,7 +356,7 @@ void graph::randomize() {
 }
 
 // randomize with a set number of particules going each ways 
-void graph::randomize(unsigned int n) {
+void graph::randomize(unsigned short int n) {
 	hashed_ = false;
 
 	// clear both vector 
@@ -369,11 +369,11 @@ void graph::randomize(unsigned int n) {
 	std::exponential_distribution<double> distribution(1);
 
 	// useful variables 
-	unsigned int x_max = size() - n;
-	unsigned int x = ((unsigned int)distribution(generator))%x_max;
+	unsigned short int x_max = size() - n;
+	unsigned short int x = ((unsigned int)distribution(generator))%x_max;
 
 	// generate left values 
-	for (int i = 0; i < n; i++) {
+	for (short int i = 0; i < n; i++) {
 		left.push_back(x);
 		x_max = size() - x - (n - i - 1);
 		x += 1 + (unsigned int)distribution(generator)%(x_max - 1);
@@ -382,7 +382,7 @@ void graph::randomize(unsigned int n) {
 	// generate left values 
 	x_max = size() - n;
 	x = ((unsigned int)distribution(generator))%x_max;
-	for (int i = 0; i < n; i++) {
+	for (short int i = 0; i < n; i++) {
 		right.push_back(x);
 		x_max = size() - x - (n - i - 1);
 		x += 1 + (unsigned int)distribution(generator)%(x_max - 1);
@@ -399,7 +399,7 @@ void print(graph_t const *g) {
 	auto left_it = g->left.begin();
 	auto right_it = g->right.begin();
 
-	for(unsigned int i = 0; i < g->size(); ++i) {
+	for(unsigned short int i = 0; i < g->size(); ++i) {
 		// left character 
 		char l = ' ';
 

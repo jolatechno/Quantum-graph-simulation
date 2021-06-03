@@ -6,10 +6,10 @@
 #include <tbb/concurrent_vector.h>
 
 // check zero probability
-bool inline check_zero(const std::complex<long double>& mag) {
-	const long double double_tolerance = 1e-30;
+bool inline check_zero(const std::complex<double>& mag) {
+	const double double_tolerance = 1e-30;
 	return std::norm(mag) <= double_tolerance;
-	/*const std::complex<long double> zero = 0;
+	/*const std::complex<double> zero = 0;
 	return mag == zero;*/
 }
 
@@ -33,7 +33,7 @@ public:
 	};
 
 	// type definition
-	typedef tbb::concurrent_unordered_multimap<graph_t*, std::complex<long double>, graph_hasher, graph_comparator> graph_map_t;
+	typedef tbb::concurrent_unordered_multimap<graph_t*, std::complex<double>, graph_hasher, graph_comparator> graph_map_t;
 
 private:
 	// main list 
@@ -53,7 +53,7 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule);
+	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule);
 };
 
 // insert operators 
@@ -78,7 +78,7 @@ void state::reduce_all() {
 }
 
 // dynamic 
-void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule) {
+void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -102,14 +102,14 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, st
 
 //reader
 void size_stat(state_t* s) {
-	long double avg = 0;
-	long double var = 0;
+	double avg = 0;
+	double var = 0;
 	double long correction_factor = 0;
 	int numb = s->graphs().size();
 
 	for (auto & [graph, mag] : s->graphs()) {
-		long double size = graph->size();
-		long double proba = std::norm(mag);
+		double size = graph->size();
+		double proba = std::norm(mag);
 		avg += size*proba;
 		var += size*size*proba;
 		correction_factor += proba;
@@ -118,16 +118,16 @@ void size_stat(state_t* s) {
 	avg /= correction_factor; var /= correction_factor;
 	var = var - avg*avg <= 0 ? 0 : std::sqrt(var - avg*avg);
 
-	printf("%Lf±%Lf", avg, var);
+	printf("%f±%f", avg, var);
 }
 
 // for debugging 
 void print(state_t* const s) {
 	for (auto & [graph, mag] : s->graphs()) {
 		if (std::imag(mag) >= 0) {
-	  		printf("%Lf + i%Lf   ", std::real(mag), std::imag(mag)); 
+	  		printf("%f + i%f   ", std::real(mag), std::imag(mag)); 
 	  	} else {
-	  		printf("%Lf - i%Lf   ", std::real(mag), -std::imag(mag));
+	  		printf("%f - i%f   ", std::real(mag), -std::imag(mag));
 	  	}
 	  	print(graph);
 	  	printf("\n");

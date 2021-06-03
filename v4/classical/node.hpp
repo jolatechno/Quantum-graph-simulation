@@ -7,20 +7,20 @@
 // forward declaration of the node_t type 
 typedef struct node node_t;
 
-int const point_l_idx = -1;
-int const point_r_idx = -2;
-int const element_idx = -3;
+short int const point_l_idx = -1;
+short int const point_r_idx = -2;
+short int const element_idx = -3;
 
 struct node {
 private:
-	int left_idx__or_element_;
-	int right_idx__or_type_;
+	short int left_idx__or_element_;
+	short int right_idx__or_type_;
 	size_t hash_ = 0;
 	bool has_most_left_zero_ = false;
 public:
 
 	// constructors
-	node(int n) :
+	node(short int n) :
 		left_idx__or_element_(n), right_idx__or_type_(element_idx) {
 
 		hash_ = n;
@@ -29,7 +29,7 @@ public:
 		has_most_left_zero_ = n == 0;
 	}
 
-	node(int const idx, node_t const &other, int const type) :
+	node(short int const idx, node_t const &other, short int const type) :
 		left_idx__or_element_(idx), right_idx__or_type_(type) {
 
 		boost::hash_combine(hash_, other.hash_);
@@ -40,7 +40,7 @@ public:
 			has_most_left_zero_ = other.has_most_left_zero_;
 	}
 
-	node(int const left_idx, node_t const &left, int const right_idx, node_t const &right) :
+	node(short int const left_idx, node_t const &left, short int const right_idx, node_t const &right) :
 		left_idx__or_element_(left_idx), right_idx__or_type_(right_idx){
 
 		boost::hash_combine(hash_, left.hash_);
@@ -50,8 +50,8 @@ public:
 
 	// getters
 	size_t inline hash() const { return hash_; }
-	int inline left_idx() const { return left_idx__or_element_; }
-	int inline right_idx() const { return right_idx__or_type_; }
+	short int inline left_idx() const { return left_idx__or_element_; }
+	short int inline right_idx() const { return right_idx__or_type_; }
 	bool inline has_most_left_zero() const { return has_most_left_zero_; }
 
 	// type getters
