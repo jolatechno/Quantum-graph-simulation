@@ -1,9 +1,6 @@
 #include "../classical/rules.hpp"
 #include "../classical/graph.hpp"
 #include "../classical/checks.hpp"
-#include <stdio.h>
-#include <algorithm>    // std::reverse
-#include <vector>
 
 const int n_iteration = 1000;
 const int n_iter = 20;

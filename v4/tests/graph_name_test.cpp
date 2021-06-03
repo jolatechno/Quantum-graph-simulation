@@ -1,5 +1,4 @@
 #include "../classical/graph_name.hpp"
-#include <stdio.h>
 
 int main() {
   graph_name_t* n_1 = new graph_name(6);

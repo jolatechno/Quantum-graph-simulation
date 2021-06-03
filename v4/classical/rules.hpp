@@ -1,9 +1,6 @@
 #pragma once
 
 #include "graph.hpp"
-#include <stdio.h>
-#include <utility> //for pairs
-#include <vector>
 
 // function to get all split and merges 
 std::vector<graph::op_t> inline get_split_merge(graph_t const* graph) {

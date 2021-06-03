@@ -1,9 +1,6 @@
 #pragma once
 
 #include "graph.hpp"
-#include <stdio.h>
-#include <utility> //for pairs
-#include <vector>
 
 /* to check */
 bool inline graph_checker(graph_t* graph) {

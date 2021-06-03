@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-#include <complex> //for complex
 #include "state.hpp"
 #include "rules.hpp"
 #include "../classical/checks.hpp"

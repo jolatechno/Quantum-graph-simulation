@@ -3,10 +3,6 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
-#include <stdio.h>
-#include <math.h> //pow cos sin and sqrt
-#include <complex>
-
 
 #define _USE_MATH_DEFINES
 #include <cmath>

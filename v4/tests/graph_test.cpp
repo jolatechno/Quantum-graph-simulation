@@ -1,7 +1,5 @@
 #include "../classical/rules.hpp"
 #include "../classical/graph.hpp"
-#include <vector>
-#include <stdio.h>
 
 int main() {
   printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");

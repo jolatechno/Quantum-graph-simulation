@@ -1,7 +1,6 @@
 #include "../classical/rules.hpp"
 #include "../classical/graph.hpp"
 #include "../classical/checks.hpp"
-#include <stdio.h>
 
 int main() {
   #pragma omp parallel

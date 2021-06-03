@@ -3,7 +3,6 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
-#include <stdio.h>
 
 #define _USE_MATH_DEFINES
 #include <cmath>

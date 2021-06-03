@@ -1,14 +1,17 @@
 #pragma once
 
-#include <vector>
-#include <utility>
-#include <functional>
 #include <complex> //for complex
-#include <string>
 #include "../classical/graph.hpp"
-#include "rules.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
+
+// check zero probability
+bool inline check_zero(const std::complex<long double>& mag) {
+	const long double double_tolerance = 1e-30;
+	return std::norm(mag) <= double_tolerance;
+	/*const std::complex<long double> zero = 0;
+	return mag == zero;*/
+}
 
 // forward definition of the state type
 typedef class state state_t;

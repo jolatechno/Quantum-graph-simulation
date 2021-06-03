@@ -1,13 +1,8 @@
 #pragma once
 
 #include "graph_name.hpp"
-#include <vector>
-#include <stdio.h>
-#include <utility> //for pairs
 #include <random>
 #include <chrono>
-#include <algorithm>    // std::rotate
-#include <boost/functional/hash.hpp>
 #include<ranges>
 
 // forward declaration of the graph_t type 

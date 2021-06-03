@@ -1,24 +1,15 @@
 #pragma once
 
-#include <vector>
 #include <math.h>  //pow
-#include <utility> //for pairs
 #include <complex> //for complex
 #include "../classical/graph.hpp"
 #include "../classical/rules.hpp"
 #include <tbb/concurrent_vector.h>
 
-bool inline check_zero(const std::complex<long double>& mag) {
-	const long double double_tolerance = 1e-30;
-	return std::norm(mag) <= double_tolerance;
-	/*const std::complex<long double> zero = 0;
-	return mag == zero;*/
-}
-
 /* count the number of subsets */
 template<class T>
 int static num_subset(std::vector<T> const &vect) {
-	return pow(2, vect.size());
+	return std::pow(2, vect.size());
 }
 
 /* create a subset and a probability from the subset indice */

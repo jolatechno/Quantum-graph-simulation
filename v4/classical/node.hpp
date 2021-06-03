@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <vector>
-#include <utility> //for pairs
 #include <boost/functional/hash.hpp>
 
 // forward declaration of the node_t type 
