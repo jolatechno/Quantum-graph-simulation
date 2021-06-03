@@ -45,15 +45,15 @@ int main() {
 
 read:
     g_1 = new graph(n, left, right);
-    printf("\nread from input*: "); g_1->print();
+    printf("\nread from input*: "); print(g_1);
     goto loop;
 
 random:
     g_1 = new graph(6);
-    printf("new graph(6):     "); g_1->print();
+    printf("new graph(6):     "); print(g_1);
 
     g_1->randomize();
-    printf("\nrandomize()*:     "); g_1->print();
+    printf("\nrandomize()*:     "); print(g_1);
 
 loop:
     graph_t* g_2 = g_1->copy();
@@ -61,12 +61,12 @@ loop:
     //--------------
 
     g_1->step();
-    printf("\n\nstep():           "); g_1->print();
+    printf("\n\nstep():           "); print(g_1);
 
     //---
 
     g_1->reversed_step();
-    printf("\nreversed_step():  "); g_1->print();
+    printf("\nreversed_step():  "); print(g_1);
 
     //--------------
 
@@ -74,7 +74,7 @@ loop:
     printf("\n\n"); print_split_merge(split_merge);
 
     g_1->split_merge(split_merge);
-    printf("\nmerge_split():    "); g_1->print();
+    printf("\nmerge_split():    "); print(g_1);
 
     //---
 
@@ -82,7 +82,7 @@ loop:
     printf("\n"); print_split_merge(split_merge);
 
     g_1->split_merge(split_merge);
-    printf("\nmerge_split():    "); g_1->print();
+    printf("\nmerge_split():    "); print(g_1);
 
     //--------------
 
@@ -90,7 +90,7 @@ loop:
     printf("\n\n"); print_erase_create(erase_create);
     
     g_1->erase_create(erase_create);
-    printf("\nerase_create():   "); g_1->print();
+    printf("\nerase_create():   "); print(g_1);
 
     printf("\n\nleft: ");
     for (auto &l : g_1->left)
@@ -106,7 +106,7 @@ loop:
     printf("\n"); print_erase_create(erase_create);
     
     g_1->erase_create(erase_create);
-    printf("\nerase_create():   "); g_1->print();
+    printf("\nerase_create():   "); print(g_1);
 
     printf("\n\nleft: ");
     for (auto &l : g_1->left)
@@ -118,7 +118,7 @@ loop:
 
     //--------------
 
-    printf("\n\ncopy*:            "); g_2->print();
+    printf("\n\ncopy*:            "); print(g_2);
 
     printf("\nhashes are: %ld %ld\n", g_1->hash(), g_2->hash());
 

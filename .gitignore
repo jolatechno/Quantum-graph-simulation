@@ -33,6 +33,7 @@
 
 # results
 *.txt
+*.json
 
 #swap
 *.swp

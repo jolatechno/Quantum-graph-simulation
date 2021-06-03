@@ -17,12 +17,16 @@ int main() {
 
     state_t* s = new state(g_1);
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
-    auto rule = step_split_merge_all(non_merge, merge);
+    auto rule = step_split_merge_all/*step_erase_create_all*/(non_merge, merge);
 
     for (int i = 1; i < 11; ++i) {
 
-        auto [avg, std_dev] = s->size_stat();
-        printf("%ld graph of size %Lf±%Lf at the %dth iteration\n", s->graphs().size(), avg, std_dev, i);
+        printf("%ld graph", s->graphs().size());
+        #ifdef VERBOSE
+            printf(" of size ");
+            size_stat(s);
+        #endif
+        printf(" after %d iterations\n", i);
 
         #ifdef TEST
             printf("checking graphs...\n");
@@ -37,7 +41,11 @@ int main() {
             printf("reduce_all() ...\n\n"); s->reduce_all(); printf("\n");
         //}	
    	}
-    
-    auto [avg, std_dev] = s->size_stat();
-    printf("%ld graph of size %Lf±%Lf at the last iteration\n", s->graphs().size(), avg, std_dev);
+
+    printf("%ld graph", s->graphs().size());
+    #ifdef VERBOSE
+        printf(" of size ");
+        size_stat(s);
+    #endif
+    printf(" at the last iteration\n");
 }

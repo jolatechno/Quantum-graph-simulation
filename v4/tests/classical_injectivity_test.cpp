@@ -27,8 +27,8 @@ int main() {
       erase_create(c2);
 
       if (c->hash() != c2->hash() /*!g->equal(c)*/){
-        c2->print(); printf("\n");
-        c->print(); printf("\n");
+        print(c2); printf("\n");
+        print(c); printf("\n");
         throw;
       }
 

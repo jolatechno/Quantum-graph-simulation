@@ -309,6 +309,17 @@ A graph is represented by a graph name, and an ordered list of the node's index 
 
 \begin{lstlisting}[style=CStyle]
 class graph {
+	// split_merge type enum 
+  	typedef enum op_type {
+		split_t,
+		merge_t,
+		erase_t,
+		create_t,
+	} op_type_t;
+
+	// typedef of the pair of an index and a op_type 
+  	typedef std::pair<unsigned int, op_type_t> op_t;
+  	
 	// variables 
 	graph_name_t* name_;
 	std::vector<unsigned int> left_;
@@ -415,6 +426,51 @@ To implement the reverse stpe we simply exchange the roles of "left" and "right"
 			rotate_once_left(left_);
 			rotate_once_left(right_);
 		}
+	}
+	//...
+\end{lstlisting}
+
+\subsubsection{erase\_create()}
+
+\begin{lstlisting}[style=CStyle]
+
+void inline graph::erase_create(std::vector<op_t>& erase_create) {
+	//...
+	void inline erase_create(std::vector<op_t>& erase_create) {
+		auto const erase_create_begin = erase_create.rend();
+
+		// add and remove left particules
+		auto erase_create_it = erase_create.rbegin();
+		int left_idx = left.size() - 1;
+		if (!left.empty())
+			for (; erase_create_it < erase_create_begin; ++erase_create_it)
+				if (erase_create_it->second == create_t) {
+					// find the position to insert
+					for (; left[left_idx] >= erase_create_it->first && left_idx >= 0; --left_idx) {}
+
+					if (left_idx < 0)
+						break;
+
+					// insert
+					left.insert(left.begin() + left_idx + 1, erase_create_it->first);
+						
+				} else {
+					// find the particule to erase 
+					for (; left[left_idx] > erase_create_it->first && left_idx >= 0; --left_idx) {}
+
+					if (left_idx < 0)
+						break;
+
+					// erase
+					left.erase(left.begin() + left_idx);
+					--left_idx;
+				}
+
+		// add the particule at the begin
+		for (; erase_create_it < erase_create_begin; ++erase_create_it)
+			left.insert(left.begin(), erase_create_it->first);
+
+		/* add and remove right particules */
 	}
 	//...
 \end{lstlisting}

@@ -36,9 +36,6 @@ private:
 	// main list 
 	graph_map_t graphs_;
 
-	// checker
-	friend bool check(state_t* s);
-
 public:
 	// single graph constructor 
 	state(graph_t* g) {
@@ -49,16 +46,11 @@ public:
 	//getter
 	auto const &graphs() { return graphs_; }
 
-	//reader
-	std::pair<long double, long double> size_stat();
-
+	// reduce
 	void reduce_all();
 
 	// dynamic 
 	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule);
-
-	// for debugging 
-	void print();
 };
 
 // insert operators 
@@ -82,26 +74,6 @@ void state::reduce_all() {
     }
 }
 
-//reader
-std::pair<long double, long double> state::size_stat() {
-	long double avg = 0;
-	long double var = 0;
-	double long correction_factor = 0;
-	int numb = graphs_.size();
-
-	for (auto & [graph, mag] : graphs_) {
-		long double size = graph->size();
-		long double proba = std::norm(mag);
-		avg += size*proba;
-		var += size*size*proba;
-		correction_factor += proba;
-	}
-
-	avg /= correction_factor; var /= correction_factor;
-	var = std::sqrt(var - avg*avg);
-	return {avg, var};
-}
-
 // dynamic 
 void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<long double>>>(graph_t* g)> rule) {
 	graph_map_t buff;
@@ -121,15 +93,40 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, st
   	}
 }
 
+//---------------------------------------------------------
+// non member functions
+//---------------------------------------------------------
+
+//reader
+void size_stat(state_t* s) {
+	long double avg = 0;
+	long double var = 0;
+	double long correction_factor = 0;
+	int numb = s->graphs().size();
+
+	for (auto & [graph, mag] : s->graphs()) {
+		long double size = graph->size();
+		long double proba = std::norm(mag);
+		avg += size*proba;
+		var += size*size*proba;
+		correction_factor += proba;
+	}
+
+	avg /= correction_factor; var /= correction_factor;
+	var = var - avg*avg <= 0 ? 0 : std::sqrt(var - avg*avg);
+
+	printf("%Lf±%Lf", avg, var);
+}
+
 // for debugging 
-void state::print() {
-	for (auto & [graph, mag] : graphs_) {
+void print(state_t* const s) {
+	for (auto & [graph, mag] : s->graphs()) {
 		if (std::imag(mag) >= 0) {
 	  		printf("%Lf + i%Lf   ", std::real(mag), std::imag(mag)); 
 	  	} else {
 	  		printf("%Lf - i%Lf   ", std::real(mag), -std::imag(mag));
 	  	}
-	  	graph->print();
+	  	print(graph);
 	  	printf("\n");
 	}
 }

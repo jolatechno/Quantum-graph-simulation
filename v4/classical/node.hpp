@@ -60,57 +60,60 @@ public:
 	bool inline is_pair() const { return right_idx__or_type_ >= 0; }
 	bool inline is_left() const { return right_idx__or_type_ == point_l_idx; };
 	bool inline is_right() const { return right_idx__or_type_ == point_r_idx; };
+};
+
+//---------------------------------------------------------
+// non member functions
+//---------------------------------------------------------
 
 // debuging 
-private:
-	void print_w_paraenthesis(std::vector<node_t> const &node_buff) const {
-		if (is_element()) {
-			printf("%d", left_idx__or_element_);
+void print(node_t const &node, std::vector<node_t> const &node_buff) {
+	std::function<void(node_t const&, std::vector<node_t> const&)> print_w_paraenthesis;
+	print_w_paraenthesis = [&](node_t const &n, std::vector<node_t> const &node_buff) {
+		if (n.is_element()) {
+			printf("%d", n.left_idx());
 			return;
 		}
 
-		if (is_pair()) {
+		if (n.is_pair()) {
 			printf("(");
-			node_buff[left_idx__or_element_].print_w_paraenthesis(node_buff);
+			print_w_paraenthesis(node_buff[n.left_idx()], node_buff);
 			printf("∧");
-			node_buff[right_idx__or_type_].print_w_paraenthesis(node_buff);
+			print_w_paraenthesis(node_buff[n.right_idx()], node_buff);
 			printf(")");
 			return;
 		}
 
-		node_buff[left_idx__or_element_].print_w_paraenthesis(node_buff);
+		print_w_paraenthesis(node_buff[n.left_idx()], node_buff);
 
-		if (is_left()) {
+		if (n.is_left()) {
 			printf(".l");
 			return;
 		}
-
 		printf(".r");
+	};
+
+	if (node.is_element()) {
+		printf("%d", node.left_idx());
+		return;
 	}
 
-public:
-	void print(std::vector<node_t> const &node_buff) const {
-		if (is_element()) {
-			printf("%d", left_idx__or_element_);
-			return;
-		}
-
-		if (is_pair()) {
-			node_buff[left_idx__or_element_].print_w_paraenthesis(node_buff);
-			printf("∧");
-			node_buff[right_idx__or_type_].print_w_paraenthesis(node_buff);
-			return;
-		}
-
-		node_buff[left_idx__or_element_].print_w_paraenthesis(node_buff);
-
-		if (is_left()) {
-			printf(".l");
-			return;
-		}
-
-		printf(".r");
+	if (node.is_pair()) {
+		print_w_paraenthesis(node_buff[node.left_idx()], node_buff);
+		printf("∧");
+		print_w_paraenthesis(node_buff[node.right_idx()], node_buff);
+		return;
 	}
+
+	print_w_paraenthesis(node_buff[node.left_idx()], node_buff);
+
+	if (node.is_left()) {
+		printf(".l");
+		return;
+	}
+
+	printf(".r");
+}
 
 	//comparator
 	/*bool inline equal(node_t const other, std::vector<node_t> const &this_node_buff, std::vector<node_t> const &other_node_buff) const {
@@ -133,4 +136,3 @@ public:
 		return this_node_buff[left_idx__or_element_].equal(other_node_buff[other.left_idx__or_element_],
 			this_node_buff, other_node_buff);
 	}*/
-};

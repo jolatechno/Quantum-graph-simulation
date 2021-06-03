@@ -32,6 +32,9 @@ private:
 		return buff_idx;
 	}
 
+	// debugging
+	friend void print(graph_name_t const *name, int n);
+
 public:
 	// normal constructors 
 	graph_name(unsigned int size) {
@@ -55,10 +58,6 @@ public:
 	size_t inline size() const {
 		return nodes_.size();
 	}
-
-	//  debuging
-	void print(int n) const;
-	void print() const;
 
 	// copy opperator 
 	graph_name_t inline *copy() {
@@ -167,15 +166,19 @@ void inline graph_name::merge(unsigned int idx) {
 	nodes_.erase(nodes_.begin() + idx);
 }
 
+//---------------------------------------------------------
+// non member functions
+//---------------------------------------------------------
+
 // debuging
-void graph_name::print(int n) const {
-	nodes_[n].print(node_buff_);
+void print(graph_name_t const *name, int n) {
+	print(name->nodes_[n], name->node_buff_);
 }
 
-void graph_name::print() const {
-	for (int i = 0; i < size(); i++) {
+void print(graph_name_t const *name) {
+	for (int i = 0; i < name->size(); i++) {
 		printf("-");
-		print(i);
+		print(name, i);
 		printf("-");
 	}
 }

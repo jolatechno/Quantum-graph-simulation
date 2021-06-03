@@ -15,6 +15,22 @@ typedef class graph graph_t;
 size_t const separator = -1; 
 
 class graph {
+public:
+  	// split_merge type enum 
+  	typedef enum op_type {
+		split_t,
+		merge_t,
+		erase_t,
+		create_t,
+	} op_type_t;
+
+	// typedef of the pair of an index and a op_type 
+  	typedef std::pair<unsigned int, op_type_t> op_t;
+
+  	// particules positions
+  	std::vector<unsigned int> mutable left;
+	std::vector<unsigned int> mutable right;
+
 private:
 	// variables 
 	graph_name_t* name_;
@@ -30,9 +46,6 @@ private:
 	void rotate_once_right(std::vector<unsigned int>& pos);
 
 public:
-	std::vector<unsigned int> mutable left;
-	std::vector<unsigned int> mutable right;
-
 	// normal constructors 
 	graph(int n) {
 		name_ = new graph_name(n);
@@ -72,23 +85,10 @@ public:
 	void randomize(unsigned int n);
 	void randomize();
 
-	// for debuging 
-	void print();
-
 	// comparators 
-  //bool inline equal(graph_t* other) const;
+  	//bool inline equal(graph_t* other) const;
 
-  // split and merge 
-  // split_merge type enum 
-  typedef enum op_type {
-		split_t,
-		merge_t,
-		erase_t,
-		create_t,
-	} op_type_t;
-	// typedef of the pair of an index and a op_type 
-  	typedef std::pair<unsigned int, op_type_t> op_t;
-  	// functions 
+	// split and merge 
   	void inline split_merge(std::vector<op_t>& split_merge); //indexes have to be sorted !!
   	void inline erase_create(std::vector<op_t>& erase_create); //indexes have to be sorted !!
 
@@ -394,20 +394,22 @@ void graph::randomize(unsigned int n) {
 	}
 }
 
-// debuging 
-void graph::print() {
-	// iterate through particules positions 
-	auto left_it = left.begin();
-	auto right_it = right.begin();
+//---------------------------------------------------------
+// non member functions
+//---------------------------------------------------------
 
-	// node list 
-	auto nodes = name_->nodes();
-	for(unsigned int i = 0; i < size(); ++i) {
+// debuging 
+void print(graph_t const *g) {
+	// iterate through particules positions 
+	auto left_it = g->left.begin();
+	auto right_it = g->right.begin();
+
+	for(unsigned int i = 0; i < g->size(); ++i) {
 		// left character 
 		char l = ' ';
 
 		// if there is any left particules left 
-		if (left_it < left.end())
+		if (left_it < g->left.end())
 			// check if there is a particule at the left port 
 			if (*left_it == i) {
 				l = '<';
@@ -420,7 +422,7 @@ void graph::print() {
 		char r = ' ';
 
 		// if there is any right particules left 
-		if (right_it < right.end())
+		if (right_it < g->right.end())
 			// check if there is a particule at the right port 
 			if (*right_it == i) {
 				r = '>';
@@ -430,7 +432,7 @@ void graph::print() {
 			}
 
 		printf("-|%c|", l);
-		name_->print(i);
+		print(g->name(), i);
 		printf("|%c|-", r);
 	}
 }

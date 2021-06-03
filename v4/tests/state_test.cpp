@@ -53,30 +53,42 @@ int main() {
 
 read:
     	g_1 = new graph(n, left, right);
-    	printf("\nread from input*: "); g_1->print();
+    	printf("\nread from input*: "); print(g_1);
     	goto loop;
 
 random:
     	g_1 = new graph(6);
-    	printf("new graph(6):  "); g_1->print();
+    	printf("new graph(6):  "); print(g_1);
 
     	g_1->randomize();
-    	printf("\nrandomize()*:  "); g_1->print(); printf("\n");
+    	printf("\nrandomize()*:  "); print(g_1); printf("\n");
 
 loop:
 
 		state_t* s = new state(g_1);
-		s->set_params(M_PI_4, M_PI_4);
+		auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+    	auto rule = split_merge_all(non_merge, merge);
+    	auto rule_ = erase_create_all(non_merge, merge);
 
-		s->split_merge_all();
+		s->step_all(rule);
 		s->reduce_all();
 
-		printf("\nmerge_split():\n"); s->print();
+		printf("\nmerge_split():\n"); print(s);
 
-		s->split_merge_all();
+		s->step_all(rule);
 		s->reduce_all();
 
-		printf("\n\nmerge_split():\n"); s->print();
+		printf("\n\nmerge_split():\n"); print(s);
+
+		s->step_all(rule_);
+		s->reduce_all();
+
+		printf("\nerase_create():\n"); print(s);
+
+		s->step_all(rule_);
+		s->reduce_all();
+
+		printf("\n\nerase_create():\n"); print(s);
 
 		if (check(s)) {
 			printf("\nstate is OK\n");

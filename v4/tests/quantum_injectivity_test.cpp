@@ -53,15 +53,15 @@ int main() {
 
 read:
     	g_1 = new graph(n, left, right);
-    	printf("\nread from input*: "); g_1->print();
+    	printf("\nread from input*: "); print(g_1);
     	goto loop;
 
 random:
     	g_1 = new graph(6);
-    	printf("new graph(6):  "); g_1->print();
+    	printf("new graph(6):  "); print(g_1);
 
     	g_1->randomize();
-    	printf("\nrandomize()*:  "); g_1->print(); printf("\n");
+    	printf("\nrandomize()*:  "); print(g_1); printf("\n");
 
 loop:
 
@@ -87,8 +87,9 @@ loop:
 
 		//----
 		
-		auto [avg, std_dev] = s->size_stat();
-        printf("%ld graph of size %Lf±%Lf after %d step_merge_split()\n", s->graphs().size(), avg, std_dev, n_iter);
+		printf("%ld graph of size ", s->graphs().size());
+        size_stat(s);
+        printf(" after %d step_merge_split()\n", n_iter);
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(reversed_rule);
@@ -102,7 +103,7 @@ loop:
 			#endif
 		}
 
-		printf("\nafter %d reversed_step_merge_split():\n", n_iter); s->print();
+		printf("\nafter %d reversed_step_merge_split():\n", n_iter); print(s);
 
 		//--------------------------
 
@@ -123,8 +124,9 @@ loop:
 
 		//----
 		
-		auto [avg_, std_dev_] = s->size_stat();
-        printf("%ld graph of size %Lf±%Lf after %d step_erase_create_all()\n", s->graphs().size(), avg_, std_dev_, n_iter);
+        printf("%ld graph of size ", s->graphs().size());
+        size_stat(s);
+        printf(" after %d step_erase_create_all()\n", n_iter);
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(reversed_rule_);
@@ -138,6 +140,6 @@ loop:
 			#endif
 		}
 
-		printf("\nafter %d reversed_step_erase_create_all():\n", n_iter); s->print();
+		printf("\nafter %d reversed_step_erase_create_all():\n", n_iter); print(s);
 	}
 }
