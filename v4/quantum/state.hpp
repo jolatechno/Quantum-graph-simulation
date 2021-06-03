@@ -4,6 +4,7 @@
 #include "../classical/graph.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
+#include <map>
 
 // check zero probability
 bool inline check_zero(const std::complex<double>& mag) {
@@ -107,7 +108,7 @@ void size_stat(state_t* s) {
 	double long correction_factor = 0;
 	int numb = s->graphs().size();
 
-	for (auto & [graph, mag] : s->graphs()) {
+	for (auto [graph, mag] : s->graphs()) {
 		double size = graph->size();
 		double proba = std::norm(mag);
 		avg += size*proba;
@@ -121,8 +122,61 @@ void size_stat(state_t* s) {
 	printf("%f±%f", avg, var);
 }
 
+void start_json(graph_t const* initial, char const* rule) {
+	// print rule
+	printf("{\n\t\"rule\" : \"%s\",", rule);
+
+	// print initial state staitisic
+	printf("\n\t\"initial state\" : {\n");
+	printf("\t\t\"size\" : %ld,\n", initial->size());
+	printf("\t\t\"left\" : %ld,\n", initial->left.size());
+	printf("\t\t\"right\" : %ld\n", initial->right.size());
+	printf("\t},\n\t\"iterations\" : [");
+
+	// print first iteration statistic
+	printf("\n\t\t{\n\t\t\t\"nums\" : [1],");
+	printf("\n\t\t\t\"probas\" : [1.000]\n\t\t}");
+}
+
+void serialize_state_to_json(state_t* s) {
+	// final vectors
+	std::vector<unsigned short int> nums;
+	std::vector<double> probas;
+
+	auto const graphs = s->graphs();
+	for (auto & [graph, mag] : graphs) {
+		size_t size = graph->size();
+		double proba = std::norm(mag);
+
+		if (size >= nums.size()) {
+			nums.resize(size + 1, 0);
+			probas.resize(size + 1, 0);
+		}
+
+		nums[size] += 1;
+		probas[size] += proba;
+	}
+
+	// print number of graphs
+	printf(",\n\t\t{\n\t\t\t\"nums\" : [%d", nums[0]);
+	for (auto it = nums.begin() + 1; it < nums.end(); ++it)
+		printf(", %d", *it);
+
+	// print total probability
+	printf("],\n\t\t\t\"probas\" : [%f", probas[0]);
+	for (auto it = probas.begin() + 1; it < probas.end(); ++it)
+		printf(", %f", *it);
+
+	// print separator
+	printf("]\n\t\t}");
+}
+
+void end_json() {
+	printf("\n\t]\n}\n");
+}
+
 // for debugging 
-void print(state_t* const s) {
+void print(state_t *s) {
 	for (auto & [graph, mag] : s->graphs()) {
 		if (std::imag(mag) >= 0) {
 	  		printf("%f + i%f   ", std::real(mag), std::imag(mag)); 

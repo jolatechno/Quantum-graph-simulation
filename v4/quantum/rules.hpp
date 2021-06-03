@@ -155,3 +155,13 @@ auto reversed_step_erase_create_all(std::complex<double>& non_merge, std::comple
 		return graphs_;
 	};
 }
+
+// split_merge step and erase create
+auto split_merge_step_erase_create_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+	return [&](graph_t* g) {
+		auto const erase_create_all_ = erase_create_all(non_merge, merge);
+		split_merge(g);
+		g->step();
+		return erase_create_all_(g);
+	};
+}
