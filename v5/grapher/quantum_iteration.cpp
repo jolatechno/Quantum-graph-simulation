@@ -23,7 +23,7 @@ int main() {
     state_t* s = new state(g_1);
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
 
-    std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule;
+    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule;
 
     if (rule_ == "step_split_merge_all") {
         rule = step_split_merge_all(non_merge, merge);
