@@ -23,8 +23,8 @@ public:
   	typedef std::pair<unsigned short int, op_type_t> op_t;
 
   	// particules positions
-  	std::vector</*bool*/ char> mutable left; //not bool to not use space efficient bool vectors
-	std::vector</*bool*/ char> mutable right;
+  	std::vector<bool /*char*/> mutable left; //not bool to not use space efficient bool vectors
+	std::vector<bool /*char*/> mutable right;
 
 private:
 	// variables 
@@ -37,12 +37,12 @@ private:
 public:
 	// normal constructors 
 	graph(short int n) {
-		left = std::vector</*bool*/ char>(n, false);
-		right = std::vector</*bool*/ char>(n, false);
+		left = std::vector<bool /*char*/>(n, false);
+		right = std::vector<bool /*char*/>(n, false);
 		name_ = graph_name_t(n);
 	}
 
-	graph(std::vector</*bool*/ char> left_, std::vector</*bool*/ char> right_) : left(left_), right(right_) {
+	graph(std::vector<bool /*char*/> left_, std::vector<bool /*char*/> right_) : left(left_), right(right_) {
 		if (left.size() != right.size())
 			throw;
 

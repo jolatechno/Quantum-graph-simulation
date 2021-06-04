@@ -7,9 +7,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#define RULE "split_merge_step_erase_create_all"; //"step_split_merge_all" //"step_erase_create_all"
+#define RULE "erase_create_step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #define SIZE 5
-#define N_ITER 3
+#define N_ITER 7
 
 int main() {
     auto rule_ = RULE;
@@ -30,6 +30,8 @@ int main() {
         rule = step_erase_create_all(non_merge, merge);
     } else if (rule_ == "split_merge_step_erase_create_all") {
         rule = split_merge_step_erase_create_all(non_merge, merge);
+    } else if (rule_ == "erase_create_step_split_merge_all") {
+        rule = erase_create_step_split_merge_all(non_merge, merge);
     } else
         return -1;
 

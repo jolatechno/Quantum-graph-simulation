@@ -165,3 +165,12 @@ auto split_merge_step_erase_create_all(std::complex<double>& non_merge, std::com
 		return erase_create_all_(g);
 	};
 }
+
+auto erase_create_step_split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+	return [&](graph_t* g) {
+		auto const split_merge_all_ = split_merge_all(non_merge, merge);
+		erase_create(g);
+		g->step();
+		return split_merge_all_(g);
+	};
+}
