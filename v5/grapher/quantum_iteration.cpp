@@ -41,9 +41,11 @@ int main() {
     for (int i = 1; i < N_ITER + 1; ++i) {
         s->step_all(rule);
         s->reduce_all();
-        s->discard_graphs(MAX_NUM_GRAPHS);
 
         serialize_state_to_json(s);
+
+        if (i != N_ITER)
+            s->discard_graphs(MAX_NUM_GRAPHS);
    	}
 
     end_json();
