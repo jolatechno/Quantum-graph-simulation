@@ -23,12 +23,12 @@ public:
   	typedef std::pair<unsigned short int, op_type_t> op_t;
 
   	// particules positions
-  	std::vector<bool> mutable left;
-	std::vector<bool> mutable right;
+  	std::vector</*bool*/ char> mutable left; //not bool to not use space efficient bool vectors
+	std::vector</*bool*/ char> mutable right;
 
 private:
 	// variables 
-	graph_name_t* name_;
+	graph_name_t name_;
 
 	// hash
 	size_t mutable hash_ = 0;
@@ -37,49 +37,31 @@ private:
 public:
 	// normal constructors 
 	graph(short int n) {
-		left = std::vector<bool>(n, false);
-		right = std::vector<bool>(n, false);
-		name_ = new graph_name(n);
+		left = std::vector</*bool*/ char>(n, false);
+		right = std::vector</*bool*/ char>(n, false);
+		name_ = graph_name_t(n);
 	}
 
-	graph(std::vector<bool> left, std::vector<bool> right) : left(left), right(right) {
+	graph(std::vector</*bool*/ char> left_, std::vector</*bool*/ char> right_) : left(left_), right(right_) {
 		if (left.size() != right.size())
 			throw;
 
-		name_ = new graph_name(left.size());
+		name_ = graph_name_t(left.size());
 	}
 
 	// size operator 
 	size_t inline size() const {
-		return name_->size();
+		return left.size();
 	};
 
-	// copy opperator 
-	graph_t inline *copy() {
-		// just copy the vectors 
-		graph_t* this_copy = new graph(0);
-		this_copy->name_ = name_->copy();
-		this_copy->left = left;
-		this_copy->right = right;
-
-		// save memory 
-		left.shrink_to_fit();
-		right.shrink_to_fit();
-	
-		return this_copy;
-	}
-
 	// getters 
-	graph_name_t inline const *name() const { return name_; };
+	graph_name_t inline const &name() const { return name_; };
 
 	// hasher 
 	size_t inline hash() const;
 
 	// randomizer 
 	void randomize();
-
-	// comparators 
-  	//bool inline equal(graph_t* other) const;
 
 	// split and merge 
   	void inline split_merge(std::vector<op_t>& split_merge); //indexes have to be sorted !!
@@ -94,7 +76,7 @@ public:
   	}
   	void inline reversed_step() {
   		hashed_ = false;
-  		
+
   		std::rotate(left.rbegin(), left.rbegin() + 1, left.rend());
 		std::rotate(right.begin(), right.begin() + 1, right.end());
   	}
@@ -113,7 +95,8 @@ size_t graph::hash() const {
 	boost::hash<unsigned int> hasher;
 
 	// left hash 
-	for (int i = 0; i < size(); ++i)
+	auto const size_ = size();
+	for (short int i = 0; i < size_; ++i)
 		if (left[i])
 			boost::hash_combine(hash_, i);
 
@@ -121,7 +104,7 @@ size_t graph::hash() const {
   	boost::hash_combine(hash_, separator);
 
   	// right hash 
-  	for (int i = 0; i < size(); ++i)
+  	for (short int i = 0; i < size_; ++i)
 		if (right[i])
 			boost::hash_combine(hash_, i);
 
@@ -129,7 +112,7 @@ size_t graph::hash() const {
   	boost::hash_combine(hash_, separator);
 
   	// name hash 
-  	boost::hash_combine(hash_, name_->hash());
+  	boost::hash_combine(hash_, name_.hash());
 		
 
   hashed_ = true;
@@ -147,7 +130,7 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 	auto const size_ = size();
 	for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
 		if (type == split_t) {
-			first_split |= name_->split(pos);
+			first_split |= name_.split(pos);
 
 			// change right
 			right[pos] = false;
@@ -156,7 +139,7 @@ void graph::split_merge(std::vector<op_t>& split_merge) {
 			right.insert(right.begin() + pos + 1, true);
 			left.insert(left.begin() + pos + 1, false);
 		} else if (type == merge_t) {
-			name_->merge(pos);
+			name_.merge(pos);
 
 			// next pos
 			unsigned short int next_pos = (pos + 1) % size_;

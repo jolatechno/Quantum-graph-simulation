@@ -13,13 +13,13 @@ int main() {
 
     for (int i = 0; i < 20; ++i) {
       g->randomize();
-      graph_t* c = g->copy();
+      graph_t* c = new graph_t(*g);
 
       g->step();
       g->reversed_step();
       split_merge(g);
 
-      graph_t* c2 = g->copy();
+      graph_t* c2 = new graph_t(*g);
 
       split_merge(c2);
       erase_create(c2);

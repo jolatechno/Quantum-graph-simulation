@@ -14,5 +14,8 @@ verbose:
 gprof:
 	$(eval U_CFLAGS+=-pg)
 
+libs:
+	$(U_CXX) -w ../**/**.hpp
+
 $(targets):
 	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS)

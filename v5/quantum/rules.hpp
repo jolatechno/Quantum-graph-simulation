@@ -66,7 +66,7 @@ auto split_merge_all(std::complex<double>& non_merge, std::complex<double>& merg
 			for (int j = 1; j < n_max; ++j)
 			#pragma omp task
 			{
-				graph_t* g_ = g->copy();
+				graph_t* g_ = new graph_t(*g);
 
 				auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge, merge);
 				g_->split_merge(split_merge_list);
@@ -98,7 +98,7 @@ auto erase_create_all(std::complex<double>& non_create, std::complex<double>& cr
 			for (int j = 1; j < n_max; ++j)
 			#pragma omp task
 			{
-				graph_t* g_ = g->copy();
+				graph_t* g_ = new graph_t(*g);
 
 				auto [split_merge_list, mag_erase_create] = subset(erase_create, j, non_create, create);
 				g_->erase_create(split_merge_list);

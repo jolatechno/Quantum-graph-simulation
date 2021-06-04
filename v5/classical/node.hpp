@@ -11,7 +11,7 @@ short int const point_l_idx = -1;
 short int const point_r_idx = -2;
 short int const element_idx = -3;
 
-struct node {
+class node {
 private:
 	short int left_idx__or_element_;
 	short int right_idx__or_type_;

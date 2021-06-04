@@ -10,7 +10,7 @@ int main() {
   while (true) {
     printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
-    std::vector<bool> left, right;
+    std::vector</*bool*/ char> left, right;
     graph_t* g_1;
 
     bool l = false;
@@ -62,7 +62,7 @@ random:
     printf("\nrandomize()*:     "); print(g_1);
 
 loop:
-    graph_t* g_2 = g_1->copy();
+    graph_t* g_2 = new graph_t(*g_1);
 
     //--------------
 

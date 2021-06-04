@@ -30,10 +30,12 @@ private:
 	}
 
 	// debugging
-	friend void print(graph_name_t const *name, short int n);
+	friend void print(graph_name_t const &name, short int n);
 
 public:
 	// normal constructors 
+	graph_name() {}
+	
 	graph_name(unsigned short int size) {
 		for (short int i = 0; i < size; ++i)
 			nodes_.emplace_back(i);
@@ -45,17 +47,6 @@ public:
 	// size operator 
 	size_t inline size() const {
 		return nodes_.size();
-	}
-
-	// copy opperator 
-	graph_name_t inline *copy() {
-		// just copy the vector 
-		graph_name_t* this_copy = new graph_name(0);
-		this_copy->nodes_ = nodes_;
-		this_copy->node_buff_ = node_buff_;
-		this_copy->trash_collection_ = trash_collection_;
-
-		return this_copy;
 	}
 
 	//hasher
@@ -160,12 +151,12 @@ void inline graph_name::merge(unsigned short int idx) {
 //---------------------------------------------------------
 
 // debuging
-void print(graph_name_t const *name, short int n) {
-	print(name->nodes_[n], name->node_buff_);
+void print(graph_name_t const &name, short int n) {
+	print(name.nodes_[n], name.node_buff_);
 }
 
-void print(graph_name_t const *name) {
-	for (short int i = 0; i < name->size(); i++) {
+void print(graph_name_t const &name) {
+	for (short int i = 0; i < name.size(); i++) {
 		printf("-");
 		print(name, i);
 		printf("-");
