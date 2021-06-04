@@ -40,6 +40,8 @@ int main() {
         //if (i % 3 == 0) {
             printf("reduce_all() ...\n\n"); s->reduce_all(); printf("\n");
         //}	
+
+        //s->discard_graphs(300);
    	}
 
     printf("%ld graph", s->graphs().size());

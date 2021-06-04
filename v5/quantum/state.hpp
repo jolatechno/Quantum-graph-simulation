@@ -55,6 +55,9 @@ public:
 
 	// dynamic 
 	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule);
+
+	// limit graphs
+	void discard_graphs(size_t n_graphs);
 };
 
 // insert operators 
@@ -76,6 +79,32 @@ void state::reduce_all() {
     	
     	it = graphs_.unsafe_erase(it, upper);
     }
+}
+
+void state::discard_graphs(size_t n_graphs) {
+	if (graphs_.size() < n_graphs)
+		return;
+
+	/* compute sure threshold proba */
+	double threshold_proba = 1 / (double)n_graphs;
+	size_t const num_graph_delete = graphs_.size() - n_graphs;
+
+	std::multimap<double, graph_t*> map;
+	for (auto & [graph, mag] : graphs_) {
+		double proba = std::norm(mag);
+
+		if (proba < threshold_proba) {
+			map.insert({proba, graph});
+
+			if (map.size() == num_graph_delete + 1) {
+				threshold_proba = map.rbegin()->first;
+				map.erase(std::prev(map.end()));
+			}
+		}
+	}
+
+	for (auto & [_, key] : map)
+		graphs_.unsafe_erase(key);
 }
 
 // dynamic 

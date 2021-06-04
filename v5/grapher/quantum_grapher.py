@@ -33,8 +33,8 @@ ax = plt.axes(projection='3d')
 
 ax.plot_surface(iterations, sizes, probas, cmap='viridis', edgecolor='none')
 ax.set_title(f'graph probabilty ({ data["rule"] })')
-ax.set_xlabel('iterations')
-ax.set_ylabel('graph size')
+ax.set_ylabel('iterations')
+ax.set_xlabel('graph size')
 
 fig.savefig(f'quantum_graphs_probabilities_{ data["rule"] }_{ data["initial state"]["size"] }.png')
 
@@ -43,7 +43,7 @@ ax = plt.axes(projection='3d')
 
 ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
 ax.set_title(f'number of graphs ({ data["rule"] })')
-ax.set_xlabel('iterations')
-ax.set_ylabel('graph size')
+ax.set_ylabel('iterations')
+ax.set_xlabel('graph size')
 
 fig.savefig(f'quantum_graphs_nums_{ data["rule"] }_{ data["initial state"]["size"] }.png')
