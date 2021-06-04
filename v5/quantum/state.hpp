@@ -21,20 +21,20 @@ class state {
 public:
 	// hasher
 	struct graph_hasher {
-		size_t operator()(graph_t* const &g) const {
-			return g->hash();
+		size_t operator()(std::shared_ptr<graph_t> const &g) const {
+			return g.get()->hash();
 		}
 	};
 
 	// comparator
 	struct graph_comparator {
-		bool operator()(graph_t* const &g1, graph_t* const &g2) const {
-			return g1->hash() == g2->hash();
+		bool operator()(std::shared_ptr<graph_t> const &g1, std::shared_ptr<graph_t> const &g2) const {
+			return g1.get()->hash() == g2.get()->hash();
 		}
 	};
 
 	// type definition
-	typedef tbb::concurrent_unordered_multimap<graph_t*, std::complex<double>, graph_hasher, graph_comparator> graph_map_t;
+	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<double>, graph_hasher, graph_comparator> graph_map_t;
 
 private:
 	// main list 
@@ -44,7 +44,7 @@ public:
 	// single graph constructor 
 	state(graph_t* g) {
 		// add graph 
-		graphs_.insert({g, {1, 0}});
+		graphs_.insert({std::shared_ptr<graph_t>(g), {1, 0}});
 	}
 
 	//getter
@@ -54,7 +54,7 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule);
+	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule);
 
 	// limit graphs
 	void discard_graphs(size_t n_graphs);
@@ -89,7 +89,7 @@ void state::discard_graphs(size_t n_graphs) {
 	double threshold_proba = 1 / (double)n_graphs;
 	size_t const num_graph_delete = graphs_.size() - n_graphs;
 
-	std::multimap<double, graph_t*> map;
+	std::multimap<double, std::shared_ptr<graph_t>> map;
 	for (auto & [graph, mag] : graphs_) {
 		double proba = std::norm(mag);
 
@@ -108,7 +108,7 @@ void state::discard_graphs(size_t n_graphs) {
 }
 
 // dynamic 
-void state::step_all(std::function<tbb::concurrent_vector<std::pair<graph_t*, std::complex<double>>>(graph_t* g)> rule) {
+void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -174,7 +174,7 @@ void serialize_state_to_json(state_t* s) {
 
 	auto const graphs = s->graphs();
 	for (auto & [graph, mag] : graphs) {
-		size_t size = graph->size();
+		size_t size = graph.get()->size();
 		double proba = std::norm(mag);
 
 		if (size >= nums.size()) {
@@ -212,7 +212,7 @@ void print(state_t *s) {
 	  	} else {
 	  		printf("%f - i%f   ", std::real(mag), -std::imag(mag));
 	  	}
-	  	print(graph);
+	  	print(graph.get());
 	  	printf("\n");
 	}
 }
