@@ -6,19 +6,14 @@
 #include <tbb/concurrent_vector.h>
 #include <map>
 
-// check zero probability
-bool inline check_zero(const std::complex<double>& mag) {
-	const double double_tolerance = 1e-6;
-	return std::norm(mag) <= double_tolerance;
-	/*const std::complex<double> zero = 0;
-	return mag == zero;*/
-}
-
 // forward definition of the state type
 typedef class state state_t;
 
 class state {
 public:
+	// tolerance
+	double tolerance = 1e-7;
+
 	// hasher
 	struct graph_hasher {
 		size_t operator()(std::shared_ptr<graph_t> const &g) const {
@@ -39,6 +34,9 @@ public:
 private:
 	// main list 
 	graph_map_t graphs_;
+
+	// check zero probas
+	bool inline check_zero(const std::complex<double>& mag) { return std::norm(mag) <= tolerance; }
 
 public:
 	// single graph constructor 
@@ -69,46 +67,48 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-	for(auto it = graphs_.begin(); it != graphs_.end();) {
-    	// range of similar graphs to delete
-    	auto upper = graphs_.equal_range(it->first).second;
+    #ifdef FAST_REDUCE
+		graph_map_t buff; // faster, parallel reduce that uses WAY more ram
+		buff.swap(graphs_);
 
-    	for(auto jt = std::next(it); jt != upper; ++jt)
-        	it->second += jt->second;
+		#pragma omp parallel
+		#pragma omp single
+	    for(auto it = buff.begin(); it != buff.end();) {
+	    	// range of similar graphs to delete
+	    	auto const graph = it->first;
+	    	auto const range = buff.equal_range(graph);
 
-    	// if the first graphgs has a zero probability, erase the whole range
-    	if (!check_zero(it->second))
-    		++it;
-    	
-    	it = graphs_.unsafe_erase(it, upper);
-    }
+	    	// next iteration
+	    	it = range.second;
 
-	/*graph_map_t buff; // faster, parallel reduce that uses WAY more ram
-	buff.swap(graphs_);
+	    	#pragma omp task
+	    	{
+	    		std::complex<double> acc = 0;
+	    		for(auto jt = range.first; jt != range.second; ++jt)
+	        		acc += jt->second;
 
-	#pragma omp parallel
-	#pragma omp single
-    for(auto it = buff.begin(); it != buff.end();) {
-    	// range of similar graphs to delete
-    	auto const graph = it->first;
-    	auto const range = buff.equal_range(graph);
+		    	// if the first graphgs has a zero probability, erase the whole range
+		    	if (!check_zero(acc))
+		    		graphs_.insert({graph, acc});
+	    	}
+	    }
 
-    	// next iteration
-    	it = range.second;
+	    buff.clear();
+    #else
+		for(auto it = graphs_.begin(); it != graphs_.end();) {
+	    	// range of similar graphs to delete
+	    	auto upper = graphs_.equal_range(it->first).second;
 
-    	#pragma omp task
-    	{
-    		std::complex<double> acc = 0;
-    		for(auto jt = range.first; jt != range.second; ++jt)
-        		acc += jt->second;
+	    	for(auto jt = std::next(it); jt != upper; ++jt)
+	        	it->second += jt->second;
 
 	    	// if the first graphgs has a zero probability, erase the whole range
-	    	if (!check_zero(acc))
-	    		graphs_.insert({graph, acc});
-    	}
-    }
-
-    buff.clear();*/
+	    	if (!check_zero(it->second))
+	    		++it;
+	    	
+	    	it = graphs_.unsafe_erase(it, upper);
+	    }
+    #endif
 }
 
 void state::discard_all(size_t n_graphs) {

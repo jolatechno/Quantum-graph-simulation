@@ -17,10 +17,10 @@ bool check(state_t* s) {
     	probability += std::norm(it->second);
 
     	//check if a probability is under zero
-		if (check_zero(it->second)) {
+		/*if (check_zero(it->second)) {
 			printf("probability is zero!!\n");
 			return false;
-		}
+		}*/
 
 		//check graph
 		if (!graph_checker(it->first.get()))
