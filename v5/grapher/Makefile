@@ -43,3 +43,6 @@ libs:
 
 $(targets):
 	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DTOL=$(TOL)
+
+run:
+	nohup ./quantum_iteration.o > res.json 2> /dev/null &

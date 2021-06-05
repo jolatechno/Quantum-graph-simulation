@@ -92,8 +92,6 @@ void state::reduce_all() {
 		    		graphs_.insert({graph, acc});
 	    	}
 	    }
-
-	    buff.clear();
     #else
 		for(auto it = graphs_.begin(); it != graphs_.end();) {
 	    	// range of similar graphs to delete
@@ -127,7 +125,6 @@ void state::discard_all(size_t n_graphs) {
 
 			if (map.size() == n_graphs + 1) {
 				map.erase(map.begin());
-				printf("\nmap %f %f\n", map.begin()->first, std::prev(map.end())->first);
 				threshold_proba = map.begin()->first;
 			}
 		}
@@ -168,8 +165,6 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
   			graphs_.insert({graph_, mag_ * mag});
   		}
   	}
-
-  	buff.clear();
 }
 
 //---------------------------------------------------------

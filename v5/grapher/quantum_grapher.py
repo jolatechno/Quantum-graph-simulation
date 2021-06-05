@@ -13,7 +13,6 @@ iterations = np.arange(0, n_iterations)
 
 iterations, sizes = np.meshgrid(sizes, iterations)
 
-proba_ratio = np.ones(n_iterations)
 total_proba = np.zeros(n_iterations)
 total_num = np.zeros(n_iterations)
 
@@ -24,9 +23,6 @@ for i in range(n_iterations):
 	probas_ = data["iterations"][i]["probas"]
 	total_proba[i] = sum(probas_)
 	probas_ /= total_proba[i]
-
-	if i > 0:
-		proba_ratio[i] = total_proba[i] / total_proba[i - 1]
 
 	nums_ = data["iterations"][i]["nums"]
 	total_num[i] = sum(nums_)
@@ -70,7 +66,6 @@ color = 'tab:blue'
 color2 = 'tab:red'
 
 ax.plot(total_proba, label="total proba", color=color)
-ax.plot(proba_ratio, label="proba ratio", color='tab:orange')
 ax.legend()
 ax.set_ylabel("proba", color=color)
 ax.tick_params(axis='y', labelcolor=color)
