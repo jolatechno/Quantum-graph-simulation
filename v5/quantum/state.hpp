@@ -52,7 +52,7 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule);
+	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> const &g)> rule);
 
 	// limit graphs
 	void discard_all(size_t n_graphs);
@@ -130,6 +130,8 @@ void state::discard_all(size_t n_graphs) {
 		}
 	}
 
+	printf("\na\n");
+
 	graphs_.clear();
 	for (auto & [_, key] : map)
 		graphs_.insert(key);
@@ -149,7 +151,7 @@ void state::normalize() {
 }
 
 // dynamic 
-void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule) {
+void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> const &g)> rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -204,8 +206,15 @@ void start_json(graph_t const* initial, char const* rule) {
 	printf("\t},\n\t\"iterations\" : [");
 
 	// print first iteration statistic
-	printf("\n\t\t{\n\t\t\t\"nums\" : [1],");
-	printf("\n\t\t\t\"probas\" : [1.000]\n\t\t}");
+	printf("\n\t\t{\n\t\t\t\"nums\" : [");
+	for (int i = 0; i < initial->size(); ++i)
+		printf("0, ");
+
+	printf("1],\n\t\t\t\"probas\" : [");
+	for (int i = 0; i < initial->size(); ++i)
+		printf("0.0, ");
+
+	printf("1.0]\n\t\t}");
 }
 
 void serialize_state_to_json(state_t* s) {

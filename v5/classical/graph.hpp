@@ -114,7 +114,6 @@ size_t graph::hash() const {
   	// name hash 
   	boost::hash_combine(hash_, name_.hash());
 		
-
   hashed_ = true;
   return hash_;
 }

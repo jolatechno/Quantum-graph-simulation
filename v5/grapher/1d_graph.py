@@ -7,4 +7,4 @@ with open("res.txt", 'r') as file:
     plots = list(map(float, nums.split(',')))
     plt.plot(np.arange(-len(plots) // 2, len(plots) // 2), plots, linewidth=1)
 
-plt.savefig('graph.png')
+plt.savefig('plots/classical/graph.png')

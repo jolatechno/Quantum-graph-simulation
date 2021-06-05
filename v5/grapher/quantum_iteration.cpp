@@ -52,7 +52,9 @@ int main() {
     for (int i = 1; i < N_ITER + 1; ++i) {
         s->step_all(rule);
         s->reduce_all();
-        s->discard_all(MAX_NUM_GRAPHS);
+
+        if (MAX_NUM_GRAPHS > 0)
+            s->discard_all(MAX_NUM_GRAPHS);
 
         serialize_state_to_json(s);
         

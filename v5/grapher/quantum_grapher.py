@@ -45,7 +45,7 @@ ax.set_title(f'graph probabilty ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
 
-fig.savefig(f'quantum_graphs_probabilities_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig(f'plots/probabilities/p_{ data["rule"] }_{ data["initial state"]["size"] }.png')
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
@@ -55,7 +55,7 @@ ax.set_title(f'number of graphs ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
 
-fig.savefig(f'quantum_graphs_nums_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig(f'plots/proportions/n_{ data["rule"] }_{ data["initial state"]["size"] }.png')
 
 fig = plt.figure()
 ax = plt.axes()
@@ -75,5 +75,4 @@ ax2.plot(total_num, color=color2)
 ax2.set_ylabel("total number of graphs", color=color2)
 ax2.tick_params(axis='y', labelcolor=color2)
 
-
-fig.savefig(f'quantum_graphs_stats_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig(f'plots/stats/s_{ data["rule"] }_{ data["initial state"]["size"] }.png')
