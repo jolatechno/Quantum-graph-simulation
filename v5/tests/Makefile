@@ -1,5 +1,5 @@
 U_CXX=$(CXX) -std=c++2a
-U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
+U_CFLAGS=$(CFLAGS) -DTBB_PREVIEW_CONCURRENT_ORDERED_CONTAINERS -ltbb -fopenmp
 
 targets=$(basename $(wildcard **.cpp))
 

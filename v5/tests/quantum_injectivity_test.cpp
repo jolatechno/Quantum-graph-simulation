@@ -16,7 +16,7 @@ int main() {
 	while (true) {
 		printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
-		std::vector<bool /*char*/> left, right;
+		std::vector<char /*bool*/> left, right;
 	    graph_t* g_1;
 
 	    bool l = false;

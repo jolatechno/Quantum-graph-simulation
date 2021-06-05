@@ -37,11 +37,10 @@ int main() {
 
         printf("\nstep_split_merge_all() ...\n"); s->step_all(rule);
 
-        //if (i % 3 == 0) {
-            printf("reduce_all() ...\n\n"); s->reduce_all(); printf("\n");
-        //}	
-
-        //s->discard_graphs(300);
+        printf("reduce_all() ...\n\n");
+        s->reduce_all();
+        //s->reduce_and_discard(300);
+        printf("\n");
    	}
 
     printf("%ld graph", s->graphs().size());
