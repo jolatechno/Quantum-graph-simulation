@@ -39,7 +39,7 @@ int main() {
 
         printf("reduce_all() ...\n\n");
         s->reduce_all();
-        //s->reduce_and_discard(300);
+        //s->discard_all(300);
         printf("\n");
    	}
 

@@ -4,11 +4,11 @@
 #include "../classical/graph.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
-#include <tbb/concurrent_map.h>
+#include <map>
 
 // check zero probability
 bool inline check_zero(const std::complex<double>& mag) {
-	const double double_tolerance = 1e-30;
+	const double double_tolerance = 1e-6;
 	return std::norm(mag) <= double_tolerance;
 	/*const std::complex<double> zero = 0;
 	return mag == zero;*/
@@ -57,7 +57,10 @@ public:
 	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule);
 
 	// limit graphs
-	void reduce_and_discard(size_t n_graphs);
+	void discard_all(size_t n_graphs);
+
+	// normalize
+	void normalize();
 };
 
 // insert operators 
@@ -66,7 +69,21 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-	graph_map_t buff;
+	for(auto it = graphs_.begin(); it != graphs_.end();) {
+    	// range of similar graphs to delete
+    	auto upper = graphs_.equal_range(it->first).second;
+
+    	for(auto jt = std::next(it); jt != upper; ++jt)
+        	it->second += jt->second;
+
+    	// if the first graphgs has a zero probability, erase the whole range
+    	if (!check_zero(it->second))
+    		++it;
+    	
+    	it = graphs_.unsafe_erase(it, upper);
+    }
+
+	/*graph_map_t buff; // faster, parallel reduce that uses WAY more ram
 	buff.swap(graphs_);
 
 	#pragma omp parallel
@@ -91,42 +108,47 @@ void state::reduce_all() {
     	}
     }
 
-    buff.clear();
+    buff.clear();*/
 }
 
-void state::reduce_and_discard(size_t n_graphs) {
+void state::discard_all(size_t n_graphs) {
 	if (graphs_.size() < n_graphs)
-		return reduce_all();
+		return;
 
-	tbb::concurrent_multimap<double, std::pair<std::shared_ptr<graph_t>, std::complex<double>>> map;
+	/* compute sure threshold proba */
+	double threshold_proba = 0;
+
+	std::map<double, std::pair<std::shared_ptr<graph_t>, std::complex<double>>> map;
+	for (auto & [graph, mag] : graphs_) {
+		double proba = std::norm(mag);
+
+		if (proba > threshold_proba) {
+			map.insert({proba, {graph, mag}});
+
+			if (map.size() == n_graphs + 1) {
+				map.erase(map.begin());
+				printf("\nmap %f %f\n", map.begin()->first, std::prev(map.end())->first);
+				threshold_proba = map.begin()->first;
+			}
+		}
+	}
+
+	graphs_.clear();
+	for (auto & [_, key] : map)
+		graphs_.insert(key);
+}
+
+void state::normalize() {
+	double proba = 0;
+
+	for (auto & [_, mag] : graphs_)
+		proba += std::norm(mag);
 
 	#pragma omp parallel
 	#pragma omp single
-    for(auto it = graphs_.begin(); it != graphs_.end();) {
-    	// range of similar graphs to delete
-    	auto const graph = it->first;
-    	auto const range = graphs_.equal_range(graph);
-
-    	// next iteration
-    	it = range.second;
-
-    	#pragma omp task
-    	{
-    		std::complex<double> acc = 0;
-    		for(auto jt = range.first; jt != range.second; ++jt)
-        		acc += jt->second;
-
-	    	// if the first graphgs has a zero probability, erase the whole range
-	    	if (!check_zero(acc))
-	    		map.insert({std::norm(acc), {graph, acc}});
-    	}
-    }
-
-    graphs_.clear();
-    auto it = map.begin(); 
-    for (int i = 0; i < n_graphs && it != map.end(); ++i, ++it)
-    #pragma omp task
-    	graphs_.insert(it->second);
+	for (auto it = graphs_.begin(); it != graphs_.end(); ++it)
+		#pragma omp task
+		it->second /= proba;
 }
 
 // dynamic 

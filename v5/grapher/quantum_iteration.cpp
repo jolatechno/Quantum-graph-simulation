@@ -9,8 +9,8 @@
 
 #define RULE "erase_create_step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #define SIZE 5
-#define N_ITER 7
-#define MAX_NUM_GRAPHS 1000000
+#define N_ITER 20
+#define MAX_NUM_GRAPHS 20000
 
 int main() {
     auto rule_ = RULE;
@@ -40,8 +40,12 @@ int main() {
     
     for (int i = 1; i < N_ITER + 1; ++i) {
         s->step_all(rule);
-        s->reduce_and_discard(MAX_NUM_GRAPHS);
+        s->reduce_all();
+        s->discard_all(MAX_NUM_GRAPHS);
+
         serialize_state_to_json(s);
+        
+        s->normalize();
    	}
 
     end_json();
