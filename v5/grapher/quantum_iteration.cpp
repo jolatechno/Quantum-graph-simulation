@@ -27,18 +27,22 @@
     #define TOLERANCE 5e-7
 #endif
 
+#ifndef SIZE
+    #define SIZE 5
+#endif
+
 int main() {
-    graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
+    //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
-    /*graph_t* g_1 = new graph(SIZE);
-    g_1->randomize();*/
+    graph_t* g_1 = new graph(SIZE);
+    g_1->randomize();
 
     state_t* s = new state(g_1);
     s->tolerance = TOLERANCE;
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
 
-    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule;
-    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule2;
+    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule;
+    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule2;
 
     std::string rule_ = RULE;
     if (rule_ == "step_split_merge_all") {

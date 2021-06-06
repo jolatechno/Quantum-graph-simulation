@@ -13,14 +13,14 @@ int static num_subset(std::vector<T> const &vect) {
 }
 
 /* create a subset and a probability from the subset indice */
-std::pair<std::vector<graph::op_t>, std::complex<double>> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
-	std::complex<double>& non_merge, std::complex<double>& merge) {
+std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
+	std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	
 	std::vector<graph::op_t> res;
-	std::complex<double> proba = 1;
+	std::complex<long double> proba = 1;
 
 	for (int i = 0; i < split_merge.size(); ++i) {
-		double sign = 1 - 2*(split_merge[i].second % 2);
+		long double sign = 1 - 2*(split_merge[i].second % 2);
 
 		/* i_th bit of subset_numb */
 		if (subset_numb%2) {
@@ -28,7 +28,7 @@ std::pair<std::vector<graph::op_t>, std::complex<double>> static subset(std::vec
 			res.push_back(split_merge[i]);
 
 			/* get proba */
-			proba *= std::complex<double>(merge.real(), sign*merge.imag());
+			proba *= std::complex<long double>(merge.real(), sign*merge.imag());
 		} else
 			proba *= sign*non_merge;
 
@@ -40,17 +40,17 @@ std::pair<std::vector<graph::op_t>, std::complex<double>> static subset(std::vec
 }
 
 //to create a reversible dynamic
-std::pair<std::complex<double>, std::complex<double>> unitary(double teta, double phi) {
-	std::complex<double> non_merge_ = std::cos(teta);
-	std::complex<double> merge_ = std::polar(std::sin(teta), phi);
+std::pair<std::complex<long double>, std::complex<long double>> unitary(long double teta, long double phi) {
+	std::complex<long double> non_merge_ = std::cos(teta);
+	std::complex<long double> merge_ = std::polar(std::sin(teta), phi);
 	return {non_merge_, merge_};
 } 
 
 // split merge a graph
-auto split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto split_merge = get_split_merge(g.get());
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>> graphs;
+		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
 
 		#pragma omp parallel
 		{
@@ -79,10 +79,10 @@ auto split_merge_all(std::complex<double>& non_merge, std::complex<double>& merg
 }
 
 // split merge a graph
-auto erase_create_all(std::complex<double>& non_create, std::complex<double>& create) {
+auto erase_create_all(std::complex<long double>& non_create, std::complex<long double>& create) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto erase_create = get_erase_create(g.get());
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>> graphs;
+		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
 
 		#pragma omp parallel
 		{
@@ -111,7 +111,7 @@ auto erase_create_all(std::complex<double>& non_create, std::complex<double>& cr
 }
 
 //step and split merge
-auto step_split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		g->step();
@@ -119,7 +119,7 @@ auto step_split_merge_all(std::complex<double>& non_merge, std::complex<double>&
 	};
 }
 
-auto reversed_step_split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		auto graphs_ = split_merge_all_(g);
@@ -134,7 +134,7 @@ auto reversed_step_split_merge_all(std::complex<double>& non_merge, std::complex
 }
 
 //step and erase create
-auto step_erase_create_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		g->step();
@@ -142,7 +142,7 @@ auto step_erase_create_all(std::complex<double>& non_merge, std::complex<double>
 	};
 }
 
-auto reversed_step_erase_create_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto reversed_step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		auto graphs_ = erase_create_all_(g);
@@ -157,7 +157,7 @@ auto reversed_step_erase_create_all(std::complex<double>& non_merge, std::comple
 }
 
 // split_merge step and erase create
-auto split_merge_step_erase_create_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto split_merge_step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		split_merge(g.get());
@@ -166,7 +166,7 @@ auto split_merge_step_erase_create_all(std::complex<double>& non_merge, std::com
 	};
 }
 
-auto erase_create_step_split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
+auto erase_create_step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		erase_create(g.get());

@@ -13,7 +13,7 @@ typedef class state state_t;
 class state {
 public:
 	// tolerance
-	double tolerance = 1e-7;
+	long double tolerance = 1e-7;
 
 	// hasher
 	struct graph_hasher {
@@ -44,14 +44,14 @@ public:
 	};
 
 	// type definition
-	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<double>, graph_hasher, graph_comparator> graph_map_t;
+	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<long double>, graph_hasher, graph_comparator> graph_map_t;
 
 private:
 	// main list 
 	graph_map_t graphs_;
 
 	// check zero probas
-	bool inline check_zero(const std::complex<double>& mag) { return std::norm(mag) <= tolerance; }
+	bool inline check_zero(const std::complex<long double>& mag) { return std::norm(mag) <= tolerance; }
 
 public:
 	// single graph constructor 
@@ -67,7 +67,7 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> const &g)> rule);
+	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> const &g)> rule);
 
 	// limit graphs
 	void discard_all(size_t n_graphs);
@@ -98,7 +98,7 @@ void state::reduce_all() {
 
 	    	#pragma omp task
 	    	{
-	    		std::complex<double> acc = 0;
+	    		std::complex<long double> acc = 0;
 	    		for(auto jt = range.first; jt != range.second; ++jt)
 	        		acc += jt->second;
 
@@ -129,11 +129,11 @@ void state::discard_all(size_t n_graphs) {
 		return;
 
 	/* compute sure threshold proba */
-	double threshold_proba = 0;
+	long double threshold_proba = 0;
 
-	std::map<double, std::pair<std::shared_ptr<graph_t>, std::complex<double>>> map;
+	std::map<long double, std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> map;
 	for (auto & [graph, mag] : graphs_) {
-		double proba = std::norm(mag);
+		long double proba = std::norm(mag);
 
 		if (proba > threshold_proba) {
 			map.insert({proba, {graph, mag}});
@@ -151,7 +151,7 @@ void state::discard_all(size_t n_graphs) {
 }
 
 void state::normalize() {
-	double proba = 0;
+	long double proba = 0;
 
 	for (auto & [_, mag] : graphs_)
 		proba += std::norm(mag);
@@ -164,7 +164,7 @@ void state::normalize() {
 }
 
 // dynamic 
-void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> const &g)> rule) {
+void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> const &g)> rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -188,14 +188,14 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 
 //reader
 void size_stat(state_t* s) {
-	double avg = 0;
-	double var = 0;
-	double long correction_factor = 0;
+	long double avg = 0;
+	long double var = 0;
+	long double correction_factor = 0;
 	int numb = s->graphs().size();
 
 	for (auto [graph, mag] : s->graphs()) {
-		double size = graph->size();
-		double proba = std::norm(mag);
+		long double size = graph->size();
+		long double proba = std::norm(mag);
 		avg += size*proba;
 		var += size*size*proba;
 		correction_factor += proba;
@@ -204,7 +204,7 @@ void size_stat(state_t* s) {
 	avg /= correction_factor; var /= correction_factor;
 	var = var - avg*avg <= 0 ? 0 : std::sqrt(var - avg*avg);
 
-	printf("%f±%f", avg, var);
+	printf("%Lf±%Lf", avg, var);
 }
 
 void start_json(graph_t const* initial, char const* rule) {
@@ -231,12 +231,12 @@ void start_json(graph_t const* initial, char const* rule) {
 void serialize_state_to_json(state_t* s) {
 	// final vectors
 	std::vector<unsigned short int> nums;
-	std::vector<double> probas;
+	std::vector<long double> probas;
 
 	auto const graphs = s->graphs();
 	for (auto & [graph, mag] : graphs) {
 		size_t size = graph.get()->size();
-		double proba = std::norm(mag);
+		long double proba = std::norm(mag);
 
 		if (size >= nums.size()) {
 			nums.resize(size + 1, 0);
@@ -253,9 +253,9 @@ void serialize_state_to_json(state_t* s) {
 		printf(", %d", *it);
 
 	// print total probability
-	printf("],\n\t\t\t\"probas\" : [%f", probas[0]);
+	printf("],\n\t\t\t\"probas\" : [%Lf", probas[0]);
 	for (auto it = probas.begin() + 1; it < probas.end(); ++it)
-		printf(", %f", *it);
+		printf(", %Lf", *it);
 
 	// print separator
 	printf("]\n\t\t}");
@@ -269,9 +269,9 @@ void end_json() {
 void print(state_t *s) {
 	for (auto & [graph, mag] : s->graphs()) {
 		if (std::imag(mag) >= 0) {
-	  		printf("%f + i%f   ", std::real(mag), std::imag(mag)); 
+	  		printf("%Lf + i%Lf   ", std::real(mag), std::imag(mag)); 
 	  	} else {
-	  		printf("%f - i%f   ", std::real(mag), -std::imag(mag));
+	  		printf("%Lf - i%Lf   ", std::real(mag), -std::imag(mag));
 	  	}
 	  	print(graph.get());
 	  	printf("\n");

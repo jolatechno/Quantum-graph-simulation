@@ -5,6 +5,7 @@ RULE="\"erase_create_step_split_merge_all\""
 NI=20
 NG=20000
 TOL=5e-7
+SIZE=5
 
 targets=$(basename $(wildcard **.cpp))
 
@@ -50,7 +51,7 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DTOL=$(TOL)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL)
 
 run:
 	nohup ./quantum_iteration.o > res.json 2> /dev/null &
