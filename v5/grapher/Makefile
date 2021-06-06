@@ -28,6 +28,9 @@ fast_reduce:
 slow_compare:
 	$(eval U_CFLAGS+=-DSLOW_COMPARE)
 
+normalize:
+	$(eval U_CFLAGS+=-DNORMALIZE)
+
 #rules
 
 rule_s_sm:

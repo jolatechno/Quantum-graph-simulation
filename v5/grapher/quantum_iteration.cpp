@@ -85,7 +85,9 @@ int main() {
 
         serialize_state_to_json(s);
         
-        s->normalize();
+        #ifdef NORMALIZE
+            s->normalize();
+        #endif
    	}
 
     end_json();
