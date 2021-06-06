@@ -31,6 +31,14 @@
     #define SIZE 5
 #endif
 
+#ifndef TETA
+    #define TETA M_PI_4
+#endif
+
+#ifndef PHI
+    #define PHI M_PI_2
+#endif
+
 int main() {
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
@@ -39,7 +47,7 @@ int main() {
 
     state_t* s = new state(g_1);
     s->tolerance = TOLERANCE;
-    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+    auto [non_merge, merge] = unitary(TETA, PHI);
 
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule;
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule2;

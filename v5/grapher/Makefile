@@ -6,6 +6,8 @@ NI=20
 NG=20000
 TOL=5e-7
 SIZE=5
+TETA=M_PI_4
+PHI=M_PI_2
 
 targets=$(basename $(wildcard **.cpp))
 
@@ -22,8 +24,8 @@ gprof:
 
 #parameters
 
-fast_reduce:
-	$(eval U_CFLAGS+=-DFAST_REDUCE)
+slow_reduce:
+	$(eval U_CFLAGS+=-DSLOW_REDUCE)
 
 slow_compare:
 	$(eval U_CFLAGS+=-DSLOW_COMPARE)
@@ -54,7 +56,7 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
 
 run:
 	nohup ./quantum_iteration.o > res.json 2> /dev/null &

@@ -82,7 +82,21 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-    #ifdef FAST_REDUCE
+    #ifdef SLOW_REDUCE
+		for(auto it = graphs_.begin(); it != graphs_.end();) {
+	    	// range of similar graphs to delete
+	    	auto upper = graphs_.equal_range(it->first).second;
+
+	    	for(auto jt = std::next(it); jt != upper; ++jt)
+	        	it->second += jt->second;
+
+	    	// if the first graphgs has a zero probability, erase the whole range
+	    	if (!check_zero(it->second))
+	    		++it;
+	    	
+	    	it = graphs_.unsafe_erase(it, upper);
+	    }
+    #else
 		graph_map_t buff; // faster, parallel reduce that uses WAY more ram
 		buff.swap(graphs_);
 
@@ -106,20 +120,6 @@ void state::reduce_all() {
 		    	if (!check_zero(acc))
 		    		graphs_.insert({graph, acc});
 	    	}
-	    }
-    #else
-		for(auto it = graphs_.begin(); it != graphs_.end();) {
-	    	// range of similar graphs to delete
-	    	auto upper = graphs_.equal_range(it->first).second;
-
-	    	for(auto jt = std::next(it); jt != upper; ++jt)
-	        	it->second += jt->second;
-
-	    	// if the first graphgs has a zero probability, erase the whole range
-	    	if (!check_zero(it->second))
-	    		++it;
-	    	
-	    	it = graphs_.unsafe_erase(it, upper);
 	    }
     #endif
 }

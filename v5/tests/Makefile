@@ -16,8 +16,8 @@ gprof:
 
 #parameters
 
-fast_reduce:
-	$(eval U_CFLAGS+=-DFAST_REDUCE)
+slow_reduce:
+	$(eval U_CFLAGS+=-DSLOW_REDUCE)
 
 slow_compare:
 	$(eval U_CFLAGS+=-DSLOW_COMPARE)
