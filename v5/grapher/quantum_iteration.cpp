@@ -11,6 +11,10 @@
     #define RULE "erase_create_step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #endif
 
+#ifndef RULE2
+    #define RULE2 ""; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
+#endif
+
 #ifndef N_ITER
     #define N_ITER 20
 #endif
@@ -34,8 +38,9 @@ int main() {
     auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
 
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule;
+    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>>(std::shared_ptr<graph_t> g)> rule2;
 
-    auto rule_ = RULE;
+    std::string rule_ = RULE;
     if (rule_ == "step_split_merge_all") {
         rule = step_split_merge_all(non_merge, merge);
     } else if (rule_ == "step_erase_create_all") {
@@ -47,9 +52,27 @@ int main() {
     } else
         return -1;
 
-    start_json(g_1, rule_);
+    bool rule2_ = true;
+    rule_ = RULE2;
+    if (rule_ == "split_merge_all") {
+        rule2 = split_merge_all(non_merge, merge);
+    } if (rule_ == "erase_create_all") {
+        rule2 = erase_create_all(non_merge, merge);
+    } else
+        rule2_ = false;
+
+    if (rule2_)
+        rule_ += "_";
+
+    rule_ += RULE;
+    start_json(g_1, rule_.c_str());
     
     for (int i = 1; i < N_ITER + 1; ++i) {
+        if (rule2_) {
+            s->step_all(rule2);
+            s->reduce_all();
+        }
+
         s->step_all(rule);
         s->reduce_all();
 

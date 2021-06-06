@@ -14,6 +14,16 @@ verbose:
 gprof:
 	$(eval U_CFLAGS+=-pg)
 
+#parameters
+
+fast_reduce:
+	$(eval U_CFLAGS+=-DFAST_REDUCE)
+
+slow_compare:
+	$(eval U_CFLAGS+=-DSLOW_COMPARE)
+
+#targets
+
 libs:
 	$(U_CXX) -w ../**/**.hpp
 

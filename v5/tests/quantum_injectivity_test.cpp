@@ -75,7 +75,7 @@ loop:
 	    auto rule = step_split_merge_all(non_merge, merge);
 	    auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
 
-		int n_iter = 5;
+		int n_iter = 6;
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(rule);

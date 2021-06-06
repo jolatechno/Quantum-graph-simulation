@@ -4,6 +4,7 @@
 #include "../classical/graph.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
+#include <boost/range/combine.hpp>
 #include <map>
 
 // forward definition of the state type
@@ -24,7 +25,21 @@ public:
 	// comparator
 	struct graph_comparator {
 		bool operator()(std::shared_ptr<graph_t> const &g1, std::shared_ptr<graph_t> const &g2) const {
-			return g1.get()->hash() == g2.get()->hash();
+			#ifdef SLOW_COMPARE
+				if (g1->left != g2->left)
+					return false;
+
+				if (g1->right != g2->right)
+					return false;
+
+				for (auto [n1, n2] : boost::combine(g1->name().nodes(), g2->name().nodes()))
+					if (n1.hash() != n2.hash())
+						return false;
+
+				return true;
+			#else
+				return g1->hash() == g2->hash();
+			#endif
 		}
 	};
 
@@ -130,8 +145,6 @@ void state::discard_all(size_t n_graphs) {
 		}
 	}
 
-	printf("\na\n");
-
 	graphs_.clear();
 	for (auto & [_, key] : map)
 		graphs_.insert(key);
@@ -200,9 +213,7 @@ void start_json(graph_t const* initial, char const* rule) {
 
 	// print initial state staitisic
 	printf("\n\t\"initial state\" : {\n");
-	printf("\t\t\"size\" : %ld,\n", initial->size());
-	printf("\t\t\"left\" : %ld,\n", initial->left.size());
-	printf("\t\t\"right\" : %ld\n", initial->right.size());
+	printf("\t\t\"size\" : %ld\n", initial->size());
 	printf("\t},\n\t\"iterations\" : [");
 
 	// print first iteration statistic

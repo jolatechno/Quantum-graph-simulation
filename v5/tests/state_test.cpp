@@ -71,28 +71,30 @@ loop:
 
 		state_t* s = new state(g_1);
 		auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
-    	auto rule = split_merge_all(non_merge, merge);
-    	auto rule_ = erase_create_all(non_merge, merge);
+    	auto rule = step_split_merge_all(non_merge, merge);
+    	auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
+    	auto rule_ = step_erase_create_all(non_merge, merge);
+    	auto reversed_rule_ = reversed_step_erase_create_all(non_merge, merge);
 
 		s->step_all(rule);
 		s->reduce_all();
 
-		printf("\nmerge_split():\n"); print(s);
+		printf("\nstep_merge_split():\n"); print(s);
 
-		s->step_all(rule);
+		s->step_all(reversed_rule);
 		s->reduce_all();
 
-		printf("\n\nmerge_split():\n"); print(s);
+		printf("\n\nreversed_step_merge_split():\n"); print(s);
 
 		s->step_all(rule_);
 		s->reduce_all();
 
-		printf("\nerase_create():\n"); print(s);
+		printf("\nstep_erase_create():\n"); print(s);
 
-		s->step_all(rule_);
+		s->step_all(reversed_rule_);
 		s->reduce_all();
 
-		printf("\n\nerase_create():\n"); print(s);
+		printf("\n\nreversed_erase_create():\n"); print(s);
 
 		if (check(s)) {
 			printf("\nstate is OK\n");

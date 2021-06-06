@@ -49,7 +49,7 @@ std::pair<std::complex<double>, std::complex<double>> unitary(double teta, doubl
 // split merge a graph
 auto split_merge_all(std::complex<double>& non_merge, std::complex<double>& merge) {
 	return [&](std::shared_ptr<graph_t> const &g) {
-		auto split_merge = get_split_merge((graph_t*)g.get());
+		auto split_merge = get_split_merge(g.get());
 		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<double>>> graphs;
 
 		#pragma omp parallel

@@ -19,10 +19,15 @@ verbose:
 gprof:
 	$(eval U_CFLAGS+=-pg)
 
-#rules
+#parameters
 
 fast_reduce:
 	$(eval U_CFLAGS+=-DFAST_REDUCE)
+
+slow_compare:
+	$(eval U_CFLAGS+=-DSLOW_COMPARE)
+
+#rules
 
 rule_s_sm:
 	$(eval RULE="\"step_split_merge_all\"")
@@ -35,6 +40,9 @@ rule_sm_s_ec:
 
 rule_ec_s_sm:
 	$(eval RULE="\"erase_create_step_split_merge_all\"")
+
+rule_qec_s_sm:
+	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"erase_create_all\"")
 
 #targets
 

@@ -37,6 +37,9 @@ for i in range(n_iterations):
 #print("\nnums ", nums)
 #print("\nprobas ", probas)
 
+
+# graph probabilities
+
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
@@ -44,8 +47,12 @@ ax.plot_surface(iterations, sizes, probas, cmap='viridis', edgecolor='none')
 ax.set_title(f'graph probabilty ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
+ax.set_zlabel('probability')
 
 fig.savefig(f'plots/probabilities/p_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+
+
+# number of graphs 
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
@@ -54,9 +61,13 @@ ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
 ax.set_title(f'number of graphs ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
+ax.set_zlabel('number of graphs')
 
 fig.savefig(f'plots/proportions/n_{ data["rule"] }_{ data["initial state"]["size"] }.png')
 
+
+# graph statistic
+# probability
 fig = plt.figure()
 ax = plt.axes()
 ax.set_xlabel('iterations')
@@ -70,6 +81,7 @@ ax.legend()
 ax.set_ylabel("proba", color=color)
 ax.tick_params(axis='y', labelcolor=color)
 
+# number of graphs
 ax2 = ax.twinx()
 ax2.plot(total_num, color=color2)
 ax2.set_ylabel("total number of graphs", color=color2)
