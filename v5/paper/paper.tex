@@ -321,9 +321,9 @@ class graph {
   	typedef std::pair<unsigned int, op_type_t> op_t;
   	
 	// variables 
-	graph_name_t* name_;
-	std::vector<unsigned int> left_;
-	std::vector<unsigned int> right_;
+	graph_name_t name_;
+	std::vector<char /*bool*/> left;
+	std::vector<char /*bool*/> right;
 
 	// hash
 	size_t mutable hash_ = 0;
@@ -334,15 +334,13 @@ class graph {
 
 \subsubsection{step and reversed\_step()}
 
-The fonction to step all particules uses the fonctions "rotate\_once\_left" and "rotate\_once\_right" which rotate particules if they overflow:
-
 \begin{lstlisting}[style=CStyle]
 	//...
 	void inline step() {
   		hashed_ = false;
 
-  		rotate_once_right(right_);
-  		rotate_once_left(left_);
+  		std::rotate(left.begin(), left.begin() + 1, left.end());
+		std::rotate(right.rbegin(), right.rbegin() + 1, right.rend());
   	}
   	//...
 \end{lstlisting}
@@ -354,8 +352,8 @@ To implement the reverse stpe we simply exchange the roles of "left" and "right"
   	void inline reversed_step() {
   		hashed_ = false;
 
-  		rotate_once_right(left_);
-  		rotate_once_left(right_);
+  		std::rotate(left.rbegin(), left.rbegin() + 1, left.rend());
+		std::rotate(right.begin(), right.begin() + 1, right.end());
   	}
   	//...
 \end{lstlisting}
@@ -369,62 +367,37 @@ To implement the reverse stpe we simply exchange the roles of "left" and "right"
 			return;
 		
 		hashed_ = false;
-
-		// check for last merge
-		if (split_merge.back() == split_merge_t(size() - 1, merge_t)) {
-			name_->merge(size() - 1);
-			overflow_right(left_);	
-			split_merge.pop_back();
-		}
-			
-		// check for first element split 
-		bool first_split = false;
-
-		// and calculating max displacement 
-		int total_displacement = 0;
-		for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
-			if (type == split_t) {
-				++total_displacement;
-			} else
-				--total_displacement;
-
-		// reserve space for nodes
-		name_->reserve(total_displacement);
-
-		// split and merge names
-		for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
-			if (type == split_t) {
-				first_split |= name_->split(pos);
-			} else
-				name_->merge(pos);
-
-		// move particules
-		auto const split_merge_begin = split_merge.rend();
-		int displacement = total_displacement;
-		auto split_merge_it = split_merge.rbegin();
-		for (auto &left_it : left_ | std::ranges::views::reverse) {
-			// check if there are any nodes left
-			for (;split_merge_it->first >= left_it && split_merge_it != split_merge_begin; ++split_merge_it)
-				// check if the node is split or merged
-				if (split_merge_it->second == split_t) {
-						--displacement; // decrement the displacement 
-					} else
-						++displacement; // decrement the displacement
-
-			//check if we can exit
-			if (split_merge_it == split_merge_begin && displacement == 0)
-				break;
-
-			left_it += displacement;
-		}
-	
-
-		/* we than do the exact same thing with particule going to the right, rplacing ">=" at line 42 by a ">" */
 		
-		// finish first split 
+		bool first_split = false;
+		auto const size_ = size();
+		for (auto & [pos, type] : split_merge | std::ranges::views::reverse)
+			if (type == split_t) {
+				first_split |= name_.split(pos);
+
+				// change right
+				right[pos] = false;
+
+				//insert
+				right.insert(right.begin() + pos + 1, true);
+				left.insert(left.begin() + pos + 1, false);
+			} else if (type == merge_t) {
+				name_.merge(pos);
+
+				// next pos
+				unsigned short int next_pos = (pos + 1) % size_;
+					
+				// change left
+				left[next_pos] = true;
+
+				//erase
+				right.erase(right.begin() + pos);
+				left.erase(left.begin() + pos);
+			}
+
+		/* finish first split */
 		if (first_split) {
-			rotate_once_left(left_);
-			rotate_once_left(right_);
+			std::rotate(left.begin(), left.begin() + 1, left.end());
+			std::rotate(right.begin(), right.begin() + 1, right.end());
 		}
 	}
 	//...
@@ -437,40 +410,19 @@ To implement the reverse stpe we simply exchange the roles of "left" and "right"
 void inline graph::erase_create(std::vector<op_t>& erase_create) {
 	//...
 	void inline erase_create(std::vector<op_t>& erase_create) {
-		auto const erase_create_begin = erase_create.rend();
+		if (erase_create.empty())
+			return;
+			
+		hashed_ = false;
 
-		// add and remove left particules
-		auto erase_create_it = erase_create.rbegin();
-		int left_idx = left.size() - 1;
-		if (!left.empty())
-			for (; erase_create_it < erase_create_begin; ++erase_create_it)
-				if (erase_create_it->second == create_t) {
-					// find the position to insert
-					for (; left[left_idx] >= erase_create_it->first && left_idx >= 0; --left_idx) {}
-
-					if (left_idx < 0)
-						break;
-
-					// insert
-					left.insert(left.begin() + left_idx + 1, erase_create_it->first);
-						
-				} else {
-					// find the particule to erase 
-					for (; left[left_idx] > erase_create_it->first && left_idx >= 0; --left_idx) {}
-
-					if (left_idx < 0)
-						break;
-
-					// erase
-					left.erase(left.begin() + left_idx);
-					--left_idx;
-				}
-
-		// add the particule at the begin
-		for (; erase_create_it < erase_create_begin; ++erase_create_it)
-			left.insert(left.begin(), erase_create_it->first);
-
-		/* add and remove right particules */
+		for (auto & [pos, type] : erase_create)
+			if (type == erase_t) {
+				left[pos] = false;
+				right[pos] = false;
+			} else if (type == create_t) {
+				left[pos] = true;
+				right[pos] = true;
+			}
 	}
 	//...
 \end{lstlisting}
@@ -485,29 +437,35 @@ To hash graphs we simply combine all the positions of partricules going in one d
 		if (hashed_)
 			return hash_;
 
+		// save memory 
+		left.shrink_to_fit();
+		right.shrink_to_fit();
+
 		hash_ = 0;
 		boost::hash<unsigned int> hasher;
 
 		// left hash 
-		for (auto &l : left_)
-			boost::hash_combine(hash_, l);
+		auto const size_ = size();
+		for (short int i = 0; i < size_; ++i)
+			if (left[i])
+				boost::hash_combine(hash_, i);
 
 	 	 // separator 
 	  	boost::hash_combine(hash_, separator);
 
 	  	// right hash 
-	  	for (auto &r : right_)
-	   		boost::hash_combine(hash_, r);
+	  	for (short int i = 0; i < size_; ++i)
+			if (right[i])
+				boost::hash_combine(hash_, i);
 
 	  	// separator 
 	  	boost::hash_combine(hash_, separator);
 
 	  	// name hash 
-	  	boost::hash_combine(hash_, name_->hash());
+	  	boost::hash_combine(hash_, name_.hash());
 			
-
-	  hashed_ = true;
-	  return hash_;
+	  	hashed_ = true;
+	  	return hash_;
 	}
 	//...
 }
@@ -515,44 +473,40 @@ To hash graphs we simply combine all the positions of partricules going in one d
 
 \subsubsection{get\_split\_merges()}
 
-To get the list of all indeces of splits and merges, we iterate through both the "left" and "right" positions, iterating the one that is the smallest so that it always converges towars positions that match (or are one apart for merges):
-
 \begin{lstlisting}[style=CStyle]
 /* function to get all split and merges */
 std::vector<graph::split_merge_t> inline get_split_merge(graph_t* graph) {
-	std::vector<graph::op_t> split_merge;
+	std::vector<graph::op_t> split_merges;
+	
+	auto const size_ = graph.size();
+	for (int i = 0; i < size_; ++i)
+		if (graph.left[i] && graph.right[i]) {
+			split_merges.push_back({i, graph.split_t});
+		} else {
+			// next pos
+			unsigned short int next_pos = (i + 1) % size_; 
 
-	unsigned int const last_idx = graph->size() - 1;
+			if (graph.left[i] && graph.right[next_pos] && !graph.left[next_pos])
+				split_merges.push_back({i, graph.merge_t});
+		}
 
-	auto left_it = graph->left().begin();
-	auto right_it = graph->right().begin();
-	bool first_or_last_split = *left_it == *right_it && *left_it == 0;
-	first_or_last_split |= graph->left().back() == last_idx && graph->right().back() == last_idx;
+	return split_merges;
+}
+\end{lstlisting}
 
-	while (right_it < right_end = graph->right().end() && left_it < graph->left().end())
-		if (*left_it == *right_it) {
-			// check for split
-			split_merge.push_back({*left_it, graph->split_t});
+\subsubsection{get\_erase\_create()}
 
-			++right_it;
-			++left_it;
-		} else if (*left_it < *right_it) {
-			// chedk for merges
-			if (*left_it == *right_it - 1)
-				if (left_it == graph->left().end() - 1) {
-					split_merge.push_back({*left_it, graph->merge_t});
-				} else if (*(left_it + 1) != *right_it)
-					split_merge.push_back({*left_it, graph->merge_t});
+\begin{lstlisting}[style=CStyle]
+std::vector<graph::op_t> inline get_erase_create(graph_t const &graph) {
+	std::vector<graph::op_t> create_erases;
 
-			++left_it;
-		} else
-			++right_it;
-		
-	if (!first_or_last_split)
-		if (graph->left().back() == last_idx && graph->right()[0] == 0)
-			split_merge.push_back({last_idx, graph->merge_t});
+	for (int i = 0; i < graph.size(); ++i)
+		if (graph.left[i] && graph.right[i]) {
+			create_erases.push_back({i, graph.erase_t});
+		} else if (!graph.left[i] && !graph.right[i])
+			create_erases.push_back({i, graph.create_t});
 
-	return split_merge;
+	return create_erases;
 }
 \end{lstlisting}
 
@@ -590,19 +544,30 @@ class state {
 \begin{lstlisting}[style=CStyle]
 	//...
 	void reduce_all() {
-		for(auto it = graphs_.begin(); it != graphs_.end();) {
-			// range of similar graphs to delete
-			auto upper = graphs_.equal_range(it->first).second;
+		graph_map_t buff; // faster, parallel reduce that uses WAY more ram
+		buff.swap(graphs_);
 
-			for(auto jt = std::next(it); jt != upper; ++jt)
-		    	it->second += jt->second;
+		#pragma omp parallel
+		#pragma omp single
+	    for(auto it = buff.begin(); it != buff.end();) {
+	    	// range of similar graphs to delete
+	    	auto const graph = it->first;
+	    	auto const range = buff.equal_range(graph);
 
-			// if the first graphgs has a zero probability, erase the whole range
-			if (!check_zero(it->second))
-				++it;
-			
-			it = graphs_.unsafe_erase(it, upper);
-		}
+	    	// next iteration
+	    	it = range.second;
+
+	    	#pragma omp task
+	    	{
+	    		std::complex<long double> acc = 0;
+	    		for(auto jt = range.first; jt != range.second; ++jt)
+	        		acc += jt->second;
+
+		    	// if the first graphgs has a zero probability, erase the whole range
+		    	if (!check_zero(acc))
+		    		graphs_.insert({graph, acc});
+	    	}
+	    }
 	}
 	//...
 \end{lstlisting}
@@ -622,7 +587,7 @@ We pass a function "rule" that returns a vector of graphs and magnitude obtained
 		for (auto & [graph, mag] : buff)
 		#pragma omp task
 		{
-			auto graphs = rule(graph);
+			auto const graphs = rule(graph);
 			for (auto & [graph_, mag_] : graphs)
 			#pragma task
 	  			graphs_.insert({graph_, mag_ * mag});

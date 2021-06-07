@@ -25,7 +25,9 @@ public:
 	// comparator
 	struct graph_comparator {
 		bool operator()(std::shared_ptr<graph_t> const &g1, std::shared_ptr<graph_t> const &g2) const {
-			#ifdef SLOW_COMPARE
+			#ifndef SLOW_COMPARE
+				return g1->hash() == g2->hash();
+			#else
 				if (g1->left != g2->left)
 					return false;
 
@@ -37,8 +39,6 @@ public:
 						return false;
 
 				return true;
-			#else
-				return g1->hash() == g2->hash();
 			#endif
 		}
 	};
@@ -82,21 +82,7 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-    #ifdef SLOW_REDUCE
-		for(auto it = graphs_.begin(); it != graphs_.end();) {
-	    	// range of similar graphs to delete
-	    	auto upper = graphs_.equal_range(it->first).second;
-
-	    	for(auto jt = std::next(it); jt != upper; ++jt)
-	        	it->second += jt->second;
-
-	    	// if the first graphgs has a zero probability, erase the whole range
-	    	if (!check_zero(it->second))
-	    		++it;
-	    	
-	    	it = graphs_.unsafe_erase(it, upper);
-	    }
-    #else
+    #ifndef SLOW_REDUCE
 		graph_map_t buff; // faster, parallel reduce that uses WAY more ram
 		buff.swap(graphs_);
 
@@ -120,6 +106,20 @@ void state::reduce_all() {
 		    	if (!check_zero(acc))
 		    		graphs_.insert({graph, acc});
 	    	}
+	    }
+    #else
+		for(auto it = graphs_.begin(); it != graphs_.end();) {
+	    	// range of similar graphs to delete
+	    	auto upper = graphs_.equal_range(it->first).second;
+
+	    	for(auto jt = std::next(it); jt != upper; ++jt)
+	        	it->second += jt->second;
+
+	    	// if the first graphgs has a zero probability, erase the whole range
+	    	if (!check_zero(it->second))
+	    		++it;
+	    	
+	    	it = graphs_.unsafe_erase(it, upper);
 	    }
     #endif
 }
@@ -174,11 +174,19 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 	#pragma omp task
   	{
   		auto const graphs = rule(graph);
+
+  		#pragma omp barrier
+  		if (graph.hash() == buff.begin()->first.hash())
+  			printf("created graphs..\n"); // suspecting error here
+
   		for (auto & [graph_, mag_] : graphs)
   		#pragma task
   		{
   			graphs_.insert({graph_, mag_ * mag});
   		}
+  		#pragma omp barrier
+  		if (graph.hash() == buff.begin()->first.hash())
+  			printf("..OK\n"); // suspecting error here
   	}
 }
 

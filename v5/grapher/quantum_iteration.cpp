@@ -81,11 +81,11 @@ int main() {
     
     for (int i = 1; i < N_ITER + 1; ++i) {
         if (rule2_) {
-            s->step_all(rule2);
+            printf("step...\n"); s->step_all(rule2); printf("...OK\n"); //supecting errors here
             s->reduce_all();
         }
 
-        s->step_all(rule);
+        printf("step...\n"); s->step_all(rule); printf("...OK\n"); //supecting errors here
         s->reduce_all();
 
         if (MAX_NUM_GRAPHS > 0)
