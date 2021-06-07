@@ -57,7 +57,7 @@ public:
 	// single graph constructor 
 	state(graph_t &g) {
 		// add graph 
-		graphs_.insert({std::shared_ptr<graph_t>(&g), {1, 0}});
+		graphs_.insert({std::make_shared<graph_t>(g), {1, 0}});
 	}
 
 	//getter
