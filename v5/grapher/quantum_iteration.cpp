@@ -39,6 +39,14 @@
     #define PHI M_PI_2
 #endif
 
+#ifndef TETA2
+    #define TETA2 TETA
+#endif
+
+#ifndef PHI2
+    #define PHI2 PHI
+#endif
+
 int main() {
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
@@ -48,6 +56,7 @@ int main() {
     state_t* s = new state(g_1);
     s->tolerance = TOLERANCE;
     auto [non_merge, merge] = unitary(TETA, PHI);
+    auto [non_create, create] = unitary(TETA2, PHI2);
 
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule;
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule2;
@@ -65,11 +74,17 @@ int main() {
         return -1;
 
     rule_ = RULE2;
-    if (rule_ == "split_merge_all") {
-        rule2 = split_merge_all(non_merge, merge);
+    if (rule_ == "step_split_merge_all") {
+        rule = step_split_merge_all(non_create, create);
+        rule_ += "_";
+    } else if (rule_ == "step_erase_create_all") {
+        rule = step_erase_create_all(non_create, create);
+        rule_ += "_";
+    } else if (rule_ == "split_merge_all") {
+        rule2 = split_merge_all(non_create, create);
         rule_ += "_";
     } if (rule_ == "erase_create_all") {
-        rule2 = erase_create_all(non_merge, merge);
+        rule2 = erase_create_all(non_create, create);
         rule_ += "_";
     } else
         rule2 = rule;
