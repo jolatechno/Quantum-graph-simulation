@@ -162,6 +162,8 @@ void state::normalize() {
 	for (auto & [_, mag] : graphs_)
 		proba += std::norm(mag);
 
+	proba = std::sqrt(proba);
+
 	#pragma omp parallel
 	#pragma omp single
 	for (auto it = graphs_.begin(); it != graphs_.end(); ++it)
@@ -190,11 +192,8 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 // randomize
 void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
 	auto const random_complex = [&]() {
-		std::uniform_real_distribution<long double> unif(-1, 1);
-	    std::default_random_engine re;
-
-		long double real = unif(re);
-		long double imag = unif(re);
+		long double real = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
+		long double imag = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
 		return std::complex<long double>(real, imag);
 	};
 

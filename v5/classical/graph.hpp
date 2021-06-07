@@ -2,7 +2,6 @@
 
 #include "graph_name.hpp"
 #include <cstdlib>
-#include <ctime>
 #include <ranges>
 
 // forward declaration of the graph_t type 
@@ -181,7 +180,6 @@ void graph::randomize() {
 	hashed_ = false;
 
 	// random genearator 
-	std::srand(std::time(nullptr)); // use current time as seed for random generator
     for (int i = 0; i < size(); ++i) {
     	left[i] = std::rand() % 2;
     	right[i] = std::rand() % 2;

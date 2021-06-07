@@ -3,6 +3,7 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -20,6 +21,8 @@
 #endif
 
 int main() {
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+    
     graph_t g_1 = graph_t({true, false, false, true, true},  {true, false, true, false, true});
 
     /*graph_t* g_1 = new graph(7);

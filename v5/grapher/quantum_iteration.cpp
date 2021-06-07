@@ -3,6 +3,7 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -55,14 +56,17 @@ int main() {
     // 
     // !!!!!!!!!!!!!!!!!!!!!!
 
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
-    /*graph_t g_1 = graph_t(SIZE);
+    graph_t g_1 = graph_t(SIZE);
     g_1.randomize();
+    state_t* s = new state(g_1);
 
-    state_t* s = new state(g_1);*/
-    state_t* s = new state();
-    s->randomize(3, 8, 3);
+    /*state_t* s = new state();
+    s->randomize(3, 8, 3);*/
+
     s->tolerance = TOLERANCE;
     auto [non_merge, merge] = unitary(TETA, PHI);
     auto [non_create, create] = unitary(TETA2, PHI2);

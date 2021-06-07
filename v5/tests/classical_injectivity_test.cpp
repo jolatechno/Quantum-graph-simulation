@@ -1,8 +1,11 @@
 #include "../classical/rules.hpp"
 #include "../classical/graph.hpp"
 #include "../classical/checks.hpp"
+#include <ctime>
 
 int main() {
+  std::srand(std::time(nullptr)); // use current time as seed for random generator
+
   #pragma omp parallel
   #pragma omp single
   for (int j = 0; j < 1000; ++j)

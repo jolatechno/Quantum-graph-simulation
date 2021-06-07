@@ -3,11 +3,14 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
 int main() {
+	std::srand(std::time(nullptr)); // use current time as seed for random generator
+	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
 	printf("you can also input 'r' to create a random graph of size 6\n");
