@@ -50,6 +50,9 @@ rule_ec_s_sm:
 rule_qec_s_sm:
 	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"erase_create_all\"")
 
+rule_s_ec_s_sm:
+	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"step_erase_create_all\"")
+
 #targets
 
 libs:

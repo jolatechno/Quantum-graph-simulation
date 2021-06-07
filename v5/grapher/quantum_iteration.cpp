@@ -75,10 +75,10 @@ int main() {
 
     rule_ = RULE2;
     if (rule_ == "step_split_merge_all") {
-        rule = step_split_merge_all(non_create, create);
+        rule2 = step_split_merge_all(non_create, create);
         rule_ += "_";
     } else if (rule_ == "step_erase_create_all") {
-        rule = step_erase_create_all(non_create, create);
+        rule2 = step_erase_create_all(non_create, create);
         rule_ += "_";
     } else if (rule_ == "split_merge_all") {
         rule2 = split_merge_all(non_create, create);
