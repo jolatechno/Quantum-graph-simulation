@@ -168,25 +168,22 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 	graph_map_t buff;
 	buff.swap(graphs_);
 
-	#pragma omp parallel
-	#pragma omp single
+	//#pragma omp parallel
+	//#pragma omp single
   	for (auto & [graph, mag] : buff)
-	#pragma omp task
+	//#pragma omp task
   	{
+  		printf(" a");
   		auto const graphs = rule(graph);
-
-  		#pragma omp barrier
-  		if (graph.hash() == buff.begin()->first.hash())
-  			printf("created graphs..\n"); // suspecting error here
+  		printf("b ");
 
   		for (auto & [graph_, mag_] : graphs)
-  		#pragma task
-  		{
+  		//#pragma task
+  		{	
+  			printf(" c");
   			graphs_.insert({graph_, mag_ * mag});
+  			printf("d ");
   		}
-  		#pragma omp barrier
-  		if (graph.hash() == buff.begin()->first.hash())
-  			printf("..OK\n"); // suspecting error here
   	}
 }
 
