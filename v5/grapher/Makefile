@@ -62,4 +62,4 @@ $(targets):
 	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
 
 run:
-	nohup bash -c "time ./quantum_iteration.o 2> err.txt > res.json" 2> time.txt &
+	nohup bash -c "time ( ./quantum_iteration.o 2> err.txt > res.json ) 2> time.txt"  2> /dev/null &

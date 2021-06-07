@@ -9,6 +9,13 @@ const int n_iter = 20;
 #endif
 
 int main() {
+  // !!!!!!!!!!!!!!!!!!!!!!
+  //
+  // making stdout unbuffered so it can get redirected to file even if there is an error
+  std::setvbuf(stdout, NULL, _IONBF, 0);
+  // 
+  // !!!!!!!!!!!!!!!!!!!!!!
+
   std::vector<float> sizes(2*N_ITER + 1, 0);
 
   for (int j = 0; j < n_iter - 1; ++j) {

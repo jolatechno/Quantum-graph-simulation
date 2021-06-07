@@ -48,6 +48,13 @@
 #endif
 
 int main() {
+    // !!!!!!!!!!!!!!!!!!!!!!
+    //
+    // making stdout unbuffered so it can get redirected to file even if there is an error
+    std::setvbuf(stdout, NULL, _IONBF, 0);
+    // 
+    // !!!!!!!!!!!!!!!!!!!!!!
+
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
     graph_t g_1 = graph_t(SIZE);
