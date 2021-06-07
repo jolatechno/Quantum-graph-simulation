@@ -83,7 +83,7 @@ int main() {
     } else if (rule_ == "split_merge_all") {
         rule2 = split_merge_all(non_create, create);
         rule_ += "_";
-    } if (rule_ == "erase_create_all") {
+    } else if (rule_ == "erase_create_all") {
         rule2 = erase_create_all(non_create, create);
         rule_ += "_";
     } else
@@ -93,7 +93,11 @@ int main() {
     start_json(g_1, rule_.c_str());
     
     for (int i = 1; i < N_ITER + 1; ++i) {
-        s->step_all(rule);
+        if (i%2) {
+            s->step_all(rule);
+        } else
+            s->step_all(rule2);
+
         s->reduce_all();
 
         if (MAX_NUM_GRAPHS > 0)
@@ -104,8 +108,6 @@ int main() {
         #ifdef NORMALIZE
             s->normalize();
         #endif
-
-        std::swap(rule, rule2);
    	}
 
     end_json();
