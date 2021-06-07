@@ -55,9 +55,9 @@ private:
 
 public:
 	// single graph constructor 
-	state(graph_t* g) {
+	state(graph_t &g) {
 		// add graph 
-		graphs_.insert({std::shared_ptr<graph_t>(g), {1, 0}});
+		graphs_.insert({std::shared_ptr<graph_t>(&g), {1, 0}});
 	}
 
 	//getter
@@ -168,22 +168,16 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 	graph_map_t buff;
 	buff.swap(graphs_);
 
-	//#pragma omp parallel
-	//#pragma omp single
+	#pragma omp parallel
+	#pragma omp single
   	for (auto & [graph, mag] : buff)
-	//#pragma omp task
+	#pragma omp task
   	{
-  		printf(" a");
   		auto const graphs = rule(graph);
-  		printf("b ");
 
   		for (auto & [graph_, mag_] : graphs)
   		//#pragma task
-  		{	
-  			printf(" c");
   			graphs_.insert({graph_, mag_ * mag});
-  			printf("d ");
-  		}
   	}
 }
 
@@ -212,22 +206,22 @@ void size_stat(state_t* s) {
 	printf("%Lf±%Lf", avg, var);
 }
 
-void start_json(graph_t const* initial, char const* rule) {
+void start_json(graph_t const &initial, char const* rule) {
 	// print rule
 	printf("{\n\t\"rule\" : \"%s\",", rule);
 
 	// print initial state staitisic
 	printf("\n\t\"initial state\" : {\n");
-	printf("\t\t\"size\" : %ld\n", initial->size());
+	printf("\t\t\"size\" : %ld\n", initial.size());
 	printf("\t},\n\t\"iterations\" : [");
 
 	// print first iteration statistic
 	printf("\n\t\t{\n\t\t\t\"nums\" : [");
-	for (int i = 0; i < initial->size(); ++i)
+	for (int i = 0; i < initial.size(); ++i)
 		printf("0, ");
 
 	printf("1],\n\t\t\t\"probas\" : [");
-	for (int i = 0; i < initial->size(); ++i)
+	for (int i = 0; i < initial.size(); ++i)
 		printf("0.0, ");
 
 	printf("1.0]\n\t\t}");
@@ -278,7 +272,7 @@ void print(state_t *s) {
 	  	} else {
 	  		printf("%Lf - i%Lf   ", std::real(mag), -std::imag(mag));
 	  	}
-	  	print(graph.get());
+	  	print(*graph);
 	  	printf("\n");
 	}
 }

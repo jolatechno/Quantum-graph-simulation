@@ -29,7 +29,7 @@ int main() {
 		printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
 		std::vector<char /*bool*/> left, right;
-	    graph_t* g_1;
+	    graph_t g_1;
 
 	    bool l = false;
 	    bool r = false;
@@ -68,15 +68,15 @@ int main() {
 	    }
 
 read:
-    	g_1 = new graph(left, right);
+    	g_1 = graph_t(left, right);
     	printf("\nread from input*: "); print(g_1);
     	goto loop;
 
 random:
-    	g_1 = new graph(6);
+    	g_1 = graph_t(6);
     	printf("new graph(6):  "); print(g_1);
 
-    	g_1->randomize();
+    	g_1.randomize();
     	printf("\nrandomize()*:  "); print(g_1); printf("\n");
 
 loop:

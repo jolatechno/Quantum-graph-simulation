@@ -23,7 +23,7 @@ bool check(state_t* s) {
 		}*/
 
 		//check graph
-		if (!graph_checker(it->first.get()))
+		if (!graph_checker(*it->first))
 			return false;
 
     	//iterate over all graphs

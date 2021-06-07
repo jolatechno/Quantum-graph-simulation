@@ -42,8 +42,8 @@
 int main() {
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
-    graph_t* g_1 = new graph(SIZE);
-    g_1->randomize();
+    graph_t g_1 = graph_t(SIZE);
+    g_1.randomize();
 
     state_t* s = new state(g_1);
     s->tolerance = TOLERANCE;

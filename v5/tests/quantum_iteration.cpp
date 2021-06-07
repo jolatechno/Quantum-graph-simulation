@@ -20,7 +20,7 @@
 #endif
 
 int main() {
-    graph_t* g_1 = new graph({true, false, false, true, true},  {true, false, true, false, true});
+    graph_t g_1 = graph_t({true, false, false, true, true},  {true, false, true, false, true});
 
     /*graph_t* g_1 = new graph(7);
     g_1->randomize();*/

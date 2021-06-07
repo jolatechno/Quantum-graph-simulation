@@ -9,23 +9,23 @@ int main() {
   #pragma omp task
   {
     
-    graph_t* g = new graph(10);
+    graph_t g = graph_t(10);
 
     for (int i = 0; i < 20; ++i) {
-      g->randomize();
-      graph_t* c = new graph_t(*g);
+      g.randomize();
+      graph_t c = g;
 
-      g->step();
-      g->reversed_step();
-      split_merge(*g);
+      g.step();
+      g.reversed_step();
+      split_merge(g);
 
-      graph_t* c2 = new graph_t(*g);
+      graph_t c2 = g;
 
-      split_merge(*c2);
-      erase_create(*c2);
-      erase_create(*c2);
+      split_merge(c2);
+      erase_create(c2);
+      erase_create(c2);
 
-      if (c->hash() != c2->hash() /*!g->equal(c)*/){
+      if (c.hash() != c2.hash() /*!g->equal(c)*/){
         print(c2); printf("\n");
         print(c); printf("\n");
         throw;

@@ -35,7 +35,9 @@ private:
 	bool mutable hashed_ = false;
 
 public:
-	// normal constructors 
+	// normal constructors
+	graph() {}
+
 	graph(short int n) {
 		left = std::vector<char /*bool*/>(n, false);
 		right = std::vector<char /*bool*/>(n, false);
@@ -191,14 +193,14 @@ void graph::randomize() {
 //---------------------------------------------------------
 
 // debuging 
-void print(graph_t const *g) {
+void print(graph_t const &g) {
 	// iterate through particules positions 
-	auto left_it = g->left.begin();
-	auto right_it = g->right.begin();
+	auto left_it = g.left.begin();
+	auto right_it = g.right.begin();
 
-	for(unsigned short int i = 0; i < g->size(); ++i) {
-		printf("-|%c|", g->left[i] ? '<' : ' ');
-		print(g->name(), i);
-		printf("|%c|-", g->right[i] ? '>' : ' ');
+	for(unsigned short int i = 0; i < g.size(); ++i) {
+		printf("-|%c|", g.left[i] ? '<' : ' ');
+		print(g.name(), i);
+		printf("|%c|-", g.right[i] ? '>' : ' ');
 	}
 }
