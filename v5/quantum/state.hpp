@@ -54,14 +54,16 @@ private:
 	bool inline check_zero(const std::complex<long double>& mag) { return std::norm(mag) <= tolerance; }
 
 public:
-	// single graph constructor 
+	// constructor
+	state() {}
+
 	state(graph_t &g) {
 		// add graph 
 		graphs_.insert({std::make_shared<graph_t>(g), {1, 0}});
 	}
 
 	//getter
-	auto const &graphs() { return graphs_; }
+	auto const &graphs() const { return graphs_; }
 
 	// reduce
 	void reduce_all();
@@ -74,6 +76,9 @@ public:
 
 	// normalize
 	void normalize();
+
+	// randomize
+	void randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs);
 };
 
 // insert operators 
@@ -181,6 +186,19 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
   	}
 }
 
+// randomize
+void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
+	for (int size = min_graph_size; size < max_graph_size; ++size)
+		for (int j = 0; j < num_graphs; ++j) {
+			graph_t g(size);
+			g.randomize();
+			graphs_.insert({std::make_shared<graph_t>(g), {1, 0}});
+		}
+
+	reduce_all();
+	normalize();
+}
+
 //---------------------------------------------------------
 // non member functions
 //---------------------------------------------------------
@@ -206,28 +224,10 @@ void size_stat(state_t* s) {
 	printf("%Lf±%Lf", avg, var);
 }
 
-void start_json(graph_t const &initial, char const* rule) {
-	// print rule
-	printf("{\n\t\"rule\" : \"%s\",", rule);
+void serialize_state_to_json(state_t const *s, bool first) {
+	if (!first)
+		printf(",");
 
-	// print initial state staitisic
-	printf("\n\t\"initial state\" : {\n");
-	printf("\t\t\"size\" : %ld\n", initial.size());
-	printf("\t},\n\t\"iterations\" : [");
-
-	// print first iteration statistic
-	printf("\n\t\t{\n\t\t\t\"nums\" : [");
-	for (int i = 0; i < initial.size(); ++i)
-		printf("0, ");
-
-	printf("1],\n\t\t\t\"probas\" : [");
-	for (int i = 0; i < initial.size(); ++i)
-		printf("0.0, ");
-
-	printf("1.0]\n\t\t}");
-}
-
-void serialize_state_to_json(state_t* s) {
 	// final vectors
 	std::vector<unsigned short int> nums;
 	std::vector<long double> probas;
@@ -247,7 +247,7 @@ void serialize_state_to_json(state_t* s) {
 	}
 
 	// print number of graphs
-	printf(",\n\t\t{\n\t\t\t\"nums\" : [%d", nums[0]);
+	printf("\n\t\t{\n\t\t\t\"nums\" : [%d", nums[0]);
 	for (auto it = nums.begin() + 1; it < nums.end(); ++it)
 		printf(", %d", *it);
 
@@ -258,6 +258,18 @@ void serialize_state_to_json(state_t* s) {
 
 	// print separator
 	printf("]\n\t\t}");
+}
+
+void start_json(state_t const *s, char const* rule) {
+	// print rule
+	printf("{\n\t\"rule\" : \"%s\",", rule);
+
+	printf("\n\t\"iterations\" : [");
+	serialize_state_to_json(s, true);
+}
+
+void serialize_state_to_json(state_t const *s) {
+	serialize_state_to_json(s, false);
 }
 
 void end_json() {

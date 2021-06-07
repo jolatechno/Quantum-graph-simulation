@@ -3,6 +3,7 @@
 import json
 from matplotlib import pyplot as plt 
 import numpy as np
+import os
 
 with open('res.json') as f:
   data = json.load(f)
@@ -36,7 +37,7 @@ for i in range(n_iterations):
 	# compute nums
 	nums_ = data["iterations"][i]["nums"]
 	total_num[i] = sum(nums_)
-	nums_ /= total_num[i]
+	#nums_ /= total_num[i]
 
 	#compute sizes
 	sizes_ = np.arange(0, len(nums_))
@@ -52,6 +53,12 @@ for i in range(n_iterations):
 #print("\nnums ", nums)
 #print("\nprobas ", probas)
 
+# find name
+for i in range(1000000):
+	name = f"{ i }_{ data['rule'] }.png"
+	if not os.path.exists("plots/probabilities/" + name):
+		break
+
 
 # graph probabilities
 
@@ -64,7 +71,7 @@ ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
 ax.set_zlabel('probability')
 
-fig.savefig(f'plots/probabilities/p_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig("plots/probabilities/" + name)
 
 
 # number of graphs 
@@ -72,13 +79,13 @@ fig.savefig(f'plots/probabilities/p_{ data["rule"] }_{ data["initial state"]["si
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
-ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
+ax.plot_surface(iterations, sizes, np.log10(1 + nums), cmap='viridis', edgecolor='none')
 ax.set_title(f'number of graphs ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
-ax.set_zlabel('number of graphs')
+ax.set_zlabel('log10(1 + number of graphs)')
 
-fig.savefig(f'plots/proportions/n_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig("plots/number/" + name)
 
 
 # graph statistic
@@ -102,7 +109,7 @@ ax2.plot(total_num, color=color2)
 ax2.set_ylabel("total number of graphs", color=color2)
 ax2.tick_params(axis='y', labelcolor=color2)
 
-fig.savefig(f'plots/stats/s_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig("plots/stats/" + name)
 
 
 #graph sizes
@@ -115,4 +122,4 @@ ax.set_title(f'graph average size ({ data["rule"] })')
 ax.errorbar(iterations_list, avg_size, std_dev_size,
 						capsize=2, elinewidth=1, markeredgewidth=2)
 
-fig.savefig(f'plots/sizes/as_{ data["rule"] }_{ data["initial state"]["size"] }.png')
+fig.savefig("plots/sizes/" + name)

@@ -57,10 +57,12 @@ int main() {
 
     //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
     
-    graph_t g_1 = graph_t(SIZE);
+    /*graph_t g_1 = graph_t(SIZE);
     g_1.randomize();
 
-    state_t* s = new state(g_1);
+    state_t* s = new state(g_1);*/
+    state_t* s = new state();
+    s->randomize(3, 8, 3);
     s->tolerance = TOLERANCE;
     auto [non_merge, merge] = unitary(TETA, PHI);
     auto [non_create, create] = unitary(TETA2, PHI2);
@@ -97,7 +99,7 @@ int main() {
         rule2 = rule;
 
     rule_ += RULE;
-    start_json(g_1, rule_.c_str());
+    start_json(s, rule_.c_str());
     
     for (int i = 1; i < N_ITER + 1; ++i) {
         if (i%2) {
