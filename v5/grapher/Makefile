@@ -41,14 +41,11 @@ rule_s_sm:
 rule_s_ec:
 	$(eval RULE="\"step_erase_create_all\"")
 
-rule_sm_s_ec:
-	$(eval RULE="\"split_merge_step_erase_create_all\"")
-
 rule_ec_s_sm:
-	$(eval RULE="\"erase_create_step_split_merge_all\"")
-
-rule_qec_s_sm:
 	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"erase_create_all\"")
+
+rule_s_sm_ec:
+	$(eval RULE="\"erase_create_all\"" -DRULE2="\"step_split_merge_all\"")
 
 rule_s_ec_s_sm:
 	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"step_erase_create_all\"")

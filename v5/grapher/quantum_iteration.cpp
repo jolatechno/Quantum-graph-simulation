@@ -9,7 +9,7 @@
 #include <cmath>
 
 #ifndef RULE
-    #define RULE "erase_create_step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
+    #define RULE "step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #endif
 
 #ifndef RULE2
@@ -79,10 +79,10 @@ int main() {
         rule = step_split_merge_all(non_merge, merge);
     } else if (rule_ == "step_erase_create_all") {
         rule = step_erase_create_all(non_merge, merge);
-    } else if (rule_ == "split_merge_step_erase_create_all") {
-        rule = split_merge_step_erase_create_all(non_merge, merge);
-    } else if (rule_ == "erase_create_step_split_merge_all") {
-        rule = erase_create_step_split_merge_all(non_merge, merge);
+    } else if (rule_ == "split_merge_all") {
+        rule = split_merge_all(non_create, create);
+    } else if (rule_ == "erase_create_all") {
+        rule = erase_create_all(non_create, create);
     } else
         return -1;
 
