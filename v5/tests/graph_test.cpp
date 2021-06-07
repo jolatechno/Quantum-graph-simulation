@@ -76,7 +76,7 @@ loop:
 
     //--------------
 
-    auto split_merge = get_split_merge(g_1);
+    auto split_merge = get_split_merge(*g_1);
     printf("\n\n"); print_split_merge(split_merge);
 
     g_1->split_merge(split_merge);
@@ -84,7 +84,7 @@ loop:
 
     //---
 
-    split_merge = get_split_merge(g_1);
+    split_merge = get_split_merge(*g_1);
     printf("\n"); print_split_merge(split_merge);
 
     g_1->split_merge(split_merge);
@@ -92,7 +92,7 @@ loop:
 
     //--------------
 
-    auto erase_create = get_erase_create(g_1);
+    auto erase_create = get_erase_create(*g_1);
     printf("\n\n"); print_erase_create(erase_create);
     
     g_1->erase_create(erase_create);
@@ -100,7 +100,7 @@ loop:
 
     //---
 
-    erase_create = get_erase_create(g_1);
+    erase_create = get_erase_create(*g_1);
     printf("\n"); print_erase_create(erase_create);
     
     g_1->erase_create(erase_create);

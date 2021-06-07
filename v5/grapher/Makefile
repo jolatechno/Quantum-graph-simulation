@@ -59,4 +59,4 @@ $(targets):
 	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
 
 run:
-	nohup ./quantum_iteration.o > res.json 2> /dev/null &
+	nohup ./quantum_iteration.o &> res.json &

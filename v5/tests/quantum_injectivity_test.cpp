@@ -7,6 +7,18 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#ifndef N_ITER
+    #define N_ITER 20
+#endif
+
+#ifndef TETA
+    #define TETA M_PI_4
+#endif
+
+#ifndef PHI
+    #define PHI M_PI_2
+#endif
+
 int main() {
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -70,14 +82,12 @@ random:
 loop:
 
 		state_t* s = new state(g_1);
-	    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+	    auto [non_merge, merge] = unitary(TETA, PHI);
 
 	    auto rule = step_split_merge_all(non_merge, merge);
 	    auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
 
-		int n_iter = 6;
-
-		for (int i = 0; i < n_iter; ++i) {
+		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(rule);
 			s->reduce_all();
 
@@ -93,9 +103,9 @@ loop:
 		
 		printf("%ld graph of size ", s->graphs().size());
         size_stat(s);
-        printf(" after %d step_merge_split()\n", n_iter);
+        printf(" after %d step_merge_split()\n", N_ITER);
 
-		for (int i = 0; i < n_iter; ++i) {
+		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(reversed_rule);
 			s->reduce_all();
 
@@ -107,14 +117,14 @@ loop:
 			#endif
 		}
 
-		printf("\nafter %d reversed_step_merge_split():\n", n_iter); print(s);
+		printf("\nafter %d reversed_step_merge_split():\n", N_ITER); print(s);
 
 		//--------------------------
 
 		auto rule_ = step_erase_create_all(non_merge, merge);
 	    auto reversed_rule_ = reversed_step_erase_create_all(non_merge, merge);
 
-		for (int i = 0; i < n_iter; ++i) {
+		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(rule_);
 			s->reduce_all();
 
@@ -130,9 +140,9 @@ loop:
 		
         printf("%ld graph of size ", s->graphs().size());
         size_stat(s);
-        printf(" after %d step_erase_create_all()\n", n_iter);
+        printf(" after %d step_erase_create_all()\n", N_ITER);
 
-		for (int i = 0; i < n_iter; ++i) {
+		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(reversed_rule_);
 			s->reduce_all();
 
@@ -144,6 +154,6 @@ loop:
 			#endif
 		}
 
-		printf("\nafter %d reversed_step_erase_create_all():\n", n_iter); print(s);
+		printf("\nafter %d reversed_step_erase_create_all():\n", N_ITER); print(s);
 	}
 }

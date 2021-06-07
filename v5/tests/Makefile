@@ -1,6 +1,10 @@
 U_CXX=$(CXX) -std=c++2a
 U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
 
+NI=20
+TETA=M_PI_4
+PHI=M_PI_2
+
 targets=$(basename $(wildcard **.cpp))
 
 all: $(targets)
@@ -28,4 +32,4 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DN_ITER=$(NI) -DTETA=$(TETA) -DPHI=$(PHI)

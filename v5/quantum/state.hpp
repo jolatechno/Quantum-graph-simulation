@@ -173,7 +173,7 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
   	for (auto & [graph, mag] : buff)
 	#pragma omp task
   	{
-  		auto graphs = rule(graph);
+  		auto const graphs = rule(graph);
   		for (auto & [graph_, mag_] : graphs)
   		#pragma task
   		{

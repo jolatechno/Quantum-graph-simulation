@@ -7,6 +7,18 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#ifndef N_ITER
+    #define N_ITER 20
+#endif
+
+#ifndef TETA
+    #define TETA M_PI_4
+#endif
+
+#ifndef PHI
+    #define PHI M_PI_2
+#endif
+
 int main() {
     graph_t* g_1 = new graph({true, false, false, true, true},  {true, false, true, false, true});
 
@@ -16,10 +28,10 @@ int main() {
     print(g_1);
 
     state_t* s = new state(g_1);
-    auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
+    auto [non_merge, merge] = unitary(TETA, PHI);
     auto rule = /**/step_split_merge_all/*step_erase_create_all*/(non_merge, merge);
 
-    for (int i = 1; i < 10; ++i) {
+    for (int i = 1; i < N_ITER; ++i) {
 
         printf("%ld graph", s->graphs().size());
         #ifdef VERBOSE
