@@ -6,6 +6,7 @@
 #include <tbb/concurrent_vector.h>
 #include <boost/range/combine.hpp>
 #include <map>
+#include <random>
 
 // forward definition of the state type
 typedef class state state_t;
@@ -188,11 +189,20 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
 
 // randomize
 void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
+	auto const random_complex = [&]() {
+		std::uniform_real_distribution<long double> unif(-1, 1);
+	    std::default_random_engine re;
+
+		long double real = unif(re);
+		long double imag = unif(re);
+		return std::complex<long double>(real, imag);
+	};
+
 	for (int size = min_graph_size; size < max_graph_size; ++size)
 		for (int j = 0; j < num_graphs; ++j) {
 			graph_t g(size);
 			g.randomize();
-			graphs_.insert({std::make_shared<graph_t>(g), {1, 0}});
+			graphs_.insert({std::make_shared<graph_t>(g), random_complex()});
 		}
 
 	reduce_all();
