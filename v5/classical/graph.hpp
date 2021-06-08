@@ -4,6 +4,10 @@
 #include <cstdlib>
 #include <ranges>
 
+#ifndef BOOL_TYPE
+	#define BOOL_TYPE bool /*char*/
+#endif
+
 // forward declaration of the graph_t type 
 typedef class graph graph_t;
 size_t const separator = -1; 
@@ -22,8 +26,8 @@ public:
   	typedef std::pair<unsigned short int, op_type_t> op_t;
 
   	// particules positions
-  	std::vector<char /*bool*/> mutable left; //not bool to not use space efficient bool vectors
-	std::vector<char /*bool*/> mutable right;
+  	std::vector<BOOL_TYPE> mutable left; //not bool to not use space efficient bool vectors
+	std::vector<BOOL_TYPE> mutable right;
 
 private:
 	// variables 
@@ -38,12 +42,12 @@ public:
 	graph() {}
 
 	graph(short int n) {
-		left = std::vector<char /*bool*/>(n, false);
-		right = std::vector<char /*bool*/>(n, false);
+		left = std::vector<BOOL_TYPE>(n, false);
+		right = std::vector<BOOL_TYPE>(n, false);
 		name_ = graph_name_t(n);
 	}
 
-	graph(std::vector<char /*bool*/> left_, std::vector<char /*bool*/> right_) : left(left_), right(right_) {
+	graph(std::vector<BOOL_TYPE> left_, std::vector<BOOL_TYPE> right_) : left(left_), right(right_) {
 		if (left.size() != right.size())
 			throw;
 

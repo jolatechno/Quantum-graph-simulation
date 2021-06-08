@@ -19,7 +19,7 @@ int main() {
 	while (true) {
 		printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
-		std::vector<char /*bool*/> left, right;
+		std::vector<BOOL_TYPE> left, right;
 	    graph_t g_1;
 
 	    bool l = false;

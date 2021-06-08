@@ -9,7 +9,7 @@ const double probability_tolerance = 1e-5;
 bool check(state_t* s) {
 	auto data = s->graphs();
 	auto end = data.end();
-	double probability = 0;
+	PROBA_TYPE probability = 0;
 
 	//iterate over all graphs
     for(auto it = data.begin(); it != data.end(); ++it) {
@@ -35,7 +35,7 @@ bool check(state_t* s) {
 
 	//check for probability
 	if (probability > 1 + probability_tolerance || probability < 1 - probability_tolerance) {
-		printf("probability not equal 1 (%f)!!\n", probability);
+		printf("probability not equal 1 (%Lf)!!\n", probability);
 		return false;
 	}
 

@@ -28,8 +28,6 @@ int main() {
     /*graph_t* g_1 = new graph(7);
     g_1->randomize();*/
 
-    print(g_1);
-
     state_t* s = new state(g_1);
     auto [non_merge, merge] = unitary(TETA, PHI);
     auto rule = /**/step_split_merge_all/*step_erase_create_all*/(non_merge, merge);

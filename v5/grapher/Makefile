@@ -1,4 +1,4 @@
-U_CXX=$(CXX) -std=c++2a
+U_CXX=$(CXX) -O3 -std=c++2a
 U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
 
 NI=20
@@ -39,9 +39,6 @@ randomize:
 slow_reduce:
 	$(eval U_CFLAGS+=-DSLOW_REDUCE)
 
-slow_compare:
-	$(eval U_CFLAGS+=-DSLOW_COMPARE)
-
 normalize:
 	$(eval U_CFLAGS+=-DNORMALIZE)
 
@@ -63,6 +60,9 @@ rule_s_ec_s_sm:
 	$(eval U_CFLAGS+=-DRULE="\"step_split_merge_all\"" -DRULE2="\"step_erase_create_all\"")
 
 #targets
+
+clean:
+	rm *.out
 
 libs:
 	$(U_CXX) -w ../**/**.hpp

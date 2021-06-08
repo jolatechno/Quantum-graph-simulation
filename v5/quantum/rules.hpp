@@ -14,14 +14,14 @@ int static num_subset(std::vector<T> const &vect) {
 }
 
 /* create a subset and a probability from the subset indice */
-std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
-	std::complex<long double>& non_merge, std::complex<long double>& merge) {
+std::pair<std::vector<graph::op_t>, std::complex<PROBA_TYPE>> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
+	std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	
 	std::vector<graph::op_t> res;
-	std::complex<long double> proba = 1;
+	std::complex<PROBA_TYPE> proba = 1;
 
 	for (int i = 0; i < split_merge.size(); ++i) {
-		long double sign = 1 - 2*(split_merge[i].second % 2);
+		PROBA_TYPE sign = 1 - 2*(split_merge[i].second % 2);
 
 		/* i_th bit of subset_numb */
 		if (subset_numb%2) {
@@ -29,7 +29,7 @@ std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std
 			res.push_back(split_merge[i]);
 
 			/* get proba */
-			proba *= std::complex<long double>(merge.real(), sign*merge.imag());
+			proba *= std::complex<PROBA_TYPE>(merge.real(), sign*merge.imag());
 		} else
 			proba *= sign*non_merge;
 
@@ -41,27 +41,29 @@ std::pair<std::vector<graph::op_t>, std::complex<long double>> static subset(std
 }
 
 //to create a reversible dynamic
-std::pair<std::complex<long double>, std::complex<long double>> unitary(long double teta, long double phi) {
-	std::complex<long double> non_merge_ = std::cos(teta);
-	std::complex<long double> merge_ = std::polar(std::sin(teta), phi);
+std::pair<std::complex<PROBA_TYPE>, std::complex<PROBA_TYPE>> unitary(PROBA_TYPE teta, PROBA_TYPE phi) {
+	std::complex<PROBA_TYPE> non_merge_ = std::cos(teta);
+	std::complex<PROBA_TYPE> merge_ = std::polar(std::sin(teta), phi);
 	return {non_merge_, merge_};
 } 
 
 // split merge a graph
-auto split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+state_t::rule_t split_merge_all(std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
+		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>> graphs;
 
 		// check for identity
-		if (s->check_zero(merge)) {
-			graphs.push_back({g, {1, 0}});
+		bool const identity = s->check_zero(merge);
+		if (identity) {
+			graphs.push_back({g, non_merge});
 			return graphs;
 		}
 
 		// check for classical case
-		if (s->check_zero(non_merge)) {
+		bool const classical = s->check_zero(merge);
+		if (classical) {
 			split_merge(*g);
-			graphs.push_back({g, {1, 0}});
+			graphs.push_back({g, merge});
 			return graphs;
 		}
 
@@ -93,20 +95,22 @@ auto split_merge_all(std::complex<long double>& non_merge, std::complex<long dou
 }
 
 // split merge a graph
-auto erase_create_all(std::complex<long double>& non_create, std::complex<long double>& create) {
+state_t::rule_t erase_create_all(std::complex<PROBA_TYPE> const &non_create, std::complex<PROBA_TYPE> const &create) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
+		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>> graphs;
 
 		// check for identity
-		if (s->check_zero(create)) {
-			graphs.push_back({g, {1, 0}});
+		bool const identity = s->check_zero(create);
+		if (identity) {
+			graphs.push_back({g, non_create});
 			return graphs;
 		}
 
 		// check for classical case
-		if (s->check_zero(non_create)) {
+		bool const classical = s->check_zero(non_create);
+		if (classical) {
 			erase_create(*g);
-			graphs.push_back({g, {1, 0}});
+			graphs.push_back({g, create});
 			return graphs;
 		}
 
@@ -138,7 +142,7 @@ auto erase_create_all(std::complex<long double>& non_create, std::complex<long d
 }
 
 //step and split merge
-auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+state_t::rule_t step_split_merge_all(std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		g->step();
@@ -146,7 +150,7 @@ auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<lon
 	};
 }
 
-auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+state_t::rule_t reversed_step_split_merge_all(std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		auto graphs_ = split_merge_all_(s, g);
@@ -161,7 +165,7 @@ auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::co
 }
 
 //step and erase create
-auto step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+state_t::rule_t step_erase_create_all(std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		g->step();
@@ -169,7 +173,7 @@ auto step_erase_create_all(std::complex<long double>& non_merge, std::complex<lo
 	};
 }
 
-auto reversed_step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
+state_t::rule_t reversed_step_erase_create_all(std::complex<PROBA_TYPE> const &non_merge, std::complex<PROBA_TYPE> const &merge) {
 	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		auto graphs_ = erase_create_all_(s, g);

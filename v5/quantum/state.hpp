@@ -11,10 +11,14 @@
 // forward definition of the state type
 typedef class state state_t;
 
+#ifndef PROBA_TYPE
+	#define PROBA_TYPE long double
+#endif
+
 class state {
 public:
 	// tolerance
-	long double tolerance = 1e-7;
+	PROBA_TYPE tolerance = 1e-7;
 
 	// hasher
 	struct graph_hasher {
@@ -26,30 +30,16 @@ public:
 	// comparator
 	struct graph_comparator {
 		bool operator()(std::shared_ptr<graph_t> const &g1, std::shared_ptr<graph_t> const &g2) const {
-			#ifndef SLOW_COMPARE
-				return g1->hash() == g2->hash();
-			#else
-				if (g1->left != g2->left)
-					return false;
-
-				if (g1->right != g2->right)
-					return false;
-
-				for (auto [n1, n2] : boost::combine(g1->name().nodes(), g2->name().nodes()))
-					if (n1.hash() != n2.hash())
-						return false;
-
-				return true;
-			#endif
+			return g1->hash() == g2->hash();
 		}
 	};
 
 	// type definition
-	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<long double>, graph_hasher, graph_comparator> graph_map_t;
-	typedef std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(state_t const *s, std::shared_ptr<graph_t> const &g)> rule_t;
+	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>, graph_hasher, graph_comparator> graph_map_t;
+	typedef std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>>(state_t const *s, std::shared_ptr<graph_t> const &g)> rule_t;
 
 	// check zero probas
-	bool inline check_zero(const std::complex<long double>& mag) const { return std::norm(mag) <= tolerance; }
+	bool inline check_zero(const std::complex<PROBA_TYPE>& mag) const { return std::norm(mag) <= tolerance; }
 
 private:
 	// main list 
@@ -106,7 +96,7 @@ void state::reduce_all() {
 
 	    	#pragma omp task
 	    	{
-	    		std::complex<long double> acc = 0;
+	    		std::complex<PROBA_TYPE> acc = 0;
 	    		for(auto jt = range.first; jt != range.second; ++jt)
 	        		acc += jt->second;
 
@@ -132,16 +122,17 @@ void state::reduce_all() {
     #endif
 }
 
+// use std::partition !!
 void state::discard_all(size_t n_graphs) {
 	if (graphs_.size() < n_graphs)
 		return;
 
 	/* compute sure threshold proba */
-	long double threshold_proba = 0;
+	PROBA_TYPE threshold_proba = 0;
 
-	std::map<long double, std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> map;
+	std::map<PROBA_TYPE, std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>> map;
 	for (auto & [graph, mag] : graphs_) {
-		long double proba = std::norm(mag);
+		PROBA_TYPE proba = std::norm(mag);
 
 		if (proba > threshold_proba) {
 			map.insert({proba, {graph, mag}});
@@ -159,7 +150,7 @@ void state::discard_all(size_t n_graphs) {
 }
 
 void state::normalize() {
-	long double proba = 0;
+	PROBA_TYPE proba = 0;
 
 	for (auto & [_, mag] : graphs_)
 		proba += std::norm(mag);
@@ -173,7 +164,7 @@ void state::normalize() {
 		it->second /= proba;
 }
 
-// dynamic 
+// dynamic
 void state::step_all(rule_t rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
@@ -194,9 +185,9 @@ void state::step_all(rule_t rule) {
 // randomize
 void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
 	auto const random_complex = [&]() {
-		long double real = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
-		long double imag = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
-		return std::complex<long double>(real, imag);
+		PROBA_TYPE real = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		PROBA_TYPE imag = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		return std::complex<PROBA_TYPE>(real, imag);
 	};
 
 	for (int size = min_graph_size; size < max_graph_size; ++size)
@@ -212,9 +203,9 @@ void state::randomize(unsigned short int min_graph_size, unsigned short int max_
 
 void state::zero_randomize(unsigned short int min_graph_size, unsigned short int max_graph_size) {
 	auto const random_complex = [&]() {
-		long double real = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
-		long double imag = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
-		return std::complex<long double>(real, imag);
+		PROBA_TYPE real = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		PROBA_TYPE imag = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		return std::complex<PROBA_TYPE>(real, imag);
 	};
 
 	for (int size = min_graph_size; size < max_graph_size; ++size) {
@@ -231,14 +222,14 @@ void state::zero_randomize(unsigned short int min_graph_size, unsigned short int
 
 //reader
 void size_stat(state_t* s) {
-	long double avg = 0;
-	long double var = 0;
-	long double correction_factor = 0;
+	PROBA_TYPE avg = 0;
+	PROBA_TYPE var = 0;
+	PROBA_TYPE correction_factor = 0;
 	int numb = s->graphs().size();
 
 	for (auto [graph, mag] : s->graphs()) {
-		long double size = graph->size();
-		long double proba = std::norm(mag);
+		PROBA_TYPE size = graph->size();
+		PROBA_TYPE proba = std::norm(mag);
 		avg += size*proba;
 		var += size*size*proba;
 		correction_factor += proba;
@@ -256,12 +247,12 @@ void serialize_state_to_json(state_t const *s, bool first) {
 
 	// final vectors
 	std::vector<unsigned short int> nums;
-	std::vector<long double> probas;
+	std::vector<PROBA_TYPE> probas;
 
 	auto const graphs = s->graphs();
 	for (auto & [graph, mag] : graphs) {
 		size_t size = graph.get()->size();
-		long double proba = std::norm(mag);
+		PROBA_TYPE proba = std::norm(mag);
 
 		if (size >= nums.size()) {
 			nums.resize(size + 1, 0);

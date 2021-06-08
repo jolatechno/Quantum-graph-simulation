@@ -31,7 +31,7 @@ int main() {
 	while (true) {
 		printf("\n----------------------------------------------------\n\nPleas enter next graph (Ctrl+C to exit):\n");
 
-		std::vector<char /*bool*/> left, right;
+		std::vector<BOOL_TYPE> left, right;
 	    graph_t g_1;
 
 	    bool l = false;
@@ -84,7 +84,7 @@ random:
 
 loop:
 		const auto sum = [&](state_t *s) {
-			long double proba = 0;
+			PROBA_TYPE proba = 0;
 			for (auto const & [_, mag] : s->graphs())
 				proba += std::norm(mag);
 
