@@ -127,26 +127,19 @@ void state::discard_all(size_t n_graphs) {
 	if (graphs_.size() < n_graphs)
 		return;
 
-	/* compute sure threshold proba */
-	PROBA_TYPE threshold_proba = 0;
+	// create map full of vector element
+	std::vector<std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>> vect(graphs_.begin(), graphs_.end());
 
-	std::map<PROBA_TYPE, std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>>> map;
-	for (auto & [graph, mag] : graphs_) {
-		PROBA_TYPE proba = std::norm(mag);
+	// find nth largest element
+	std::ranges::nth_element(vect.begin(), vect.begin() + n_graphs, vect.end(),
+		[&](std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>> const &it1,
+			std::pair<std::shared_ptr<graph_t>, std::complex<PROBA_TYPE>> const &it2) {
+			return  std::norm(it1.second) > std::norm(it2.second);	
+		});
 
-		if (proba > threshold_proba) {
-			map.insert({proba, {graph, mag}});
-
-			if (map.size() == n_graphs + 1) {
-				map.erase(map.begin());
-				threshold_proba = map.begin()->first;
-			}
-		}
-	}
-
+	// insert into graphs_
 	graphs_.clear();
-	for (auto & [_, key] : map)
-		graphs_.insert(key);
+	graphs_.insert(vect.begin(), vect.begin() + n_graphs);
 }
 
 void state::normalize() {

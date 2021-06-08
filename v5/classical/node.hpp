@@ -113,25 +113,3 @@ void print(node_t const &node, std::vector<node_t> const &node_buff) {
 
 	printf(".r");
 }
-
-	//comparator
-	/*bool inline equal(node_t const other, std::vector<node_t> const &this_node_buff, std::vector<node_t> const &other_node_buff) const {
-		// check if both nodes have the same type
-		if (right_idx__or_type_ < 0 && right_idx__or_type_ != other.right_idx__or_type_)
-			return false;
-
-		// if both nodes are element check if they are equal
-		if (is_element())
-			return left_idx__or_element_ == other.left_idx__or_element_;
-
-		//if both nodes are pairs check if both element are equal
-		if (is_pair())
-			return this_node_buff[left_idx__or_element_].equal(other_node_buff[other.left_idx__or_element_],
-				this_node_buff, other_node_buff) &&
-			this_node_buff[right_idx__or_type_].equal(other_node_buff[other.right_idx__or_type_],
-				this_node_buff, other_node_buff);
-
-		//else check both left elements
-		return this_node_buff[left_idx__or_element_].equal(other_node_buff[other.left_idx__or_element_],
-			this_node_buff, other_node_buff);
-	}*/

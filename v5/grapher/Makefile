@@ -68,7 +68,7 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
+	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
 
 run:
-	nohup bash -c "time ( ./quantum_iteration.o 2> err.txt > res.json ) 2> time.txt"  2> /dev/null &
+	nohup bash -c "time ( ./quantum_iteration.out 2> err.txt > res.json ) 2> time.txt"  2> /dev/null &

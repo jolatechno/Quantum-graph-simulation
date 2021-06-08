@@ -97,7 +97,7 @@ int main() {
 
     // ------------------------------------------
     // initialize state
-    
+    printf("%d %d\n\n", SIZE - NUM_GRAPHS, SIZE + NUM_GRAPHS + 1);
     state_t* s;
     if (RANDOMIZE) {
         s = new state();
