@@ -46,13 +46,14 @@ public:
 
 	// type definition
 	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, std::complex<long double>, graph_hasher, graph_comparator> graph_map_t;
+	typedef std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(state_t const *s, std::shared_ptr<graph_t> const &g)> rule_t;
+
+	// check zero probas
+	bool inline check_zero(const std::complex<long double>& mag) const { return std::norm(mag) <= tolerance; }
 
 private:
 	// main list 
 	graph_map_t graphs_;
-
-	// check zero probas
-	bool inline check_zero(const std::complex<long double>& mag) { return std::norm(mag) <= tolerance; }
 
 public:
 	// constructor
@@ -70,7 +71,7 @@ public:
 	void reduce_all();
 
 	// dynamic 
-	void step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> const &g)> rule);
+	void step_all(rule_t rule);
 
 	// limit graphs
 	void discard_all(size_t n_graphs);
@@ -173,7 +174,7 @@ void state::normalize() {
 }
 
 // dynamic 
-void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> const &g)> rule) {
+void state::step_all(rule_t rule) {
 	graph_map_t buff;
 	buff.swap(graphs_);
 
@@ -182,7 +183,7 @@ void state::step_all(std::function<tbb::concurrent_vector<std::pair<std::shared_
   	for (auto & [graph, mag] : buff)
 	#pragma omp task
   	{
-  		auto const graphs = rule(graph);
+  		auto const graphs = rule(this, graph);
 
   		for (auto & [graph_, mag_] : graphs)
   		//#pragma task

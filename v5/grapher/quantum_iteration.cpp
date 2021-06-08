@@ -115,8 +115,7 @@ int main() {
     auto [non_merge, merge] = unitary(TETA, PHI);
     auto [non_create, create] = unitary(TETA2, PHI2);
 
-    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule;
-    std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule2;
+    state_t::rule_t rule, rule2;
 
     // ------------------------------------------
     // read first rule

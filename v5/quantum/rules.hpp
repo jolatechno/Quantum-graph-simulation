@@ -5,6 +5,7 @@
 #include "../classical/graph.hpp"
 #include "../classical/rules.hpp"
 #include <tbb/concurrent_vector.h>
+#include "state.hpp"
 
 /* count the number of subsets */
 template<class T>
@@ -48,10 +49,23 @@ std::pair<std::complex<long double>, std::complex<long double>> unitary(long dou
 
 // split merge a graph
 auto split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	return [&](std::shared_ptr<graph_t> const &g) {
-		auto split_merge = get_split_merge(*g);
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
 
+		// check for identity
+		if (s->check_zero(merge)) {
+			graphs.push_back({g, {1, 0}});
+			return graphs;
+		}
+
+		// check for classical case
+		if (s->check_zero(non_merge)) {
+			split_merge(*g);
+			graphs.push_back({g, {1, 0}});
+			return graphs;
+		}
+
+		auto split_merge = get_split_merge(*g);
 		#pragma omp parallel
 		{
 			#pragma omp task
@@ -80,10 +94,23 @@ auto split_merge_all(std::complex<long double>& non_merge, std::complex<long dou
 
 // split merge a graph
 auto erase_create_all(std::complex<long double>& non_create, std::complex<long double>& create) {
-	return [&](std::shared_ptr<graph_t> const &g) {
-		auto erase_create = get_erase_create(*g);
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>> graphs;
 
+		// check for identity
+		if (s->check_zero(create)) {
+			graphs.push_back({g, {1, 0}});
+			return graphs;
+		}
+
+		// check for classical case
+		if (s->check_zero(non_create)) {
+			erase_create(*g);
+			graphs.push_back({g, {1, 0}});
+			return graphs;
+		}
+
+		auto erase_create = get_erase_create(*g);
 		#pragma omp parallel
 		{
 			#pragma omp task
@@ -112,17 +139,17 @@ auto erase_create_all(std::complex<long double>& non_create, std::complex<long d
 
 //step and split merge
 auto step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	return [&](std::shared_ptr<graph_t> const &g) {
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
 		g->step();
-		return split_merge_all_(g);
+		return split_merge_all_(s, g);
 	};
 }
 
 auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	return [&](std::shared_ptr<graph_t> const &g) {
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const split_merge_all_ = split_merge_all(non_merge, merge);
-		auto graphs_ = split_merge_all_(g);
+		auto graphs_ = split_merge_all_(s, g);
 
 		#pragma parallel
 		for (auto & [graph, _] : graphs_)
@@ -135,17 +162,17 @@ auto reversed_step_split_merge_all(std::complex<long double>& non_merge, std::co
 
 //step and erase create
 auto step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	return [&](std::shared_ptr<graph_t> const &g) {
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
 		g->step();
-		return erase_create_all_(g);
+		return erase_create_all_(s, g);
 	};
 }
 
 auto reversed_step_erase_create_all(std::complex<long double>& non_merge, std::complex<long double>& merge) {
-	return [&](std::shared_ptr<graph_t> const &g) {
+	return [&](state_t const *s, std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_merge, merge);
-		auto graphs_ = erase_create_all_(g);
+		auto graphs_ = erase_create_all_(s, g);
 
 		#pragma parallel
 		for (auto & [graph, _] : graphs_)
