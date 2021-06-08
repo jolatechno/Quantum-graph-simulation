@@ -9,7 +9,7 @@
 #include <cmath>
 
 #ifndef N_ITER
-    #define N_ITER 20
+    #define N_ITER 5
 #endif
 
 #ifndef TETA
@@ -83,6 +83,17 @@ random:
     	printf("\nrandomize()*:  "); print(g_1); printf("\n");
 
 loop:
+		const auto sum = [&](state_t *s) {
+			long double proba = 0;
+			for (auto const & [_, mag] : s->graphs())
+				proba += std::norm(mag);
+
+			printf("total proba is %Lf\n", proba);
+
+			#ifdef NORMALIZE
+	            s->normalize();
+	        #endif
+		};
 
 		state_t* s = new state(g_1);
 	    auto [non_merge, merge] = unitary(TETA, PHI);
@@ -93,6 +104,8 @@ loop:
 		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(rule);
 			s->reduce_all();
+
+			sum(s);
 
 			#ifdef TEST
 				if (check(s)) {
@@ -111,6 +124,8 @@ loop:
 		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(reversed_rule);
 			s->reduce_all();
+
+			sum(s);
 
 			#ifdef TEST
 				if (check(s)) {
@@ -131,6 +146,8 @@ loop:
 			s->step_all(rule_);
 			s->reduce_all();
 
+			sum(s);
+
 			#ifdef TEST
 				if (check(s)) {
 					printf("\nstate is OK\n");
@@ -148,6 +165,8 @@ loop:
 		for (int i = 0; i < N_ITER; ++i) {
 			s->step_all(reversed_rule_);
 			s->reduce_all();
+
+			sum(s);
 
 			#ifdef TEST
 				if (check(s)) {

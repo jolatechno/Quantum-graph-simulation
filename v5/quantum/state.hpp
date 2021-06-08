@@ -80,6 +80,7 @@ public:
 
 	// randomize
 	void randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs);
+	void zero_randomize(unsigned short int min_graph_size, unsigned short int max_graph_size);
 };
 
 // insert operators 
@@ -205,6 +206,21 @@ void state::randomize(unsigned short int min_graph_size, unsigned short int max_
 		}
 
 	reduce_all();
+	normalize();
+}
+
+void state::zero_randomize(unsigned short int min_graph_size, unsigned short int max_graph_size) {
+	auto const random_complex = [&]() {
+		long double real = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
+		long double imag = static_cast <long double> (rand()) / static_cast <long double> (RAND_MAX) - 0.5;
+		return std::complex<long double>(real, imag);
+	};
+
+	for (int size = min_graph_size; size < max_graph_size; ++size) {
+		graph_t g(size);
+		graphs_.insert({std::make_shared<graph_t>(g), random_complex()});
+	}
+
 	normalize();
 }
 

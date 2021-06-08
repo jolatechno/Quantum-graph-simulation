@@ -79,11 +79,11 @@ fig.savefig("plots/probabilities/" + name)
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
-ax.plot_surface(iterations, sizes, np.log10(1 + nums), cmap='viridis', edgecolor='none')
+ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
 ax.set_title(f'number of graphs ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
-ax.set_zlabel('log10(1 + number of graphs)')
+ax.set_zlabel('number of graphs')
 
 fig.savefig("plots/number/" + name)
 
@@ -120,6 +120,18 @@ ax.set_xlabel('iterations')
 ax.set_ylabel('sizes')
 ax.set_title(f'graph average size ({ data["rule"] })')
 ax.errorbar(iterations_list, avg_size, std_dev_size,
-						capsize=2, elinewidth=1, markeredgewidth=2)
+						capsize=2, elinewidth=1, markeredgewidth=2, label="average size")
+
+def find_first_non_zero(List):
+	for i in range(len(List)):
+		if List[i] != 0:
+			return i
+
+	return -1
+
+Max_size = [len(it["nums"]) - 1 for it in data["iterations"]]
+Min_size = [find_first_non_zero(it["nums"]) - 1 for it in data["iterations"]]
+ax.plot(iterations_list, Max_size, label="max size")
+ax.plot(iterations_list, Min_size, label="min size")
 
 fig.savefig("plots/sizes/" + name)

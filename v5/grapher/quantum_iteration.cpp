@@ -8,6 +8,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+// ------------------------------------------
+// rules
+
 #ifndef RULE
     #define RULE "step_split_merge_all"; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #endif
@@ -16,9 +19,15 @@
     #define RULE2 ""; //"step_split_merge_all" //"step_erase_create_all" //"split_merge_step_erase_create_all"
 #endif
 
+// ------------------------------------------
+// number of iterations
+
 #ifndef N_ITER
     #define N_ITER 20
 #endif
+
+// ------------------------------------------
+// precisions parameters
 
 #ifndef MAX_NUM_GRAPHS
     #define MAX_NUM_GRAPHS 20000
@@ -28,9 +37,8 @@
     #define TOLERANCE 5e-7
 #endif
 
-#ifndef SIZE
-    #define SIZE 5
-#endif
+// ------------------------------------------
+// first rule parameters
 
 #ifndef TETA
     #define TETA M_PI_4
@@ -40,6 +48,8 @@
     #define PHI M_PI_2
 #endif
 
+// second rule parameters
+
 #ifndef TETA2
     #define TETA2 TETA
 #endif
@@ -48,24 +58,58 @@
     #define PHI2 PHI
 #endif
 
+// ------------------------------------------
+// starting condition parameters
+
+#ifndef SIZE
+    #define SIZE 5
+#endif
+
+// randomize
+
+#ifndef RANDOMIZE
+    #define RANDOMIZE false
+#endif
+
+#ifndef DELTA_SIZE
+    #define DELTA_SIZE 2
+#endif
+
+#ifndef NUM_GRAPHS
+    #define NUM_GRAPHS 3
+#endif
+
+// zero randomize
+
+#ifndef ZERO_RANDOMIZE
+    #define ZERO_RANDOMIZE false
+#endif
+
+// ------------------------------------------
+// main function
+
 int main() {
-    // !!!!!!!!!!!!!!!!!!!!!!
-    //
+    // ------------------------------------------
     // making stdout unbuffered so it can get redirected to file even if there is an error
     std::setvbuf(stdout, NULL, _IONBF, 0);
-    // 
-    // !!!!!!!!!!!!!!!!!!!!!!
 
     std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-    //graph_t* g_1 = new graph({true, false, false, true, false},  {true, false, true, false, true});
+    // ------------------------------------------
+    // initialize state
     
-    graph_t g_1 = graph_t(SIZE);
-    g_1.randomize();
-    state_t* s = new state(g_1);
-
-    /*state_t* s = new state();
-    s->randomize(3, 8, 3);*/
+    state_t* s;
+    if (RANDOMIZE) {
+        s = new state();
+        s->randomize(SIZE - NUM_GRAPHS, SIZE + NUM_GRAPHS + 1, NUM_GRAPHS);
+    } else if (ZERO_RANDOMIZE) {
+        s = new state();
+        s->zero_randomize(SIZE - NUM_GRAPHS, SIZE + NUM_GRAPHS + 1);
+    } else {
+        graph_t g_1 = graph_t(SIZE);
+        g_1.randomize();
+        s = new state(g_1);
+    }
 
     s->tolerance = TOLERANCE;
     auto [non_merge, merge] = unitary(TETA, PHI);
@@ -73,6 +117,9 @@ int main() {
 
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule;
     std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, std::complex<long double>>>(std::shared_ptr<graph_t> g)> rule2;
+
+    // ------------------------------------------
+    // read first rule
 
     std::string rule_ = RULE;
     if (rule_ == "step_split_merge_all") {
@@ -85,6 +132,9 @@ int main() {
         rule = erase_create_all(non_create, create);
     } else
         return -1;
+
+    // ------------------------------------------
+    // read second rule
 
     rule_ = RULE2;
     if (rule_ == "step_split_merge_all") {
@@ -101,6 +151,9 @@ int main() {
         rule_ += "_";
     } else
         rule2 = rule;
+
+    // ------------------------------------------
+    // iterations
 
     rule_ += RULE;
     start_json(s, rule_.c_str());
@@ -124,5 +177,4 @@ int main() {
    	}
 
     end_json();
-
 }

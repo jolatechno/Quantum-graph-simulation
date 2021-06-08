@@ -1,13 +1,17 @@
 U_CXX=$(CXX) -std=c++2a
 U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
 
-RULE="\"erase_create_step_split_merge_all\""
 NI=20
 NG=20000
+
 TOL=5e-7
-SIZE=5
+
 TETA=M_PI_4
 PHI=M_PI_2
+
+SIZE=8
+DSIZE=3
+N_GRAPHS=3
 
 targets=$(basename $(wildcard **.cpp))
 
@@ -21,6 +25,14 @@ verbose:
 
 gprof:
 	$(eval U_CFLAGS+=-pg)
+
+#starting state
+
+zero_randomize:
+	$(eval U_CFLAGS+=-DZERO_RANDOMIZE=true)
+
+randomize:
+	$(eval U_CFLAGS+=-DRANDOMIZE=true)
 
 #parameters
 
@@ -36,19 +48,19 @@ normalize:
 #rules
 
 rule_s_sm:
-	$(eval RULE="\"step_split_merge_all\"")
+	$(eval U_CFLAGS+=-DRULE="\"step_split_merge_all\"")
 
 rule_s_ec:
-	$(eval RULE="\"step_erase_create_all\"")
+	$(eval U_CFLAGS+=-DRULE="\"step_erase_create_all\"")
 
 rule_s_sm_ec:
-	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"erase_create_all\"")
+	$(eval U_CFLAGS+=-DRULE="\"step_split_merge_all\"" -DRULE2="\"erase_create_all\"")
 
 rule_s_ec_sm:
-	$(eval RULE="\"step_erase_create_all\"" -DRULE2="\"split_merge_all\"")
+	$(eval U_CFLAGS+=-DRULE="\"step_erase_create_all\"" -DRULE2="\"split_merge_all\"")
 
 rule_s_ec_s_sm:
-	$(eval RULE="\"step_split_merge_all\"" -DRULE2="\"step_erase_create_all\"")
+	$(eval U_CFLAGS+=-DRULE="\"step_split_merge_all\"" -DRULE2="\"step_erase_create_all\"")
 
 #targets
 
@@ -56,7 +68,7 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DRULE=$(RULE) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
 
 run:
 	nohup bash -c "time ( ./quantum_iteration.o 2> err.txt > res.json ) 2> time.txt"  2> /dev/null &

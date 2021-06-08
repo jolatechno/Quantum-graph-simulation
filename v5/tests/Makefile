@@ -1,7 +1,9 @@
 U_CXX=$(CXX) -std=c++2a
 U_CFLAGS=$(CFLAGS) -ltbb -fopenmp
 
-NI=20
+TOL=5e-7
+
+NI=5
 TETA=M_PI_4
 PHI=M_PI_2
 
@@ -26,10 +28,13 @@ slow_reduce:
 slow_compare:
 	$(eval U_CFLAGS+=-DSLOW_COMPARE)
 
+normalize:
+	$(eval U_CFLAGS+=-DNORMALIZE)
+
 #targets
 
 libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DN_ITER=$(NI) -DTETA=$(TETA) -DPHI=$(PHI)
+	$(U_CXX) $@.cpp -o$@.o $(U_CFLAGS) -DN_ITER=$(NI) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
