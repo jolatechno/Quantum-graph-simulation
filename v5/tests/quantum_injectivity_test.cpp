@@ -3,27 +3,17 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include "../utils/quantum_test_parser.hpp"
 #include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#ifndef N_ITER
-    #define N_ITER 5
-#endif
-
-#ifndef TETA
-    #define TETA M_PI_4
-#endif
-
-#ifndef PHI
-    #define PHI M_PI_2
-#endif
-
-int main() {
+int main(int argc, char* argv[]) {
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-	SET_PRECISION
+	cxxopts::Options options("check for quantum injectivity");
+    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, tol, normalize_] = parse_test_quantum(options, argc, argv);
 	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -78,11 +68,11 @@ read:
     	goto loop;
 
 random:
-    	g_1 = graph_t(6);
-    	printf("new graph(6):  "); print(g_1);
+    	g_1 = graph_t(size);
+    	printf("new graph(%d):  ", size); print(g_1);
 
     	g_1.randomize();
-    	printf("\nrandomize()*:  "); print(g_1); printf("\n");
+    	printf("\nrandomize(%d)*:  ", size); print(g_1); printf("\n");
 
 loop:
 		const auto sum = [&](state_t *s) {
@@ -92,92 +82,44 @@ loop:
 
 			std::cout << "total proba is " << proba << "\n";
 
-			#ifdef NORMALIZE
+			if (normalize_)
 	            s->normalize();
-	        #endif
-		};
 
-		state_t* s = new state(g_1);
-	    auto [non_merge, merge] = unitary(TETA, PHI);
+	        if (max_n_graphs > 0)
+	        	s->discard_all(max_n_graphs);
 
-	    auto rule = step_split_merge_all(non_merge, merge);
-	    auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
 
-		for (int i = 0; i < N_ITER; ++i) {
-			s->step_all(rule);
-			s->reduce_all();
-
-			sum(s);
-
-			#ifdef TEST
+	        #ifdef TEST
 				if (check(s)) {
 					printf("\nstate is OK\n");
 				} else
 					printf("\nstate is not OK\n");
 			#endif
+		};
+
+		state_t* s = new state(g_1);
+		s->tolerance = tol;
+
+		for (int i = 0; i < n_iter; ++i) {
+			s->step_all(rule);
+			s->reduce_all();
+
+			sum(s);
 		}
 
 		//----
 		
 		printf("%ld graph of size ", s->graphs().size());
         size_stat(s);
-        printf(" after %d step_merge_split()\n", N_ITER);
+        printf(" after %d %s()\n", n_iter, rule_.c_str());
 
-		for (int i = 0; i < N_ITER; ++i) {
+		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(reversed_rule);
 			s->reduce_all();
 
 			sum(s);
-
-			#ifdef TEST
-				if (check(s)) {
-					printf("\nstate is OK\n");
-				} else
-					printf("\nstate is not OK\n");
-			#endif
 		}
 
-		printf("\nafter %d reversed_step_merge_split():\n", N_ITER); print(s);
-
-		//--------------------------
-
-		auto rule_ = step_erase_create_all(non_merge, merge);
-	    auto reversed_rule_ = reversed_step_erase_create_all(non_merge, merge);
-
-		for (int i = 0; i < N_ITER; ++i) {
-			s->step_all(rule_);
-			s->reduce_all();
-
-			sum(s);
-
-			#ifdef TEST
-				if (check(s)) {
-					printf("\nstate is OK\n");
-				} else
-					printf("\nstate is not OK\n");
-			#endif
-		}
-
-		//----
-		
-        printf("%ld graph of size ", s->graphs().size());
-        size_stat(s);
-        printf(" after %d step_erase_create_all()\n", N_ITER);
-
-		for (int i = 0; i < N_ITER; ++i) {
-			s->step_all(reversed_rule_);
-			s->reduce_all();
-
-			sum(s);
-
-			#ifdef TEST
-				if (check(s)) {
-					printf("\nstate is OK\n");
-				} else
-					printf("\nstate is not OK\n");
-			#endif
-		}
-
-		printf("\nafter %d reversed_step_erase_create_all():\n", N_ITER); print(s);
+		printf("\nafter %d %s():\n", n_iter, reversed_rule_.c_str()); print(s);
 	}
 }

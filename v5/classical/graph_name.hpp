@@ -9,7 +9,7 @@ typedef class graph_name graph_name_t;
 class graph_name {
 private:
 	// node list 
-	std::vector<short unsigned int> mutable nodes_; // index buffer !!
+	std::vector<short unsigned int> mutable nodes_;
 	std::vector<node_t> mutable node_buff_;
 	std::vector<short unsigned int> mutable trash_collection_;
 
@@ -54,9 +54,6 @@ public:
 			node_buff_.emplace_back(i);
 		}
 	}
-
-	// getters
-	std::vector<short unsigned int> const &nodes() const { return nodes_; }
 
 	// size operator 
 	size_t inline size() const {

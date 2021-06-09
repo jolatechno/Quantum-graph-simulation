@@ -3,15 +3,17 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include "../utils/quantum_test_parser.hpp"
 #include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-int main() {
+int main(int argc, char* argv[]) {
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-	SET_PRECISION
+	cxxopts::Options options("test state class");
+    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, _, size, tol, __] = parse_test_quantum(options, argc, argv);
 	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -66,40 +68,26 @@ read:
     	goto loop;
 
 random:
-    	g_1 = graph_t(6);
-    	printf("new graph(6):  "); print(g_1);
+    	g_1 = graph_t(size);
+    	printf("new graph(%d):  ", size); print(g_1);
 
     	g_1.randomize();
-    	printf("\nrandomize()*:  "); print(g_1); printf("\n");
+    	printf("\nrandomize(%d)*:  ", size); print(g_1); printf("\n");
 
 loop:
 
 		state_t* s = new state(g_1);
-		auto [non_merge, merge] = unitary(M_PI_4, M_PI_2);
-    	auto rule = step_split_merge_all(non_merge, merge);
-    	auto reversed_rule = reversed_step_split_merge_all(non_merge, merge);
-    	auto rule_ = step_erase_create_all(non_merge, merge);
-    	auto reversed_rule_ = reversed_step_erase_create_all(non_merge, merge);
+		s->tolerance = tol;
 
 		s->step_all(rule);
 		s->reduce_all();
 
-		printf("\nstep_merge_split():\n"); print(s);
+		printf("\n%s():\n", rule_.c_str()); print(s);
 
 		s->step_all(reversed_rule);
 		s->reduce_all();
 
-		printf("\n\nreversed_step_merge_split():\n"); print(s);
-
-		s->step_all(rule_);
-		s->reduce_all();
-
-		printf("\nstep_erase_create():\n"); print(s);
-
-		s->step_all(reversed_rule_);
-		s->reduce_all();
-
-		printf("\n\nreversed_erase_create():\n"); print(s);
+		printf("\n\n%s():\n", reversed_rule_.c_str()); print(s);
 
 		if (check(s)) {
 			printf("\nstate is OK\n");

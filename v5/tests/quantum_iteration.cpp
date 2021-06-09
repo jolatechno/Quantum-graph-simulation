@@ -3,38 +3,25 @@
 #include "../quantum/rules.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
+#include "../utils/quantum_test_parser.hpp"
 #include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#ifndef N_ITER
-    #define N_ITER 20
-#endif
-
-#ifndef TETA
-    #define TETA M_PI_4
-#endif
-
-#ifndef PHI
-    #define PHI M_PI_2
-#endif
-
-int main() {
+int main(int argc, char* argv[]) {
     std::srand(std::time(nullptr)); // use current time as seed for random generator
 
-    SET_PRECISION
-    
-    graph_t g_1 = graph_t({true, false, false, true, true},  {true, false, true, false, true});
+    cxxopts::Options options("simple quantum iterator");
+    auto [rule, _, rule_, __, n_iter, max_n_graphs, size, tol, normalize_] = parse_test_quantum(options, argc, argv);
 
-    /*graph_t* g_1 = new graph(7);
-    g_1->randomize();*/
+    graph_t g_1 = graph(size);
+    g_1.randomize();
 
     state_t* s = new state(g_1);
-    auto [non_merge, merge] = unitary(TETA, PHI);
-    auto rule = /**/step_split_merge_all/*step_erase_create_all*/(non_merge, merge);
+    s->tolerance = tol;
 
-    for (int i = 1; i < N_ITER; ++i) {
+    for (int i = 1; i < n_iter; ++i) {
 
         printf("%ld graph", s->graphs().size());
         #ifdef VERBOSE
@@ -50,11 +37,22 @@ int main() {
             printf("...OK\n");
         #endif
 
-        printf("\nstep_split_merge_all() ...\n"); s->step_all(rule);
+        printf("\n%s() ...\n", rule_.c_str());
+        s->step_all(rule);
 
-        printf("reduce_all() ...\n\n");
+        printf("reduce_all() ...\n");
         s->reduce_all();
-        //s->discard_all(300);
+        
+        if (max_n_graphs > 0) {
+            printf("discard_all() ...\n");
+            s->discard_all(max_n_graphs);
+        }
+
+        if (normalize_) {
+            printf("normalize() ...\n\n");
+            s->normalize();
+        }
+
         printf("\n");
    	}
 

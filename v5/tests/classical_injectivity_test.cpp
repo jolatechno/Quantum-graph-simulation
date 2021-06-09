@@ -1,18 +1,22 @@
 #include "../classical/rules.hpp"
 #include "../classical/graph.hpp"
 #include "../classical/checks.hpp"
+#include "../utils/classical_parser.hpp"
 #include <ctime>
 
-int main() {
+int main(int argc, char* argv[]) {
   std::srand(std::time(nullptr)); // use current time as seed for random generator
+
+  cxxopts::Options options("check for classical injectivity");
+  auto [_, __, n_iter, size] = parse_classical(options, argc, argv);
 
   #pragma omp parallel
   #pragma omp single
-  for (int j = 0; j < 1000; ++j)
+  for (int j = 0; j < n_iter; ++j)
   #pragma omp task
   {
     
-    graph_t g = graph_t(10);
+    graph_t g = graph_t(size);
 
     for (int i = 0; i < 20; ++i) {
       g.randomize();

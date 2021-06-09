@@ -22,12 +22,13 @@ typedef class state state_t;
 	namespace precision = boost::multiprecision;
 		
 	// precision
-	#ifndef PRECISION
-		#define PRECISION 128
+	#ifndef DEFAULT_PRECISION
+		#define DEFAULT_PRECISION 128
 	#endif
 
 	// precision setter
-	#define SET_PRECISION precision::mpfr_float::default_precision(PRECISION);
+	#define SET_DEFAULT_PRECISION SET_PRECISION(DEFAULT_PRECISION)
+	#define SET_PRECISION(precision_) precision::mpfr_float::default_precision(precision_);
 		
 	//type
 	#define PROBA_TYPE precision::mpfr_float
@@ -35,7 +36,9 @@ typedef class state state_t;
 	// standard type
 	#define PROBA_TYPE long double
 
-	#define SET_PRECISION
+	// precision setter
+	#define SET_DEFAULT_PRECISION
+	#define SET_PRECISION(precision)
 
 	// namespace for math functions
 	namespace precision = std;
@@ -44,7 +47,7 @@ typedef class state state_t;
 class state {
 public:
 	// tolerance
-	PROBA_TYPE tolerance = 1e-7;
+	PROBA_TYPE tolerance = 0;
 
 	// hasher
 	struct graph_hasher {
