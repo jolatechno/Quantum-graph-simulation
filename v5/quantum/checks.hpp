@@ -35,7 +35,7 @@ bool check(state_t* s) {
 
 	//check for probability
 	if (probability > 1 + probability_tolerance || probability < 1 - probability_tolerance) {
-		printf("probability not equal 1 (%Lf)!!\n", probability);
+		std::cout << "probability not equal 1 (" << probability << ")!!\n";
 		return false;
 	}
 

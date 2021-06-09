@@ -22,6 +22,8 @@
 
 int main() {
 	std::srand(std::time(nullptr)); // use current time as seed for random generator
+
+	SET_PRECISION
 	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -88,7 +90,7 @@ loop:
 			for (auto const & [_, mag] : s->graphs())
 				proba += std::norm(mag);
 
-			printf("total proba is %Lf\n", proba);
+			std::cout << "total proba is " << proba << "\n";
 
 			#ifdef NORMALIZE
 	            s->normalize();

@@ -22,6 +22,8 @@
 
 int main() {
     std::srand(std::time(nullptr)); // use current time as seed for random generator
+
+    SET_PRECISION
     
     graph_t g_1 = graph_t({true, false, false, true, true},  {true, false, true, false, true});
 

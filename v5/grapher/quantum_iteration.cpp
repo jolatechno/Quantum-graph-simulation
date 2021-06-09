@@ -91,13 +91,16 @@
 int main() {
     // ------------------------------------------
     // making stdout unbuffered so it can get redirected to file even if there is an error
+    
     std::setvbuf(stdout, NULL, _IONBF, 0);
 
     std::srand(std::time(nullptr)); // use current time as seed for random generator
 
     // ------------------------------------------
     // initialize state
-    printf("%d %d\n\n", SIZE - NUM_GRAPHS, SIZE + NUM_GRAPHS + 1);
+
+    SET_PRECISION
+
     state_t* s;
     if (RANDOMIZE) {
         s = new state();

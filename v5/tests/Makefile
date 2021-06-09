@@ -7,6 +7,8 @@ NI=5
 TETA=M_PI_4
 PHI=M_PI_2
 
+P=128
+
 targets=$(basename $(wildcard **.cpp))
 
 all: $(targets)
@@ -22,11 +24,11 @@ gprof:
 
 #parameters
 
-slow_reduce:
-	$(eval U_CFLAGS+=-DSLOW_REDUCE)
-
 normalize:
 	$(eval U_CFLAGS+=-DNORMALIZE)
+
+use_mpfr:
+	$(eval U_CFLAGS+=-DUSE_MPRF -lmpfr)
 
 #targets
 
@@ -37,4 +39,4 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS) -DN_ITER=$(NI) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
+	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS) -DN_ITER=$(NI) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI) -DPRECISION=$(P)

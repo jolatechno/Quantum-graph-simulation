@@ -13,6 +13,8 @@ SIZE=8
 DSIZE=3
 N_GRAPHS=3
 
+P=128
+
 targets=$(basename $(wildcard **.cpp))
 
 all: $(targets)
@@ -36,11 +38,12 @@ randomize:
 
 #parameters
 
-slow_reduce:
-	$(eval U_CFLAGS+=-DSLOW_REDUCE)
-
 normalize:
 	$(eval U_CFLAGS+=-DNORMALIZE)
+
+use_mpfr:
+	$(eval U_CFLAGS+=-DUSE_MPRF -lmpfr)
+
 
 #rules
 
@@ -68,7 +71,7 @@ libs:
 	$(U_CXX) -w ../**/**.hpp
 
 $(targets):
-	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI)
+	$(U_CXX) $@.cpp -o$@.out $(U_CFLAGS) -DN_ITER=$(NI) -DMAX_NUM_GRAPHS=$(NG) -DSIZE=$(SIZE) -DTOL=$(TOL) -DTETA=$(TETA) -DPHI=$(PHI) -DPRECISION=$(P)
 
 run:
 	nohup bash -c "time ( ./quantum_iteration.out 2> err.txt > res.json ) 2> time.txt"  2> /dev/null &
