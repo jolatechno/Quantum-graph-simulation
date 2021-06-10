@@ -4,14 +4,11 @@
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
 #include "../utils/quantum_test_parser.hpp"
-#include <ctime>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
 int main(int argc, char* argv[]) {
-    std::srand(std::time(nullptr)); // use current time as seed for random generator
-
     cxxopts::Options options("simple quantum iterator");
     auto [rule, _, rule_, __, n_iter, max_n_graphs, size, tol, normalize_] = parse_test_quantum(options, argc, argv);
 

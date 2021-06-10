@@ -1,9 +1,7 @@
 #include <cxxopts.hpp>
 #include "../quantum/state.hpp"
 #include "../quantum/rules.hpp"
-
-#define _USE_MATH_DEFINES
-#include <cmath>
+#include <ctime>
 
 std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::string, bool> parse_quantum(
     cxxopts::Options &options, int argc, char* argv[]) {
@@ -12,7 +10,7 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("step_split_merge_all"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
-        ("N,normalize", "normalize after each iteration", cxxopts::value<bool>()->default_value("false"))
+        ("N,normalize", "normalize after each iteration", cxxopts::value<bool>())
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("10"))
 
@@ -23,7 +21,7 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
         ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
-        ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>()->default_value("false"))
+        ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>())
 
         ("teta2", "teta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
@@ -34,7 +32,9 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
         ("randomize", "randomize initial state", cxxopts::value<bool>()->default_value("false"))
 
         ("delta-size", "delta of sizes in the random starting state", cxxopts::value<unsigned int>()->default_value("5"))
-        ("num-graphs", "number of graph for each size in random starting state", cxxopts::value<unsigned int>()->default_value("3"));
+        ("num-graphs", "number of graph for each size in random starting state", cxxopts::value<unsigned int>()->default_value("3"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>());
 
     // parse
     auto result = options.parse(argc, argv);
@@ -43,6 +43,14 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
       std::cout << options.help() << std::endl;
       exit(0);
     }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0));
 
     // ------------------------------------------
     // set precision
@@ -80,16 +88,17 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
 
     s->tolerance = result["tol"].as<PROBA_TYPE>();
 
-    PROBA_TYPE const teta = M_PI*result["teta"].as<PROBA_TYPE>();
-    PROBA_TYPE const phi = M_PI*result["phi"].as<PROBA_TYPE>();
+    PROBA_TYPE const teta_pi = result["teta"].as<PROBA_TYPE>();
+    PROBA_TYPE const phi_pi = result["phi"].as<PROBA_TYPE>();
 
-    auto const [do_not, do_] = unitary(teta, phi);
+    auto const [do_not, do_] = unitary(teta_pi, phi_pi);
 
     state_t::mag_t do_not_2, do_2;
-    if (result["different-params"].as<bool>()) {
-        PROBA_TYPE teta2 = M_PI*result["teta2"].as<PROBA_TYPE>();
-        PROBA_TYPE phi2 = M_PI*result["phi2"].as<PROBA_TYPE>();
-        auto [do_not_2_, do_2_] = unitary(teta2, phi2);
+    if (result.count("different-params")) {
+        PROBA_TYPE teta2_pi = M_PI*result["teta2"].as<PROBA_TYPE>();
+        PROBA_TYPE phi2_pi = M_PI*result["phi2"].as<PROBA_TYPE>();
+
+        auto [do_not_2_, do_2_] = unitary(teta2_pi, phi2_pi);
         do_not_2 = do_not_2_;
         do_2 = do_2_;
     } else {
@@ -135,5 +144,5 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
 
     rule_ = result["rule"].as<std::string>();
 
-    return {s, rule, rule2, n_iter, max_n_graphs, rule_, result["normalize"].as<bool>()};
+    return {s, rule, rule2, n_iter, max_n_graphs, rule_, result.count("normalize")};
 }

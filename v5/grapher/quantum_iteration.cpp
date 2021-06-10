@@ -4,15 +4,12 @@
 #include "../quantum/state.hpp"
 #include "../quantum/checks.hpp"
 #include "../utils/quantum_parser.hpp"
-#include <ctime>
 
 int main(int argc, char* argv[]) {
     // ------------------------------------------
     // making stdout unbuffered so it can get redirected to file even if there is an error
     
     std::setvbuf(stdout, NULL, _IONBF, 0);
-
-    std::srand(std::time(nullptr)); // use current time as seed for random generator
 
     // ------------------------------------------
     // initialize state

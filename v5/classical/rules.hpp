@@ -6,13 +6,13 @@
 std::vector<graph::op_t> inline get_split_merge(graph_t const &graph) {
 	std::vector<graph::op_t> split_merges;
 	
-	auto const size_ = graph.size();
-	for (int i = 0; i < size_; ++i)
+	auto const last_idx_ = graph.size() - 1;
+	for (int i = 0; i <= last_idx_; ++i)
 		if (graph.left[i] && graph.right[i]) {
 			split_merges.push_back({i, graph.split_t});
 		} else {
 			// next pos
-			unsigned short int next_pos = (i + 1) % size_; 
+			unsigned short int next_pos = i == last_idx_ ? 0 : i + 1; 
 
 			if (graph.left[i] && graph.right[next_pos] && !graph.left[next_pos])
 				split_merges.push_back({i, graph.merge_t});

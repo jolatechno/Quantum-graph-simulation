@@ -15,17 +15,16 @@ typedef class state state_t;
 // mpfr
 #ifdef USE_MPRF
 	//import
-	#include <boost/multiprecision/mpfr.hpp>
-	#include <boost/math/special_functions/gamma.hpp>
+	#include "../utils/mpreal.h"
 	
 	// namespace for math functions
-	namespace precision = boost::multiprecision;
+	namespace precision = mpfr;
+
+	//type
+	#define PROBA_TYPE precision::mpreal
 
 	// precision setter
-	#define SET_PRECISION(precision_) precision::mpfr_float::default_precision(precision_);
-		
-	//type
-	#define PROBA_TYPE precision::mpfr_float
+	#define SET_PRECISION(precision_) PROBA_TYPE::set_default_prec(precision_);
 #else
 	// standard type
 	#define PROBA_TYPE long double
@@ -107,7 +106,7 @@ void state::reduce_all() {
 	buff.swap(graphs_);
 
 	#pragma omp parallel
-	#pragma omp single
+	#pragma omp master
 	for(auto it = buff.begin(); it != buff.end();) {
 	    // range of similar graphs to delete
 	    auto const graph = it->first;
@@ -131,7 +130,7 @@ void state::reduce_all() {
 
 // use std::partition !!
 void state::discard_all(size_t n_graphs) {
-	if (graphs_.size() < n_graphs)
+	if (graphs_.size() <= n_graphs)
 		return;
 
 	// create map full of vector element
@@ -139,9 +138,9 @@ void state::discard_all(size_t n_graphs) {
 
 	// find nth largest element
 	std::ranges::nth_element(vect.begin(), vect.begin() + n_graphs, vect.end(),
-		[&](std::pair<std::shared_ptr<graph_t>, mag_t> const &it1,
+		[](std::pair<std::shared_ptr<graph_t>, mag_t> const &it1,
 			std::pair<std::shared_ptr<graph_t>, mag_t> const &it2) {
-			return  std::norm(it1.second) > std::norm(it2.second);	
+			return  std::norm(it1.second) > std::norm(it2.second);
 		});
 
 	// insert into graphs_
@@ -170,7 +169,7 @@ void state::step_all(rule_t rule) {
 	buff.swap(graphs_);
 
 	#pragma omp parallel
-	#pragma omp single
+	#pragma omp master
   	for (auto & [graph, mag] : buff)
 	#pragma omp task
   	{

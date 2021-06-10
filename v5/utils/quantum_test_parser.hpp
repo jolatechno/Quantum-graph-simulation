@@ -1,9 +1,7 @@
 #include <cxxopts.hpp>
 #include "../quantum/state.hpp"
 #include "../quantum/rules.hpp"
-
-#define _USE_MATH_DEFINES
-#include <cmath>
+#include <ctime>
 
 std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned int, unsigned int, int, PROBA_TYPE, bool> parse_test_quantum(
     cxxopts::Options &options, int argc, char* argv[]) {
@@ -22,7 +20,9 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"));
+        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>());
 
     // parse
     auto result = options.parse(argc, argv);
@@ -31,6 +31,14 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
       std::cout << options.help() << std::endl;
       exit(0);
     }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0)); 
 
     // ------------------------------------------
     // set precision
@@ -49,9 +57,9 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
     unsigned int size = result["size"].as<unsigned int>();
     PROBA_TYPE tol = result["tol"].as<PROBA_TYPE>();
 
-    PROBA_TYPE const teta = M_PI*result["teta"].as<PROBA_TYPE>();
-    PROBA_TYPE const phi = M_PI*result["phi"].as<PROBA_TYPE>();
-    auto const [do_not, do_] = unitary(teta, phi);
+    PROBA_TYPE const teta_pi = result["teta"].as<PROBA_TYPE>();
+    PROBA_TYPE const phi_pi = result["phi"].as<PROBA_TYPE>();
+    auto const [do_not, do_] = unitary(teta_pi, phi_pi);
 
     // ------------------------------------------
     // rules
@@ -87,5 +95,5 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
     } else
         throw;
 
-    return {rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, tol, result["normalize"].as<bool>()};
+    return {rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, tol, result.count("normalize")};
 }

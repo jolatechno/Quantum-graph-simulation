@@ -1,8 +1,6 @@
 #include <cxxopts.hpp>
 #include "../classical/rules.hpp"
-
-#define _USE_MATH_DEFINES
-#include <cmath>
+#include <ctime>
 
 std::tuple<std::function<void(graph_t &g)>, std::string, unsigned int, unsigned int> parse_classical(
     cxxopts::Options &options, int argc, char* argv[]) {
@@ -12,7 +10,9 @@ std::tuple<std::function<void(graph_t &g)>, std::string, unsigned int, unsigned 
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("1000"))
 
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"));
+        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>());
 
     // parse
     auto result = options.parse(argc, argv);
@@ -21,6 +21,14 @@ std::tuple<std::function<void(graph_t &g)>, std::string, unsigned int, unsigned 
       std::cout << options.help() << std::endl;
       exit(0);
     }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0));
 
     // ------------------------------------------
     // parameters

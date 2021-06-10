@@ -13,46 +13,48 @@ short int const element_idx = -3;
 
 class node {
 private:
-	short int left_idx__or_element_;
-	short int right_idx__or_type_;
 	size_t hash_ = 0;
-	bool has_most_left_zero_ = false;
+	short int left_idx__or_element__and_has_most_left_zero_; // use sign bit for has_most_left_zero_ !!
+	short int right_idx__or_type_;
 public:
 
 	// constructors
 	node(short int n) :
-		left_idx__or_element_(n), right_idx__or_type_(element_idx) {
+		left_idx__or_element__and_has_most_left_zero_(n + 1), right_idx__or_type_(element_idx) {
 
 		hash_ = n;
 		boost::hash_combine(hash_, element_idx);
 		
-		has_most_left_zero_ = n == 0;
+		if (n == 0)
+			left_idx__or_element__and_has_most_left_zero_ = -left_idx__or_element__and_has_most_left_zero_;
 	}
 
 	node(short int const idx, node_t const &other, short int const type) :
-		left_idx__or_element_(idx), right_idx__or_type_(type) {
+		left_idx__or_element__and_has_most_left_zero_(idx + 1), right_idx__or_type_(type) {
 
 		boost::hash_combine(hash_, other.hash_);
 		boost::hash_combine(hash_, type);
 
 		// check for most left zero
-		if (is_left())
-			has_most_left_zero_ = other.has_most_left_zero_;
+		if (is_left() && other.has_most_left_zero())
+			left_idx__or_element__and_has_most_left_zero_ = -left_idx__or_element__and_has_most_left_zero_;
 	}
 
 	node(short int const left_idx, node_t const &left, short int const right_idx, node_t const &right) :
-		left_idx__or_element_(left_idx), right_idx__or_type_(right_idx){
+		left_idx__or_element__and_has_most_left_zero_(left_idx + 1), right_idx__or_type_(right_idx){
 
 		boost::hash_combine(hash_, left.hash_);
 		boost::hash_combine(hash_, right.hash_);
-		has_most_left_zero_ = left.has_most_left_zero_ || right.has_most_left_zero_;
+
+		if (left.has_most_left_zero() || right.has_most_left_zero())
+			left_idx__or_element__and_has_most_left_zero_ = -left_idx__or_element__and_has_most_left_zero_;
 	}
 
 	// getters
 	size_t inline hash() const { return hash_; }
-	short int inline left_idx() const { return left_idx__or_element_; }
+	short int inline left_idx() const { return std::abs(left_idx__or_element__and_has_most_left_zero_) - 1; }
 	short int inline right_idx() const { return right_idx__or_type_; }
-	bool inline has_most_left_zero() const { return has_most_left_zero_; }
+	bool inline has_most_left_zero() const { return left_idx__or_element__and_has_most_left_zero_ < 0; }
 
 	// type getters
 	bool inline is_element() const { return right_idx__or_type_ == element_idx; }
