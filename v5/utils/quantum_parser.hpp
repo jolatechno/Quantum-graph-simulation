@@ -133,7 +133,7 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
     } else
         rule2 = rule;
 
-    rule_ += result["rule2"].as<std::string>();
+    rule_ = result["rule"].as<std::string>();
 
     return {s, rule, rule2, n_iter, max_n_graphs, rule_, result["normalize"].as<bool>()};
 }

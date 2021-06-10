@@ -65,11 +65,12 @@ for i in range(1000000):
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
-ax.plot_surface(iterations, sizes, probas, cmap='viridis', edgecolor='none')
-ax.set_title(f'graph probabilty ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
 ax.set_zlabel('probability')
+ax.set_title(f'graph probabilty ({ data["rule"] })', pad=20)
+
+ax.plot_surface(iterations, sizes, probas, cmap='viridis', edgecolor='none')
 
 fig.savefig("plots/probabilities/" + name)
 
@@ -79,11 +80,12 @@ fig.savefig("plots/probabilities/" + name)
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
-ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
-ax.set_title(f'number of graphs ({ data["rule"] })')
 ax.set_ylabel('iterations')
 ax.set_xlabel('graph size')
 ax.set_zlabel('number of graphs')
+ax.set_title(f'number of graphs ({ data["rule"] })', pad=20)
+
+ax.plot_surface(iterations, sizes, nums, cmap='viridis', edgecolor='none')
 
 fig.savefig("plots/number/" + name)
 
@@ -93,7 +95,7 @@ fig.savefig("plots/number/" + name)
 fig = plt.figure()
 ax = plt.axes()
 ax.set_xlabel('iterations')
-ax.set_title(f'total probabilty and number of graph ({ data["rule"] })')
+ax.set_title(f'total probabilty and number of graph ({ data["rule"] })', pad=20)
 
 color = 'tab:blue'
 color2 = 'tab:red'
@@ -118,7 +120,8 @@ fig = plt.figure()
 ax = plt.axes()
 ax.set_xlabel('iterations')
 ax.set_ylabel('sizes')
-ax.set_title(f'graph average size ({ data["rule"] })')
+ax.set_title(f'graph average size ({ data["rule"] })', pad=20)
+
 ax.errorbar(iterations_list, avg_size, std_dev_size,
 						capsize=2, elinewidth=1, markeredgewidth=2, label="average size")
 

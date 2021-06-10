@@ -42,9 +42,27 @@ std::pair<std::vector<graph::op_t>, state_t::mag_t> static subset(std::vector<gr
 
 //to create a reversible dynamic
 std::pair<state_t::mag_t, state_t::mag_t> unitary(PROBA_TYPE teta, PROBA_TYPE phi) {
-	state_t::mag_t non_merge_ = {precision::cos(teta), 0};
-	state_t::mag_t merge_ = {precision::cos(phi), precision::sin(phi)};
-	merge_ *= precision::sin(teta);
+	PROBA_TYPE cos_teta = precision::cos(teta);
+	PROBA_TYPE e, sin_teta = precision::sin(teta);
+
+	do {
+		e = cos_teta*cos_teta + sin_teta*sin_teta - 1;
+
+		cos_teta -= e/2;
+	} while (e != 0);
+
+	PROBA_TYPE cos_phi = precision::cos(phi);
+	PROBA_TYPE sin_phi = precision::sin(phi);
+
+	do {
+		e = cos_phi*cos_phi + sin_phi*sin_phi - 1;
+
+		cos_phi -= e/2;
+	} while (e != 0);
+
+
+	state_t::mag_t non_merge_ = {cos_teta, 0};
+	state_t::mag_t merge_ = {sin_teta*cos_phi, sin_teta*sin_phi};
 	return {non_merge_, merge_};
 } 
 
