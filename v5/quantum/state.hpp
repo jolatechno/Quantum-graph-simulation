@@ -20,14 +20,8 @@ typedef class state state_t;
 	
 	// namespace for math functions
 	namespace precision = boost::multiprecision;
-		
-	// precision
-	#ifndef DEFAULT_PRECISION
-		#define DEFAULT_PRECISION 128
-	#endif
 
 	// precision setter
-	#define SET_DEFAULT_PRECISION SET_PRECISION(DEFAULT_PRECISION)
 	#define SET_PRECISION(precision_) precision::mpfr_float::default_precision(precision_);
 		
 	//type
@@ -37,7 +31,6 @@ typedef class state state_t;
 	#define PROBA_TYPE long double
 
 	// precision setter
-	#define SET_DEFAULT_PRECISION
 	#define SET_PRECISION(precision)
 
 	// namespace for math functions
@@ -110,18 +103,29 @@ void state::reduce_all() {
 		printf("reducing %ld graphs...\n", graphs_.size());
 	#endif
 
-    for(auto it = graphs_.begin(); it != graphs_.end();) {
+    graph_map_t buff; // faster, parallel reduce that uses WAY more ram
+	buff.swap(graphs_);
+
+	#pragma omp parallel
+	#pragma omp single
+	for(auto it = buff.begin(); it != buff.end();) {
 	    // range of similar graphs to delete
-	    auto upper = graphs_.equal_range(it->first).second;
+	    auto const graph = it->first;
+	    auto const range = buff.equal_range(graph);
 
-	    for(auto jt = std::next(it); jt != upper; ++jt)
-	    	it->second += jt->second;
+	    // next iteration
+	    it = range.second;
 
-	    // if the first graphgs has a zero probability, erase the whole range
-	    if (!check_zero(it->second))
-	    	++it;
-	    	
-		it = graphs_.unsafe_erase(it, upper);
+	    #pragma omp task
+	    {
+	    	mag_t acc = {0, 0};
+	    	for(auto jt = range.first; jt != range.second; ++jt)
+	        	acc += jt->second;
+
+		    // if the first graphgs has a zero probability, erase the whole range
+		    if (!check_zero(acc))
+		    	graphs_.insert({graph, acc});
+	    }
 	}
 }
 
