@@ -10,13 +10,12 @@
 
 int main(int argc, char* argv[]) {
     cxxopts::Options options("simple quantum iterator");
-    auto [rule, _, rule_, __, n_iter, max_n_graphs, size, tol, normalize_] = parse_test_quantum(options, argc, argv);
+    auto [rule, _, rule_, __, n_iter, max_n_graphs, size, normalize_] = parse_test_quantum(options, argc, argv);
 
     graph_t g_1 = graph(size);
     g_1.randomize();
 
     state_t* s = new state(g_1);
-    s->tolerance = tol;
 
     for (int i = 1; i < n_iter; ++i) {
 

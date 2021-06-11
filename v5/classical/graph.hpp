@@ -8,6 +8,32 @@
 	#define BOOL_TYPE bool /*char*/
 #endif
 
+// mpfr
+#ifdef USE_MPRF
+	//import
+	#include "../utils/mpreal.h"
+	
+	// namespace for math functions
+	namespace precision = mpfr;
+
+	//type
+	#define PROBA_TYPE precision::mpreal
+
+	// precision setter
+	#define SET_PRECISION(precision_) PROBA_TYPE::set_default_prec(precision_);
+#else
+	// standard type
+	#define PROBA_TYPE long double
+
+	// precision setter
+	#define SET_PRECISION(precision)
+
+	// namespace for math functions
+	namespace precision = std;
+#endif
+
+PROBA_TYPE tolerance = 0;
+
 // forward declaration of the graph_t type 
 typedef class graph graph_t;
 size_t const separator = -1; 
@@ -28,6 +54,30 @@ public:
   	// particules positions
   	std::vector<BOOL_TYPE> mutable left; //not bool to not use space efficient bool vectors
 	std::vector<BOOL_TYPE> mutable right;
+
+	// magnitude
+	PROBA_TYPE mutable real = 1.;
+	PROBA_TYPE mutable imag = 0.;
+
+	// zero checker
+	PROBA_TYPE norm() const { return real*real + imag*imag; }
+	bool inline check_zero() const { return norm() <= tolerance; }
+
+	// multiply and add probability
+	std::complex<PROBA_TYPE> inline mag() const { return std::complex<PROBA_TYPE>(real, imag); }
+	void inline multiply_magnitude(std::complex<PROBA_TYPE> mag) const {
+		PROBA_TYPE temp = real;
+		real = temp*mag.real() - imag*mag.imag();
+		imag = imag*mag.real() + temp*mag.imag();
+	}
+	void inline add_magnitude(std::complex<PROBA_TYPE> mag) const {
+		real += mag.real();
+		imag += mag.imag();
+	}
+	void inline normalize_magnitude(PROBA_TYPE norm_) const {
+		real /= norm_;
+		imag /= norm_;
+	}
 
 private:
 	// variables 

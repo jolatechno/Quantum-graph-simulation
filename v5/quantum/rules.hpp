@@ -38,7 +38,6 @@ std::pair<std::vector<graph::op_t>, state_t::mag_t> static subset(std::vector<gr
 		} else
 			proba *= sign*non_merge;
 
-
 		subset_numb /= 2;
 	}
 
@@ -51,11 +50,11 @@ std::pair<state_t::mag_t, state_t::mag_t> unitary(PROBA_TYPE teta_pi, PROBA_TYPE
 		PROBA_TYPE cos_x = precision::cos(x);
 		PROBA_TYPE e, sin_x = precision::sin(x);
 
-		do {
+		/*do {
 			e = cos_x*cos_x + sin_x*sin_x - 1;
 
 			cos_x -= e;
-		} while (e != 0);
+		} while (e != 0);*/
 
 		return std::pair<PROBA_TYPE, PROBA_TYPE>(cos_x, sin_x);
 	};
@@ -71,21 +70,21 @@ std::pair<state_t::mag_t, state_t::mag_t> unitary(PROBA_TYPE teta_pi, PROBA_TYPE
 
 // split merge a graph
 state_t::rule_t split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, state_t::mag_t>> graphs;
+	return [=](std::shared_ptr<graph_t> const &g) {
+		std::vector<std::shared_ptr<graph_t>> graphs;
 
 		// check for identity
-		bool const identity = s->check_zero(merge);
+		bool const identity = std::norm(merge) <= tolerance;
 		if (identity) {
-			graphs.push_back({g, non_merge});
+			graphs.push_back(g);
 			return graphs;
 		}
 
 		// check for classical case
-		bool const classical = s->check_zero(non_merge);
+		bool const classical = std::norm(non_merge) <= tolerance;
 		if (classical) {
 			split_merge(*g);
-			graphs.push_back({g, merge});
+			graphs.push_back(g);
 			return graphs;
 		}
 
@@ -98,7 +97,8 @@ state_t::rule_t split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t 
 
 			auto [split_merge_list, mag_split_merge] = subset(split_merge, j, non_merge, merge);
 			g_->split_merge(split_merge_list);
-			graphs.push_back({g_, mag_split_merge});
+			g_->multiply_magnitude(mag_split_merge);
+			graphs.push_back(g_);
 				
 		}
 
@@ -108,21 +108,21 @@ state_t::rule_t split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t 
 
 // split merge a graph
 state_t::rule_t erase_create_all(state_t::mag_t const &non_create, state_t::mag_t const &create) {
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, state_t::mag_t>> graphs;
+	return [=](std::shared_ptr<graph_t> const &g) {
+		std::vector<std::shared_ptr<graph_t>> graphs;
 
 		// check for identity
-		bool const identity = s->check_zero(create);
+		bool const identity = std::norm(create) <= tolerance;
 		if (identity) {
-			graphs.push_back({g, non_create});
+			graphs.push_back(g);
 			return graphs;
 		}
 
 		// check for classical case
-		bool const classical = s->check_zero(non_create);
+		bool const classical = std::norm(non_create) <= tolerance;
 		if (classical) {
 			erase_create(*g);
-			graphs.push_back({g, create});
+			graphs.push_back(g);
 			return graphs;
 		}
 
@@ -135,7 +135,8 @@ state_t::rule_t erase_create_all(state_t::mag_t const &non_create, state_t::mag_
 
 			auto [split_merge_list, mag_erase_create] = subset(erase_create, j, non_create, create);
 			g_->erase_create(split_merge_list);
-			graphs.push_back({g_, mag_erase_create});
+			g_->multiply_magnitude(mag_erase_create);
+			graphs.push_back(g_);
 		}
 
 		return graphs;
@@ -145,20 +146,20 @@ state_t::rule_t erase_create_all(state_t::mag_t const &non_create, state_t::mag_
 //step and split merge
 state_t::rule_t step_split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
 	auto const split_merge_all_ = split_merge_all(non_merge, merge);
-
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
+	
+	return [=](std::shared_ptr<graph_t> const &g) {
 		g->step();
-		return split_merge_all_(s, g);
+		return split_merge_all_(g);
 	};
 }
 
 state_t::rule_t reversed_step_split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
 	auto const split_merge_all_ = split_merge_all(non_merge, merge);
 
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		auto graphs_ = split_merge_all_(s, g);
+	return [=](std::shared_ptr<graph_t> const &g) {
+		auto graphs_ = split_merge_all_(g);
 
-		for (auto & [graph, _] : graphs_)
+		for (auto & graph : graphs_)
 			graph->reversed_step();
 		
 		return graphs_;
@@ -167,20 +168,20 @@ state_t::rule_t reversed_step_split_merge_all(state_t::mag_t const &non_merge, s
 
 //step and erase create
 state_t::rule_t step_erase_create_all(state_t::mag_t const &non_erase, state_t::mag_t const &erase) {
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
+	return [=](std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_erase, erase);
 		g->step();
-		return erase_create_all_(s, g);
+		return erase_create_all_(g);
 	};
 }
 
 state_t::rule_t reversed_step_erase_create_all(state_t::mag_t const &non_erase, state_t::mag_t const &erase) {
 	auto const erase_create_all_ = erase_create_all(non_erase, erase);
 
-	return [=](state_t const *s, std::shared_ptr<graph_t> const &g) {
-		auto graphs_ = erase_create_all_(s, g);
+	return [=](std::shared_ptr<graph_t> const &g) {
+		auto graphs_ = erase_create_all_(g);
 
-		for (auto & [graph, _] : graphs_)
+		for (auto & graph : graphs_)
 			graph->reversed_step();
 		
 		return graphs_;

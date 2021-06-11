@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[]) {
 	cxxopts::Options options("check for quantum injectivity");
-    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, tol, normalize_] = parse_test_quantum(options, argc, argv);
+    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, normalize_] = parse_test_quantum(options, argc, argv);
 	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -73,12 +73,6 @@ random:
 
 loop:
 		const auto sum = [&](state_t *s) {
-			PROBA_TYPE proba = 0;
-			for (auto const & [_, mag] : s->graphs())
-				proba += std::norm(mag);
-
-			std::cout << "total proba is " << proba << "\n";
-
 			if (normalize_)
 	            s->normalize();
 
@@ -95,7 +89,6 @@ loop:
 		};
 
 		state_t* s = new state(g_1);
-		s->tolerance = tol;
 
 		for (int i = 0; i < n_iter; ++i) {
 			s->step_all(rule);

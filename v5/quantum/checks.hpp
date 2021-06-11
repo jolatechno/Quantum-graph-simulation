@@ -14,7 +14,7 @@ bool check(state_t* s) {
 	//iterate over all graphs
     for(auto it = data.begin(); it != data.end(); ++it) {
     	//add probability
-    	probability += std::norm(it->second);
+    	probability += (*it)->norm();
 
     	//check if a probability is under zero
 		/*if (check_zero(it->second)) {
@@ -23,11 +23,11 @@ bool check(state_t* s) {
 		}*/
 
 		//check graph
-		if (!graph_checker(*it->first))
+		if (!graph_checker(*(*it)))
 			return false;
 
     	//iterate over all graphs
-    	if (data.count(it->first) != 1) {
+    	if (data.count(*it) != 1) {
 			printf("two graphs with the same hash!!\n");
 			return false;
 		}

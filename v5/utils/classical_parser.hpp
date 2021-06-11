@@ -10,6 +10,8 @@ std::tuple<std::function<void(graph_t &g)>, std::string, unsigned int, unsigned 
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("1000"))
 
+        ("v,verbose", "show debugging informations")
+
         ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
 
         ("seed", "random engine seed", cxxopts::value<unsigned>());
@@ -38,7 +40,8 @@ std::tuple<std::function<void(graph_t &g)>, std::string, unsigned int, unsigned 
     // ------------------------------------------
     // initialize state
 
-    unsigned int size = result["size"].as<unsigned int>();
+    unsigned int size = result["size"].as<unsigned int>();    
+    verbose = result.count("verbose");
 
     // ------------------------------------------
     // read rule

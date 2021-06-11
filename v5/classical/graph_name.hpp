@@ -130,7 +130,7 @@ void inline graph_name::merge(short unsigned int idx) {
 	hashed_ = false;
 
 	// destination idx
-	short unsigned int right_idx = (idx + 1) % size();
+	short unsigned int right_idx = idx == size() - 1 ? 0 : idx + 1;
 	auto left = node_buff_[nodes_[idx]];
 	auto right = node_buff_[nodes_[right_idx]];
 

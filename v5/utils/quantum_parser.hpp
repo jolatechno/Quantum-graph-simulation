@@ -10,7 +10,11 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("step_split_merge_all"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
-        ("N,normalize", "normalize after each iteration", cxxopts::value<bool>())
+        ("N,normalize", "normalize after each iteration")
+
+        ("slow-compare", "slower but closer to exact comparaisons")
+
+        ("v,verbose", "show debugging informations")
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("10"))
 
@@ -86,7 +90,9 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
         s = new state(g_1);
     }
 
-    s->tolerance = result["tol"].as<PROBA_TYPE>();
+    tolerance = result["tol"].as<PROBA_TYPE>();
+   slow_comparisons = result.count("slow-compare");
+    verbose = result.count("verbose");
 
     PROBA_TYPE const teta_pi = result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = result["phi"].as<PROBA_TYPE>();

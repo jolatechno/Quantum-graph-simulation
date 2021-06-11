@@ -8,9 +8,6 @@ all: $(targets)
 test:
 	$(eval U_CFLAGS+=-DTEST)
 
-verbose:
-	$(eval U_CFLAGS+=-DVERBOSE)
-
 gprof:
 	$(eval U_CFLAGS+=-pg)
 

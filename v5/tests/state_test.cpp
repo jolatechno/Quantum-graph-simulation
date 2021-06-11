@@ -10,7 +10,7 @@
 
 int main(int argc, char* argv[]) {
 	cxxopts::Options options("test state class");
-    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, _, size, tol, __] = parse_test_quantum(options, argc, argv);
+    auto [rule, reversed_rule, rule_, reversed_rule_, n_iter, _, size, __] = parse_test_quantum(options, argc, argv);
 	
 	printf("A graphs is inputed by a series of ndoes, having particules (`>` for right and `<` for left) or not.\n");
 	printf("With nodes being separated by a '-'.\n");
@@ -74,8 +74,7 @@ random:
 loop:
 
 		state_t* s = new state(g_1);
-		s->tolerance = tol;
-
+		
 		s->step_all(rule);
 		s->reduce_all();
 

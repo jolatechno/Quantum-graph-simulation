@@ -2,7 +2,7 @@
 
 #include <complex> //for complex
 #include "../classical/graph.hpp"
-#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_unordered_set.h>
 #include <tbb/concurrent_vector.h>
 #include <boost/range/combine.hpp>
 #include <map>
@@ -12,56 +12,41 @@
 // forward definition of the state type
 typedef class state state_t;
 
-// mpfr
-#ifdef USE_MPRF
-	//import
-	#include "../utils/mpreal.h"
-	
-	// namespace for math functions
-	namespace precision = mpfr;
-
-	//type
-	#define PROBA_TYPE precision::mpreal
-
-	// precision setter
-	#define SET_PRECISION(precision_) PROBA_TYPE::set_default_prec(precision_);
-#else
-	// standard type
-	#define PROBA_TYPE long double
-
-	// precision setter
-	#define SET_PRECISION(precision)
-
-	// namespace for math functions
-	namespace precision = std;
-#endif
+bool slow_comparisons = false;
 
 class state {
 public:
-	// tolerance
-	PROBA_TYPE tolerance = 0;
-
 	// hasher
 	struct graph_hasher {
 		size_t operator()(std::shared_ptr<graph_t> const &g) const {
-			return g.get()->hash();
+			return g->hash();
 		}
 	};
 
 	// comparator
 	struct graph_comparator {
 		bool operator()(std::shared_ptr<graph_t> const &g1, std::shared_ptr<graph_t> const &g2) const {
-			return g1->hash() == g2->hash();
+			if (slow_comparisons) {
+				if (g1->size() != g2->size())
+					return false;
+
+				if (g1->name().hash() != g2->name().hash())
+					return false;
+
+				if (g1->left != g2->left)
+					return false;
+
+				return g1->right == g2->right;
+
+			} else 
+				return g1->hash() == g2->hash();
 		}
 	};
 
 	// type definition
 	typedef std::complex<PROBA_TYPE> mag_t;
-	typedef tbb::concurrent_unordered_multimap<std::shared_ptr<graph_t>, mag_t, graph_hasher, graph_comparator> graph_map_t;
-	typedef std::function<tbb::concurrent_vector<std::pair<std::shared_ptr<graph_t>, mag_t>>(state_t const *s, std::shared_ptr<graph_t> const &g)> rule_t;
-
-	// check zero probas
-	bool inline check_zero(const mag_t& mag) const { return std::norm(mag) <= tolerance; }
+	typedef tbb::concurrent_unordered_multiset<std::shared_ptr<graph_t>, graph_hasher, graph_comparator> graph_map_t;
+	typedef std::function<std::vector<std::shared_ptr<graph_t>>(std::shared_ptr<graph_t> const &g)> rule_t;
 
 private:
 	// main list 
@@ -73,7 +58,7 @@ public:
 
 	state(graph_t &g) {
 		// add graph 
-		graphs_.insert({std::make_shared<graph_t>(g), {1, 0}});
+		graphs_.insert(std::make_shared<graph_t>(g));
 	}
 
 	//getter
@@ -98,9 +83,8 @@ public:
 
 // insert operators 
 void state::reduce_all() {
-	#ifdef VERBOSE
+	if (verbose)
 		printf("reducing %ld graphs...\n", graphs_.size());
-	#endif
 
     graph_map_t buff; // faster, parallel reduce that uses WAY more ram
 	buff.swap(graphs_);
@@ -109,7 +93,7 @@ void state::reduce_all() {
 	#pragma omp master
 	for(auto it = buff.begin(); it != buff.end();) {
 	    // range of similar graphs to delete
-	    auto const graph = it->first;
+	    auto graph = *it;
 	    auto const range = buff.equal_range(graph);
 
 	    // next iteration
@@ -117,15 +101,17 @@ void state::reduce_all() {
 
 	    #pragma omp task
 	    {
-	    	mag_t acc = {0, 0};
-	    	for(auto jt = range.first; jt != range.second; ++jt)
-	        	acc += jt->second;
+	    	for(auto jt = std::next(range.first); jt != range.second; ++jt)
+	        	graph->add_magnitude((*jt)->mag());
 
 		    // if the first graphgs has a zero probability, erase the whole range
-		    if (!check_zero(acc))
-		    	graphs_.insert({graph, acc});
+		    if (!graph->check_zero())
+		    	graphs_.insert(graph);
 	    }
 	}
+
+	if (verbose)
+		printf("...to %ld graphs\n", graphs_.size());
 }
 
 // use std::partition !!
@@ -134,13 +120,12 @@ void state::discard_all(size_t n_graphs) {
 		return;
 
 	// create map full of vector element
-	std::vector<std::pair<std::shared_ptr<graph_t>, mag_t>> vect(graphs_.begin(), graphs_.end());
+	std::vector<std::shared_ptr<graph_t>> vect(graphs_.begin(), graphs_.end());
 
 	// find nth largest element
 	std::ranges::nth_element(vect.begin(), vect.begin() + n_graphs, vect.end(),
-		[](std::pair<std::shared_ptr<graph_t>, mag_t> const &it1,
-			std::pair<std::shared_ptr<graph_t>, mag_t> const &it2) {
-			return  std::norm(it1.second) > std::norm(it2.second);
+		[](std::shared_ptr<graph_t> const &it1, std::shared_ptr<graph_t> const &it2) {
+			return  it1->norm() > it2->norm();
 		});
 
 	// insert into graphs_
@@ -151,16 +136,16 @@ void state::discard_all(size_t n_graphs) {
 void state::normalize() {
 	PROBA_TYPE proba = 0;
 
-	for (auto & [_, mag] : graphs_)
-		proba += std::norm(mag);
+	for (auto & graph : graphs_)
+		proba += graph->norm();
 
 	proba = precision::sqrt(proba);
 
 	#pragma omp parallel
-	#pragma omp single
+	#pragma omp master
 	for (auto it = graphs_.begin(); it != graphs_.end(); ++it)
 		#pragma omp task
-		it->second /= proba;
+		(*it)->normalize_magnitude(proba);
 }
 
 // dynamic
@@ -170,30 +155,29 @@ void state::step_all(rule_t rule) {
 
 	#pragma omp parallel
 	#pragma omp master
-  	for (auto & [graph, mag] : buff)
+  	for (auto & graph : buff)
 	#pragma omp task
   	{
-  		auto const graphs = rule(this, graph);
-
-  		for (auto & [graph_, mag_] : graphs)
-  		//#pragma task
-  			graphs_.insert({graph_, mag_ * mag});
+  		auto const graphs = rule(graph);
+		graphs_.insert(graphs.begin(), graphs.end());
+  			
   	}
 }
 
 // randomize
 void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
-	auto const random_complex = [&]() {
-		PROBA_TYPE real = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		PROBA_TYPE imag = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		return mag_t(real, imag);
+	auto const random_ = [&]() {
+		PROBA_TYPE numb = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		return numb;
 	};
 
 	for (int size = min_graph_size; size < max_graph_size; ++size)
 		for (int j = 0; j < num_graphs; ++j) {
 			graph_t g(size);
 			g.randomize();
-			graphs_.insert({std::make_shared<graph_t>(g), random_complex()});
+			g.imag = random_();
+			g.real = random_();
+			graphs_.insert(std::make_shared<graph_t>(g));
 		}
 
 	reduce_all();
@@ -201,15 +185,16 @@ void state::randomize(unsigned short int min_graph_size, unsigned short int max_
 }
 
 void state::zero_randomize(unsigned short int min_graph_size, unsigned short int max_graph_size) {
-	auto const random_complex = [&]() {
-		PROBA_TYPE real = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		PROBA_TYPE imag = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		return mag_t(real, imag);
+	auto const random_ = [&]() {
+		PROBA_TYPE numb = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		return numb;
 	};
 
 	for (int size = min_graph_size; size < max_graph_size; ++size) {
 		graph_t g(size);
-		graphs_.insert({std::make_shared<graph_t>(g), random_complex()});
+		g.imag = random_();
+		g.real = random_();
+		graphs_.insert(std::make_shared<graph_t>(g));
 	}
 
 	normalize();
@@ -226,9 +211,9 @@ void size_stat(state_t* s) {
 	PROBA_TYPE correction_factor = 0;
 	int numb = s->graphs().size();
 
-	for (auto [graph, mag] : s->graphs()) {
+	for (auto graph : s->graphs()) {
 		PROBA_TYPE size = graph->size();
-		PROBA_TYPE proba = std::norm(mag);
+		PROBA_TYPE proba = graph->norm();
 		avg += size*proba;
 		var += size*size*proba;
 		correction_factor += proba;
@@ -249,9 +234,9 @@ void serialize_state_to_json(state_t const *s, bool first) {
 	std::vector<PROBA_TYPE> probas{0.};
 
 	auto const graphs = s->graphs();
-	for (auto & [graph, mag] : graphs) {
+	for (auto &  graph : graphs) {
 		size_t size = graph.get()->size();
-		PROBA_TYPE proba = std::norm(mag);
+		PROBA_TYPE proba = graph->norm();
 
 		if (size >= nums.size()) {
 			nums.resize(size + 1, 0);
@@ -294,11 +279,11 @@ void end_json() {
 
 // for debugging 
 void print(state_t *s) {
-	for (auto & [graph, mag] : s->graphs()) {
-		if (std::imag(mag) >= 0) {
-	  		std::cout << std::real(mag) << " + i" << std::imag(mag) << "  "; 
+	for (auto & graph : s->graphs()) {
+		if (graph->imag >= 0) {
+	  		std::cout << graph->real << " + i" << graph->imag << "  "; 
 	  	} else
-	  		std::cout << std::real(mag) << " - i" << std::imag(mag) << "  "; 
+	  		std::cout << graph->real << " - i" << graph->imag << "  "; 
 
 	  	print(*graph);
 	  	std::cout << "\n";

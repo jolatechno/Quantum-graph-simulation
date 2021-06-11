@@ -1,9 +1,10 @@
 #include <cxxopts.hpp>
+#include "../classical/graph.hpp"
 #include "../quantum/state.hpp"
 #include "../quantum/rules.hpp"
 #include <ctime>
 
-std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned int, unsigned int, int, PROBA_TYPE, bool> parse_test_quantum(
+std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned int, unsigned int, int, bool> parse_test_quantum(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -12,7 +13,11 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
         ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
        
-        ("N,normalize", "normalize after each iteration", cxxopts::value<bool>()->default_value("false"))
+        ("N,normalize", "normalize after each iteration")
+
+        ("slow-compare", "slower but closer to exact comparaisons")
+
+        ("v,verbose", "show debugging informations")
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("10"))
 
@@ -55,7 +60,9 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
-    PROBA_TYPE tol = result["tol"].as<PROBA_TYPE>();
+    tolerance = result["tol"].as<PROBA_TYPE>();
+    slow_comparisons = result.count("slow-compare");
+    verbose = result.count("verbose");
 
     PROBA_TYPE const teta_pi = result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = result["phi"].as<PROBA_TYPE>();
@@ -95,5 +102,5 @@ std::tuple<state_t::rule_t, state_t::rule_t, std::string, std::string, unsigned 
     } else
         throw;
 
-    return {rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, tol, result.count("normalize")};
+    return {rule, reversed_rule, rule_, reversed_rule_, n_iter, max_n_graphs, size, result.count("normalize")};
 }

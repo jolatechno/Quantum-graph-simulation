@@ -4,6 +4,8 @@
 #include <vector>
 #include <boost/functional/hash.hpp>
 
+bool verbose = false;
+
 // forward declaration of the node_t type 
 typedef struct node node_t;
 
