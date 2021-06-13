@@ -17,6 +17,9 @@ gprof:
 use_mpfr:
 	$(eval U_CFLAGS+=-DUSE_MPRF -lmpfr)
 
+probabilist:
+	$(eval U_CFLAGS+=-DPROBABILIST)
+
 #targets
 
 clean:

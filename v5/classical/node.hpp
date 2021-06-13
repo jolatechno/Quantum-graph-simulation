@@ -9,16 +9,17 @@ bool verbose = false;
 // forward declaration of the node_t type 
 typedef struct node node_t;
 
-short int const point_l_idx = -1;
-short int const point_r_idx = -2;
-short int const element_idx = -3;
-
 class node {
 private:
 	size_t hash_ = 0;
 	short int left_idx__or_element__and_has_most_left_zero_; // use sign bit for has_most_left_zero_ !!
 	short int right_idx__or_type_;
 public:
+	short enum {
+		element_idx = -3,
+		point_r_idx,
+		point_l_idx,
+	};
 
 	// constructors
 	node(short int n) :

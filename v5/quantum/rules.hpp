@@ -17,16 +17,18 @@ int static num_subset(std::vector<T> const &vect) {
 }
 
 /* create a subset and a probability from the subset indice */
-std::pair<std::vector<graph::op_t>, state_t::mag_t> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
-	state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
-
-	graph_t* g;
+std::pair<std::vector<graph::op_t>, graph_t::mag_t> static subset(std::vector<graph::op_t>& split_merge, int subset_numb,
+	graph_t::mag_t const &non_merge, graph_t::mag_t const &merge) {
 	
 	std::vector<graph::op_t> res;
-	state_t::mag_t proba = {1, 0};
+	graph_t::mag_t proba = PROBA_TYPE_1;
 
 	for (int i = 0; i < split_merge.size(); ++i) {
-		PROBA_TYPE sign = 1 - 2*(split_merge[i].second == g->split_t || split_merge[i].second == g->erase_t);
+		#ifndef PROBABILIST
+			PROBA_TYPE sign = 1 - 2*(split_merge[i].second == graph_t::split_t || split_merge[i].second == graph_t::erase_t);
+		#else
+			PROBA_TYPE sign = 1;
+		#endif
 
 		/* i_th bit of subset_numb */
 		if (subset_numb%2) {
@@ -34,7 +36,11 @@ std::pair<std::vector<graph::op_t>, state_t::mag_t> static subset(std::vector<gr
 			res.push_back(split_merge[i]);
 
 			/* get proba */
-			proba *= state_t::mag_t(merge.real(), sign*merge.imag());
+			#ifndef PROBABILIST
+				proba *= graph_t::mag_t(merge.real(), sign*merge.imag());
+			#else
+				proba *= merge;
+			#endif
 		} else
 			proba *= sign*non_merge;
 
@@ -45,31 +51,31 @@ std::pair<std::vector<graph::op_t>, state_t::mag_t> static subset(std::vector<gr
 }
 
 //to create a reversible dynamic
-std::pair<state_t::mag_t, state_t::mag_t> unitary(PROBA_TYPE teta_pi, PROBA_TYPE phi_pi) {
+std::pair<graph_t::mag_t, graph_t::mag_t> unitary(PROBA_TYPE teta_pi, PROBA_TYPE phi_pi) {
 	auto const cos_sin_pair = [](PROBA_TYPE x) {
 		PROBA_TYPE cos_x = precision::cos(x);
 		PROBA_TYPE e, sin_x = precision::sin(x);
-
-		/*do {
-			e = cos_x*cos_x + sin_x*sin_x - 1;
-
-			cos_x -= e;
-		} while (e != 0);*/
 
 		return std::pair<PROBA_TYPE, PROBA_TYPE>(cos_x, sin_x);
 	};
 
 	auto [cos_teta, sin_teta] = cos_sin_pair(teta_pi * M_PI);
-	auto [cos_phi, sin_phi] = cos_sin_pair(phi_pi * M_PI);
 
-	state_t::mag_t non_merge_ = {cos_teta, 0};
-	state_t::mag_t merge_ = {sin_teta*cos_phi, sin_teta*sin_phi};
+	#ifndef PROBABILIST
+		auto [cos_phi, sin_phi] = cos_sin_pair(phi_pi * M_PI);
+
+		graph_t::mag_t non_merge_ = {cos_teta, 0};
+		graph_t::mag_t merge_ = {sin_teta*cos_phi, sin_teta*sin_phi};
+	#else
+		graph_t::mag_t non_merge_ = cos_teta*cos_teta;
+		graph_t::mag_t merge_ = sin_teta*sin_teta;
+	#endif
 
 	return {non_merge_, merge_};
 } 
 
 // split merge a graph
-state_t::rule_t split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
+state_t::rule_t split_merge_all(graph_t::mag_t const &non_merge, graph_t::mag_t const &merge) {
 	return [=](std::shared_ptr<graph_t> const &g) {
 		std::vector<std::shared_ptr<graph_t>> graphs;
 
@@ -107,7 +113,7 @@ state_t::rule_t split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t 
 }
 
 // split merge a graph
-state_t::rule_t erase_create_all(state_t::mag_t const &non_create, state_t::mag_t const &create) {
+state_t::rule_t erase_create_all(graph_t::mag_t const &non_create, graph_t::mag_t const &create) {
 	return [=](std::shared_ptr<graph_t> const &g) {
 		std::vector<std::shared_ptr<graph_t>> graphs;
 
@@ -144,7 +150,7 @@ state_t::rule_t erase_create_all(state_t::mag_t const &non_create, state_t::mag_
 }
 
 //step and split merge
-state_t::rule_t step_split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
+state_t::rule_t step_split_merge_all(graph_t::mag_t const &non_merge, graph_t::mag_t const &merge) {
 	auto const split_merge_all_ = split_merge_all(non_merge, merge);
 	
 	return [=](std::shared_ptr<graph_t> const &g) {
@@ -153,7 +159,7 @@ state_t::rule_t step_split_merge_all(state_t::mag_t const &non_merge, state_t::m
 	};
 }
 
-state_t::rule_t reversed_step_split_merge_all(state_t::mag_t const &non_merge, state_t::mag_t const &merge) {
+state_t::rule_t reversed_step_split_merge_all(graph_t::mag_t const &non_merge, graph_t::mag_t const &merge) {
 	auto const split_merge_all_ = split_merge_all(non_merge, merge);
 
 	return [=](std::shared_ptr<graph_t> const &g) {
@@ -167,7 +173,7 @@ state_t::rule_t reversed_step_split_merge_all(state_t::mag_t const &non_merge, s
 }
 
 //step and erase create
-state_t::rule_t step_erase_create_all(state_t::mag_t const &non_erase, state_t::mag_t const &erase) {
+state_t::rule_t step_erase_create_all(graph_t::mag_t const &non_erase, graph_t::mag_t const &erase) {
 	return [=](std::shared_ptr<graph_t> const &g) {
 		auto const erase_create_all_ = erase_create_all(non_erase, erase);
 		g->step();
@@ -175,7 +181,7 @@ state_t::rule_t step_erase_create_all(state_t::mag_t const &non_erase, state_t::
 	};
 }
 
-state_t::rule_t reversed_step_erase_create_all(state_t::mag_t const &non_erase, state_t::mag_t const &erase) {
+state_t::rule_t reversed_step_erase_create_all(graph_t::mag_t const &non_erase, graph_t::mag_t const &erase) {
 	auto const erase_create_all_ = erase_create_all(non_erase, erase);
 
 	return [=](std::shared_ptr<graph_t> const &g) {

@@ -44,7 +44,6 @@ public:
 	};
 
 	// type definition
-	typedef std::complex<PROBA_TYPE> mag_t;
 	typedef tbb::concurrent_unordered_multiset<std::shared_ptr<graph_t>, graph_hasher, graph_comparator> graph_map_t;
 	typedef std::function<std::vector<std::shared_ptr<graph_t>>(std::shared_ptr<graph_t> const &g)> rule_t;
 
@@ -102,7 +101,7 @@ void state::reduce_all() {
 	    #pragma omp task
 	    {
 	    	for(auto jt = std::next(range.first); jt != range.second; ++jt)
-	        	graph->add_magnitude((*jt)->mag());
+	        	graph->add_magnitude((*jt)->mag);
 
 		    // if the first graphgs has a zero probability, erase the whole range
 		    if (!graph->check_zero())
@@ -139,7 +138,9 @@ void state::normalize() {
 	for (auto & graph : graphs_)
 		proba += graph->norm();
 
-	proba = precision::sqrt(proba);
+	#ifndef PROBABILIST
+		proba = precision::sqrt(proba);
+	#endif
 
 	#pragma omp parallel
 	#pragma omp master
@@ -166,17 +167,11 @@ void state::step_all(rule_t rule) {
 
 // randomize
 void state::randomize(unsigned short int min_graph_size, unsigned short int max_graph_size, unsigned short int num_graphs) {
-	auto const random_ = [&]() {
-		PROBA_TYPE numb = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		return numb;
-	};
-
 	for (int size = min_graph_size; size < max_graph_size; ++size)
 		for (int j = 0; j < num_graphs; ++j) {
 			graph_t g(size);
 			g.randomize();
-			g.imag = random_();
-			g.real = random_();
+			g.mag_randomize();
 			graphs_.insert(std::make_shared<graph_t>(g));
 		}
 
@@ -185,15 +180,9 @@ void state::randomize(unsigned short int min_graph_size, unsigned short int max_
 }
 
 void state::zero_randomize(unsigned short int min_graph_size, unsigned short int max_graph_size) {
-	auto const random_ = [&]() {
-		PROBA_TYPE numb = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
-		return numb;
-	};
-
 	for (int size = min_graph_size; size < max_graph_size; ++size) {
 		graph_t g(size);
-		g.imag = random_();
-		g.real = random_();
+		g.mag_randomize();
 		graphs_.insert(std::make_shared<graph_t>(g));
 	}
 
@@ -280,10 +269,14 @@ void end_json() {
 // for debugging 
 void print(state_t *s) {
 	for (auto & graph : s->graphs()) {
-		if (graph->imag >= 0) {
-	  		std::cout << graph->real << " + i" << graph->imag << "  "; 
-	  	} else
-	  		std::cout << graph->real << " - i" << graph->imag << "  "; 
+		#ifndef PROBABILIST
+			if (graph->mag.imag() >= 0) {
+		  		std::cout << graph->mag.real() << " + i" << graph->mag.imag() << "  "; 
+		  	} else
+		  		std::cout << graph->mag.real() << " - i" << graph->mag.imag() << "  "; 
+		#else
+		  	std::cout << graph->mag << "  ";
+		#endif
 
 	  	print(*graph);
 	  	std::cout << "\n";

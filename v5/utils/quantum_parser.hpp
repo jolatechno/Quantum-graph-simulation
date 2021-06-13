@@ -99,7 +99,7 @@ std::tuple<state_t *, state_t::rule_t, state_t::rule_t, unsigned int, int, std::
 
     auto const [do_not, do_] = unitary(teta_pi, phi_pi);
 
-    state_t::mag_t do_not_2, do_2;
+    graph_t::mag_t do_not_2, do_2;
     if (result.count("different-params")) {
         PROBA_TYPE teta2_pi = M_PI*result["teta2"].as<PROBA_TYPE>();
         PROBA_TYPE phi2_pi = M_PI*result["phi2"].as<PROBA_TYPE>();

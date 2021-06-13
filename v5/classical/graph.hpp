@@ -21,6 +21,12 @@
 
 	// precision setter
 	#define SET_PRECISION(precision_) PROBA_TYPE::set_default_prec(precision_);
+
+	#ifndef PROBABILIST
+		#define PROBA_TYPE_1 {1, 0}
+	#else
+		#define PROBA_TYPE_1 1
+	#endif
 #else
 	// standard type
 	#define PROBA_TYPE long double
@@ -30,6 +36,8 @@
 
 	// namespace for math functions
 	namespace precision = std;
+
+	#define PROBA_TYPE_1 1
 #endif
 
 PROBA_TYPE tolerance = 0;
@@ -49,6 +57,12 @@ public:
 	} op_type_t;
 
 	// typedef of the pair of an index and a op_type 
+	#ifndef PROBABILIST
+		typedef std::complex<PROBA_TYPE> mag_t;
+	#else
+		typedef PROBA_TYPE mag_t;
+	#endif
+
   	typedef std::pair<unsigned short int, op_type_t> op_t;
 
   	// particules positions
@@ -56,27 +70,31 @@ public:
 	std::vector<BOOL_TYPE> mutable right;
 
 	// magnitude
-	PROBA_TYPE mutable real = 1.;
-	PROBA_TYPE mutable imag = 0.;
+	mag_t mutable mag = PROBA_TYPE_1;
 
 	// zero checker
-	PROBA_TYPE norm() const { return real*real + imag*imag; }
+	PROBA_TYPE norm() const { 
+		#ifndef PROBABILIST
+			return std::norm(mag); 
+		#else 
+			return mag;
+		#endif
+	}
 	bool inline check_zero() const { return norm() <= tolerance; }
 
 	// multiply and add probability
-	std::complex<PROBA_TYPE> inline mag() const { return std::complex<PROBA_TYPE>(real, imag); }
-	void inline multiply_magnitude(std::complex<PROBA_TYPE> mag) const {
-		PROBA_TYPE temp = real;
-		real = temp*mag.real() - imag*mag.imag();
-		imag = imag*mag.real() + temp*mag.imag();
-	}
-	void inline add_magnitude(std::complex<PROBA_TYPE> mag) const {
-		real += mag.real();
-		imag += mag.imag();
-	}
-	void inline normalize_magnitude(PROBA_TYPE norm_) const {
-		real /= norm_;
-		imag /= norm_;
+	void inline multiply_magnitude(mag_t const &mag_) const { mag *= mag_; }
+	void inline add_magnitude(mag_t const &mag_) const { mag += mag_; }
+	void inline normalize_magnitude(PROBA_TYPE norm_) const { mag /= norm_; }
+
+	// randomize probability
+	void inline mag_randomize() {
+		#ifndef PROBABILIST
+			mag = { static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5,
+				static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5 };
+		#else
+			mag = static_cast <PROBA_TYPE> (rand()) / static_cast <PROBA_TYPE> (RAND_MAX) - 0.5;
+		#endif
 	}
 
 private:

@@ -31,13 +31,13 @@ private:
 
 	short unsigned int push_left_or_right_to_buffer(short int idx, bool left) {
 		if (trash_collection_.empty()) {
-			node_buff_.emplace_back(idx, node_buff_[idx], left ? point_l_idx : point_r_idx);
+			node_buff_.emplace_back(idx, node_buff_[idx], left ? node_t::point_l_idx : node_t::point_r_idx);
 			return node_buff_.size() - 1;
 		}
 
 		short unsigned int buff_idx = trash_collection_.back();
 		trash_collection_.pop_back();
-		node_buff_[buff_idx] = node_t(idx, node_buff_[idx], left ? point_l_idx : point_r_idx);
+		node_buff_[buff_idx] = node_t(idx, node_buff_[idx], left ? node_t::point_l_idx : node_t::point_r_idx);
 		return buff_idx;
 	}
 
