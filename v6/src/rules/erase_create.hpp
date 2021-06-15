@@ -39,8 +39,9 @@ public:
 			return 1;
 
 		unsigned int numb_op = 0;
-		for (unsigned int nid = s.b_begin[gid]; nid < s.b_begin[gid + 1]; ++nid)
-			numb_op += s.operations[nid] != none_t;
+		unsigned int numb_nodes_ = s.numb_nodes(gid);
+		for (unsigned int nid = 0; nid < numb_nodes_; ++nid)
+			numb_op += s.operation(gid, nid) != none_t;
 
 		return std::pow(2, numb_op);
 	}
@@ -59,7 +60,7 @@ public:
 		unsigned short int numb_nodes_ = s.numb_nodes(parent_id);
 		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
 			unsigned short int node_id = s.node_id(parent_id, node);
-			auto operation = s.operations[s.b_begin[parent_id] + node];
+			auto operation = s.operation(parent_id, node);
 
 			/* update hash */
 			boost::hash_combine(hash_, s.hash(parent_id, node_id));
@@ -132,7 +133,7 @@ public:
 		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
-			auto operation = s.operations[s.b_begin[parent_id] + node];
+			auto operation = s.operation(parent_id, node);
 			
 			if (operation != none_t) {
 				bool do_ = child_id & 1;

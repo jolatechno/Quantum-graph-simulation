@@ -41,8 +41,9 @@ public:
 			return 1;
 
 		unsigned int numb_op = 0;
-		for (unsigned int nid = s.b_begin[gid]; nid < s.b_begin[gid + 1]; ++nid)
-			numb_op += s.operations[nid] != none_t;
+		unsigned int numb_nodes_ = s.numb_nodes(gid);
+		for (unsigned int nid = 0; nid < numb_nodes_; ++nid)
+			numb_op += s.operation(gid, nid) != none_t;
 
 		return std::pow(2, numb_op);
 	}
@@ -61,7 +62,7 @@ public:
 		size_t right_hash_ = 0;
 
 		/* check if there is a "first split overflow" to keep the lexicographic order */
-		bool first_split_overflow = (child_id & 1) && (s.operations[s.b_begin[parent_id]] == split_t);
+		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
 
 		if (first_split_overflow)
 			first_split_overflow = s.node_type(parent_id, s.node_id(parent_id, 0)) == state_t::pair_t;
@@ -81,10 +82,11 @@ public:
 		for (unsigned short int node = first_split_overflow; node < numb_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
-			auto operation = s.operations[s.b_begin[parent_id] + node];
+			auto operation = s.operation(parent_id, node);
 			
 			if (operation != none_t) {
 				bool do_ = child_id & 1;
+				child_id >>= 1;
 
 				if (operation == split_t) {
 					if (do_) {
@@ -99,7 +101,7 @@ public:
 
 						if (s.node_type(parent_id, node_id) == state_t::pair_t) {
 							/* update c_size */
-							//--c_size;
+							--c_size;
 
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
@@ -144,7 +146,7 @@ public:
 						s.node_type(parent_id, next_node_id) == state_t::right_t &&
 						s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
 							/* update c_size */
-							//c_size -= 3;
+							c_size -= 2;
 
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
@@ -179,11 +181,7 @@ public:
 				if (s.right(parent_id, node))
 					boost::hash_combine(right_hash_, node + displacement);
 			}
-
-			child_id >>= 1;
 		}
-
-		c_size += 4;
 
 		/* update b_size */
 		b_size += displacement;
@@ -201,13 +199,22 @@ public:
 	}
 
 	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int gid, unsigned int parent_id, unsigned int child_id) const override {
-		std::vector<unsigned short int> trash; // could be global
+		/* copy nodes */
+		auto c_begin = s.c_begin[parent_id];
+		auto c_end = s.c_begin[parent_id + 1];
+		auto new_c_begin = new_state.c_begin[gid];
+
+		std::copy(s.left_idx__or_element__and_has_most_left_zero_.begin() + c_begin, s.left_idx__or_element__and_has_most_left_zero_.begin() + c_end, new_state.left_idx__or_element__and_has_most_left_zero_.begin() + new_c_begin);
+		std::copy(s.right_idx__or_type_.begin() + c_begin, s.right_idx__or_type_.begin() + c_end, new_state.right_idx__or_type_.begin() + new_c_begin);
+		std::copy(s.node_hash.begin() + c_begin, s.node_hash.begin() + c_end, new_state.node_hash.begin() + new_c_begin);
 
 		/* get trash */
+		std::vector<unsigned short int> trash;
+
 		auto child_id_ = child_id;
 		unsigned short int numb_nodes_ = s.numb_nodes(parent_id);
 		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
-			auto operation = s.operations[s.b_begin[parent_id] + node];
+			auto operation = s.operation(parent_id, node);
 
 			if (operation != none_t) {
 				bool do_ = child_id_ & 1;
@@ -227,7 +234,6 @@ public:
 						s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
 							trash.push_back(node_id);
 							trash.push_back(next_node_id);
-							trash.push_back(s.left_idx(parent_id, next_node_id));
 						}
 					}
 			}
@@ -237,22 +243,17 @@ public:
 		for (unsigned int i = s.c_size(parent_id); i < new_state.c_size(gid); ++i)
 			trash.push_back(i);
 
-		std::cout << s.c_size(parent_id) << " " << new_state.c_size(gid) << " sizes\n";
-
 		/* get trash */
 		auto const get_trash = [&]() {
-			std::cout << trash.size() << " trash_size\n";
 			auto idx = trash.back();
 			trash.pop_back();
 			return idx;
 		};
 
-		std::cout << "populate - a\n";
-
 		int displacement = 0;
 
 		/* check if there is a "first split overflow" to keep the lexicographic order */
-		bool first_split_overflow = (child_id & 1) && (s.operations[s.b_begin[parent_id]] == split_t);
+		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
 
 		if (first_split_overflow)
 			first_split_overflow = s.node_type(parent_id, s.node_id(parent_id, 0)) == state_t::pair_t;
@@ -260,19 +261,8 @@ public:
 		if (first_split_overflow)
 			first_split_overflow = s.has_most_left_zero(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0)));
 
-		/* copy nodes */
-		auto c_begin = s.c_begin[parent_id];
-		auto c_end = s.c_begin[parent_id + 1];
-		auto new_c_begin = new_state.c_begin[gid];
-
-		std::copy(s.left_idx__or_element__and_has_most_left_zero_.begin() + c_begin, s.left_idx__or_element__and_has_most_left_zero_.begin() + c_end, new_state.left_idx__or_element__and_has_most_left_zero_.begin() + new_c_begin);
-		std::copy(s.right_idx__or_type_.begin() + c_begin, s.right_idx__or_type_.begin() + c_end, new_state.right_idx__or_type_.begin() + new_c_begin);
-		std::copy(s.node_hash.begin() + c_begin, s.node_hash.begin() + c_end, new_state.node_hash.begin() + new_c_begin);
-
-		std::cout << "populate - b\n";
-
 		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
-			auto operation = s.operations[s.b_begin[parent_id] + node];			
+			auto operation = s.operation(parent_id, node);			
 			bool do_ = operation != none_t;
 			unsigned short int node_id = s.node_id(parent_id, node);
 
@@ -337,13 +327,11 @@ public:
 					--displacement;
 				}
 			} else {
-				new_state.set_node_id(gid, node + displacement, s.node_id(gid, node));
-				new_state.set_left(gid, node + displacement, s.left(gid, node));
-				new_state.set_right(gid, node + displacement, s.right(gid, node));
+				new_state.set_node_id(gid, node + displacement, s.node_id(parent_id, node));
+				new_state.set_left(gid, node + displacement, s.left(parent_id, node));
+				new_state.set_right(gid, node + displacement, s.right(parent_id, node));
 			}
 		}
-
-		std::cout << "populate - c\n";
 
 		if (first_split_overflow) {
 			auto begin = new_state.b_begin[gid];

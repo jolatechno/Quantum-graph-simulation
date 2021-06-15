@@ -167,8 +167,10 @@ public:
 	std::vector<unsigned short int> num_childs; /* size (a) */
 
 	// new graphs
+	std::vector<bool> is_first_index; /* size (a) for the next iteration */
 	std::vector<unsigned int> new_gid; /* size (a) for the next iteration */
 	std::vector<unsigned int> parent_gid; /* size (a) for the next iteration */
+	std::vector<unsigned int> parent_gid_start; /* size (a) + 1 for the next iteration */
 	std::vector<unsigned int> parent_sub_id; /* size (a) for the next iteration */
 
 	// new graph hash
@@ -186,6 +188,8 @@ public:
 			new_gid.resize(resize_policy * size);
 			parent_gid.resize(resize_policy * size);
 			parent_sub_id.resize(resize_policy * size);
+			is_first_index.resize(resize_policy * size);
+			parent_gid_start.resize(resize_policy * size + 1);
 			new_hash.resize(resize_policy * size);
 			new_real.resize(resize_policy * size);
 			new_imag.resize(resize_policy * size);
@@ -252,6 +256,7 @@ public:
 	unsigned short int inline node_id(unsigned int gid, unsigned int node) const { return nid[b_begin[gid] + node]; }
 	bool inline left(unsigned int gid, unsigned int node) const { return left_[b_begin[gid] + node]; }
 	bool inline right(unsigned int gid, unsigned int node) const { return right_[b_begin[gid] + node]; }
+	op_type_t inline operation(unsigned int gid, unsigned int node) const { return operations[b_begin[gid] + node]; }
 
 	size_t hash(unsigned int gid, unsigned int node) const { return node_hash[c_begin[gid] + node]; }
 	short int inline right_idx(unsigned int gid, unsigned int node) const { return right_idx__or_type_[c_begin[gid] + node]; }
@@ -271,6 +276,7 @@ public:
 	void inline set_node_id(unsigned int gid, unsigned int node, unsigned short int value) { nid[b_begin[gid] + node] = value; }
 	void inline set_left(unsigned int gid, unsigned int node, bool value) { left_[b_begin[gid] + node] = value; }
 	void inline set_right(unsigned int gid, unsigned int node, unsigned short int value) { right_[b_begin[gid] + node] = value; }
+	void inline set_operation(unsigned int gid, unsigned int node, op_type_t value) { operations[b_begin[gid] + node] = value; }
 
 	void inline set_right_idx(unsigned int gid, unsigned int node, unsigned short int value) { right_idx__or_type_[c_begin[gid] + node] = value; }
 	void inline set_type(unsigned int gid, unsigned int node, node_type_t value) { set_right_idx(gid, node, value); }
@@ -284,10 +290,8 @@ public:
 	void inline set_most_left_zero(unsigned int gid, unsigned int node, bool has_most_left_zero_) {
 		short int &temp = left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node];
 
-		if (has_most_left_zero_) {
-			temp = -std::abs(temp);
-		} else
-			temp = std::abs(temp);
+		if (has_most_left_zero_ == (temp > 0))
+			temp *= -1;
 	}
 	
 
@@ -296,32 +300,27 @@ public:
 		size_t total_num_graphs = 0;
 
 		#pragma omp parallel
-		#pragma omp master
 		{
 
 			/* !!!!!!!!!!!!!!!!
 			step (1) 
 			 !!!!!!!!!!!!!!!! */
 
-			std::cout << "step 1\n";
-
-			#pragma omp parallel for
+			#pragma omp for
 			for (unsigned int gid = 0; gid < numb_graphs; ++gid) {
-				auto begin = b_begin[gid];
 				auto numb_nodes_ = numb_nodes(gid);
 
 				/* get operations for each nodes of each graph */
 				for (unsigned int nid = 0; nid < numb_nodes_; ++nid)
-					operations[begin + nid] = rule.operation(*this, gid, nid);
+					set_operation(gid, nid, rule.operation(*this, gid, nid));
 			}
 
 			/* !!!!!!!!!!!!!!!!
 			step (2) 
 			 !!!!!!!!!!!!!!!! */
 
-			std::cout << "step 2\n";
-
-			#pragma omp parallel for
+			#pragma omp barrier
+			#pragma omp for
 			for (unsigned int gid = 0; gid < numb_graphs; ++gid)
 				/* get the number of child for each graph */
 				num_childs[gid] = rule.numb_childs(*this, gid);
@@ -330,25 +329,31 @@ public:
 			step (3) 
 			 !!!!!!!!!!!!!!!! */
 			
-			std::cout << "step 3\n";
-
 			/* compute the total number of child in parallel */
-			#pragma omp parallel for reduction(+:total_num_graphs)
+			#pragma omp barrier
+			#pragma omp for reduction(+:total_num_graphs)
 			for (auto &num_graph : num_childs)
 				total_num_graphs += num_graph;
+		}
 
-			/* resize variables with the right_ number of elements */
-			resize_a_next(total_num_graphs);
+		/* resize variables with the right_ number of elements */
+		resize_a_next(total_num_graphs);
 
-			unsigned int i = 0;
+		parent_gid_start[0] = 0;
+		__gnu_parallel::partial_sum(num_childs.begin(), num_childs.begin() + total_num_graphs, parent_gid_start.begin() + 1);
+
+		#pragma omp parallel
+		{
+			#pragma omp barrier
+			#pragma omp for
 			for (unsigned int gid = 0; gid < numb_graphs; ++gid) {
 				unsigned int const num_child = num_childs[gid];
+				unsigned int const child_begin = parent_gid_start[gid];
 
 				/* assign parent ids and child ids for each child */
 				for (unsigned int child_id = 0; child_id < num_child; ++child_id) {
-					parent_gid[i] = gid;
-					parent_sub_id[i] = child_id;
-					++i;
+					parent_gid[child_begin + child_id] = gid;
+					parent_sub_id[child_begin + child_id] = child_id;
 				}
 			}
 
@@ -356,9 +361,8 @@ public:
 			step (4) 
 			 !!!!!!!!!!!!!!!! */
 
-			std::cout << "step 4\n";
-
-			#pragma omp parallel for
+			#pragma omp barrier
+			#pragma omp for
 			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
 				auto [hash_, real_, imag_, size_b_, size_c_] = rule.child_properties(*this, parent_gid[gid], parent_sub_id[gid]);
 
@@ -369,119 +373,108 @@ public:
 				new_size_b[gid] = size_b_;
 				new_size_c[gid] = size_c_;
 			}
+		}
 
-			/* !!!!!!!!!!!!!!!!
-			step (5) 
-			 !!!!!!!!!!!!!!!! */
+		/* !!!!!!!!!!!!!!!!
+		step (5) 
+		 !!!!!!!!!!!!!!!! */
+		
+		/* sort graphs hash to compute interference */
+		__gnu_parallel::sort(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
+			return new_hash[gid1] > new_hash[gid2];
+		});
 
-			std::cout << "step 5\n";
+		/* compute is_first_index */
+		is_first_index[new_gid[0]] = true;
 
-			/* sort graphs hash to compute interference
-			!! TODO: implement it in parallel (https://cw.fel.cvut.cz/old/_media/courses/b4m35pag/lab6_slides_advanced_openmp.pdf) !! */
-			std::sort(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
-				return new_hash[gid1] > new_hash[gid2];
+		//#pragma omp parallel for
+		for (unsigned int gid = 1; gid < total_num_graphs; ++gid)
+			is_first_index[new_gid[gid]] = new_hash[new_gid[gid]] != new_hash[new_gid[gid - 1]];
+
+		#pragma omp parallel for
+		for (unsigned int gid = 0; gid < total_num_graphs; ++gid)
+			if (is_first_index[new_gid[gid]])
+				/* sum magnitude of equal graphs */
+				for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[new_gid[gid_]]; ++gid_) {
+					new_real[new_gid[gid]] += new_real[new_gid[gid_]];
+					new_imag[new_gid[gid]] += new_imag[new_gid[gid_]];
+				}
+
+		/* get all graphs with a non zero probability */
+		auto partitioned_it = __gnu_parallel::partition(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid) {
+			/* check for duplicates */
+			if (!is_first_index[gid])
+				return false;
+
+			/* check for zero probability */
+			auto r = new_real[gid];
+			auto i = new_imag[gid];
+
+			return r*r + i*i > tolerance; 
+		});
+
+		new_state.numb_graphs = std::distance(new_gid.begin(), partitioned_it);
+				
+		/* !!!!!!!!!!!!!!!!
+		step (6) 
+		 !!!!!!!!!!!!!!!! */
+
+		if (n_graphs > 0 && new_state.numb_graphs > n_graphs) {
+			/* sort graphs according to probability */
+			__gnu_parallel::nth_element(new_gid.begin(), new_gid.begin() + n_graphs, new_gid.begin() + new_state.numb_graphs,
+			[&](unsigned int const &gid1, unsigned int const &gid2) {
+				auto r1 = new_real[gid1];
+				auto i1 = new_imag[gid1];
+
+				auto r2 = new_real[gid2];
+				auto i2 = new_imag[gid2];
+
+				return r1*r1 + i1*i1 > r2*r2 + i2*i2;
 			});
 
-			/* compute is_first_index */
-			std::vector<bool> is_first_index(total_num_graphs);
-			is_first_index[new_gid[0]] = true;
+			new_state.numb_graphs = n_graphs;
+		}
 
-			#pragma omp parallel for
-			for (unsigned int gid = 1; gid < total_num_graphs; ++gid)
-				is_first_index[new_gid[gid]] = new_hash[new_gid[gid]] != new_hash[new_gid[gid - 1]];
+		/* !!!!!!!!!!!!!!!!
+		step (7) 
+		 !!!!!!!!!!!!!!!! */
 
-			#pragma omp parallel for
-			for (unsigned int gid = 0; gid < total_num_graphs; ++gid)
-			  if (is_first_index[new_gid[gid]])
-					/* sum magnitude of equal graphs */
-					for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[new_gid[gid_]]; ++gid_) {
-						new_real[new_gid[gid]] += new_real[new_gid[gid_]];
-						new_imag[new_gid[gid]] += new_imag[new_gid[gid_]];
-					}
+		/* resize new step variables */
+		new_state.resize_a(new_state.numb_graphs);
 
-			/* get all graphs with a non zero probability */
-			auto partitioned_it = __gnu_parallel::partition(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid) {
-				/* check for duplicates */
-				if (!is_first_index[gid])
-					return false;
+		/* prepare for partial sum */
+		#pragma omp parallel for
+		for (unsigned int gid = 0; gid <  new_state.numb_graphs; ++gid) {
+			unsigned int id = new_gid[gid];
 
-				/* check for zero probability */
-				auto r = new_real[gid];
-				auto i = new_imag[gid];
+			new_state.b_begin[gid + 1] = new_size_b[id];
+			new_state.c_begin[gid + 1] = new_size_c[id];
 
-				return r*r + i*i > tolerance; 
-			});
+			/* assign magnitude */
+			new_state.real[gid] = new_real[id];
+			new_state.imag[gid] = new_imag[id];
+		}
 
-			new_state.numb_graphs = std::distance(new_gid.begin(), partitioned_it);
+		new_state.b_begin[0] = 0;
+		__gnu_parallel::partial_sum(new_state.b_begin.begin() + 1, new_state.b_begin.begin() + new_state.numb_graphs + 1, new_state.b_begin.begin() + 1);
 
-			/* !!!!!!!!!!!!!!!!
-			step (6) 
-			 !!!!!!!!!!!!!!!! */
+		new_state.c_begin[0] = 0;
+		__gnu_parallel::partial_sum(new_state.c_begin.begin() + 1, new_state.c_begin.begin() + new_state.numb_graphs + 1, new_state.c_begin.begin() + 1);
 
-			std::cout << "step 6\n";
+		/* resize new step variables */
+		new_state.resize_b(new_state.b_begin[new_state.numb_graphs]);
+		new_state.resize_c(new_state.c_begin[new_state.numb_graphs]);
 
-			if (n_graphs > 0 && new_state.numb_graphs > n_graphs) {
-				/* sort graphs according to probability */
-				__gnu_parallel::nth_element(new_gid.begin(), new_gid.begin() + n_graphs, new_gid.begin() + new_state.numb_graphs,
-				[&](unsigned int const &gid1, unsigned int const &gid2) {
-					auto r1 = new_real[gid1];
-					auto i1 = new_imag[gid1];
+		/* !!!!!!!!!!!!!!!!
+		step (8) 
+		 !!!!!!!!!!!!!!!! */
 
-					auto r2 = new_real[gid2];
-					auto i2 = new_imag[gid2];
+		//#pragma omp parallel for
+		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {
+			auto id = new_gid[gid];
 
-					return r1*r1 + i1*i1 > r2*r2 + i2*i2;
-				});
-
-				new_state.numb_graphs = n_graphs;
-			}
-
-			/* !!!!!!!!!!!!!!!!
-			step (7) 
-			 !!!!!!!!!!!!!!!! */
-
-			std::cout << "step 7\n";
-
-			/* resize new step variables */
-			new_state.resize_a(new_state.numb_graphs);
-
-			/* compute size (b) and (c) ... */
-			size_t size_b = 0;
-			size_t size_c = 0;
-			for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {
-				/* ...and assign "b_begin" and "c_begin" */
-				new_state.b_begin[gid] = size_b;
-				new_state.c_begin[gid] = size_c;
-
-				auto id = new_gid[gid];
-
-				new_state.real[gid] = new_real[id];
-				new_state.imag[gid] = new_imag[id];
-
-				size_b += new_size_b[id];
-				size_c += new_size_c[id];
-			}
-
-			new_state.b_begin[new_state.numb_graphs] = size_b;
-			new_state.c_begin[new_state.numb_graphs] = size_c;
-
-			/* resize new step variables */
-			new_state.resize_b(size_b);
-			new_state.resize_c(size_c);
-
-			/* !!!!!!!!!!!!!!!!
-			step (8) 
-			 !!!!!!!!!!!!!!!! */
-
-			std::cout << "step 8\n";
-
-			//#pragma omp parallel for
-			for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {
-				auto id = new_gid[gid];
-
-				/* populate graphs */
-				rule.populate_new_graph(*this, new_state, gid, parent_gid[id], parent_sub_id[id]);
-			}
+			/* populate graphs */
+			rule.populate_new_graph(*this, new_state, gid, parent_gid[id], parent_sub_id[id]);
 		}
 	}
 
