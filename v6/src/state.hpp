@@ -409,13 +409,14 @@ public:
 		});
 
 		/* compute is_first_index */
-		is_first_index[0] = true;
-
 		__gnu_parallel::adjacent_difference(new_gid.begin(), new_gid.begin() + total_num_graphs, is_first_index.begin(),
 			[&](unsigned int const &gid1, unsigned int const &gid2) {
 				return new_hash[gid1] != new_hash[gid2];
 			});
 
+		is_first_index[0] = true;
+
+		/* compute interferances */
 		#pragma omp parallel for
 		for (unsigned int gid = 0; gid < total_num_graphs; ++gid)
 			if (is_first_index[gid]) {

@@ -23,9 +23,9 @@ int main() {
 	move_all(s);
 	print(s); std::cout << "\n";
 
-	auto rule = split_merge_rule/*erase_create_rule*/(M_PI_4, 0);
+	auto rule = /*split_merge_rule*/erase_create_rule(M_PI_4, 0);
 	
-	unsigned int n_iteration = 1;
+	unsigned int n_iteration = 2;
 
 	state new_state(1000, 1000, 1000, 1000);
 
@@ -50,5 +50,5 @@ int main() {
 	}
 
 	//std::cout << "print...\n";
-	print(s); std::cout << "\n";
+	print(s);
 }
