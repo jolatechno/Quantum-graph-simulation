@@ -20,25 +20,34 @@ int main() {
 	state s(5);
 	s.randomize();
 
-	print(s); std::cout << "\n";
+	print(s); //std::cout << "\n";
 
 	auto rule = /*split_merge_rule*/erase_create_rule/**/(M_PI_4, 0);
-
 	
-	unsigned int n_iteration = 1;
+	unsigned int n_iteration = 2;
+
 	state new_state(1);
-	
+
 	for (int i = 0; i < n_iteration; ++i) {
+		//std::cout << "move...\n";
 		move_all(s);
+		//std::cout << /*"...moved\n*/"step...\n";
 		s.step(new_state, rule, -1);
+		//std::cout << "...steped\nswap...\n";
 		std::swap(s, new_state);
+		//std::cout << "...swaped\n";
 	}
 
 	for (int i = 0; i < n_iteration; ++i) {
+		//std::cout << "step...\n";
 		s.step(new_state, rule, -1);
+		//std::cout << "...steped\nswap...\n";
 		std::swap(s, new_state);
+		//std::cout << "...swapped\n";//moove...\n";
 		reversed_move_all(s);
+		//std::cout << "...mooved\n";
 	}
 
+	//std::cout << "print...\n";
 	print(s);
 }

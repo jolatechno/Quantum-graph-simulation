@@ -306,6 +306,10 @@ public:
 			step (1) 
 			 !!!!!!!!!!!!!!!! */
 
+			/*#pragma omp master
+			std::cout << "step 1\n";
+			#pragma omp barrier*/
+
 			#pragma omp for
 			for (unsigned int gid = 0; gid < numb_graphs; ++gid) {
 				auto numb_nodes_ = numb_nodes(gid);
@@ -319,6 +323,11 @@ public:
 			step (2) 
 			 !!!!!!!!!!!!!!!! */
 
+			/*#pragma omp barrier
+			#pragma omp master
+			std::cout << "step 2\n";
+			#pragma omp barrier*/
+
 			#pragma omp barrier
 			#pragma omp for
 			for (unsigned int gid = 0; gid < numb_graphs; ++gid)
@@ -328,6 +337,11 @@ public:
 			/* !!!!!!!!!!!!!!!!
 			step (3) 
 			 !!!!!!!!!!!!!!!! */
+
+			/*#pragma omp barrier
+			#pragma omp master
+			std::cout << "step 3\n";
+			#pragma omp barrier*/
 			
 			/* compute the total number of child in parallel */
 			#pragma omp barrier
@@ -361,6 +375,11 @@ public:
 			step (4) 
 			 !!!!!!!!!!!!!!!! */
 
+			/*#pragma omp barrier
+			#pragma omp master
+			std::cout << "step 4\n";
+			#pragma omp barrier*/
+
 			#pragma omp barrier
 			#pragma omp for
 			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
@@ -378,6 +397,8 @@ public:
 		/* !!!!!!!!!!!!!!!!
 		step (5) 
 		 !!!!!!!!!!!!!!!! */
+
+		//std::cout << "step 5\n";
 		
 		/* sort graphs hash to compute interference */
 		__gnu_parallel::sort(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -419,6 +440,8 @@ public:
 		step (6) 
 		 !!!!!!!!!!!!!!!! */
 
+		//std::cout << "step 6\n";
+
 		if (n_graphs > 0 && new_state.numb_graphs > n_graphs) {
 			/* sort graphs according to probability */
 			__gnu_parallel::nth_element(new_gid.begin(), new_gid.begin() + n_graphs, new_gid.begin() + new_state.numb_graphs,
@@ -439,8 +462,12 @@ public:
 		step (7) 
 		 !!!!!!!!!!!!!!!! */
 
+		//std::cout << "step 7\n";
+
 		/* resize new step variables */
 		new_state.resize_a(new_state.numb_graphs);
+
+		//std::cout << "step 7 - a\n";
 
 		/* prepare for partial sum */
 		#pragma omp parallel for
@@ -455,11 +482,15 @@ public:
 			new_state.imag[gid] = new_imag[id];
 		}
 
+		//std::cout << "step 7 - b\n";
+
 		new_state.b_begin[0] = 0;
 		__gnu_parallel::partial_sum(new_state.b_begin.begin() + 1, new_state.b_begin.begin() + new_state.numb_graphs + 1, new_state.b_begin.begin() + 1);
 
 		new_state.c_begin[0] = 0;
 		__gnu_parallel::partial_sum(new_state.c_begin.begin() + 1, new_state.c_begin.begin() + new_state.numb_graphs + 1, new_state.c_begin.begin() + 1);
+
+		//std::cout << "step 7 - d\n";
 
 		/* resize new step variables */
 		new_state.resize_b(new_state.b_begin[new_state.numb_graphs]);
@@ -468,6 +499,8 @@ public:
 		/* !!!!!!!!!!!!!!!!
 		step (8) 
 		 !!!!!!!!!!!!!!!! */
+
+		//std::cout << "step 8\n";
 
 		//#pragma omp parallel for
 		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {

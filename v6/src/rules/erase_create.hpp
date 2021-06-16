@@ -148,7 +148,6 @@ public:
 
 				child_id >>= 1;
 			} else {
-				/* update hashes */
 				new_state.set_left(gid, node, s.left(parent_id, node_id));
 				new_state.set_right(gid, node, s.right(parent_id, node_id));
 			}
