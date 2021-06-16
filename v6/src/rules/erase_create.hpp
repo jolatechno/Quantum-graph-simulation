@@ -129,7 +129,7 @@ public:
 		std::copy(s.right_idx__or_type_.begin() + c_begin, s.right_idx__or_type_.begin() + c_end, new_state.right_idx__or_type_.begin() + new_c_begin);
 		std::copy(s.node_hash.begin() + c_begin, s.node_hash.begin() + c_end, new_state.node_hash.begin() + new_c_begin);
 
-		unsigned short int numb_nodes_ = s.numb_nodes(parent_id);
+		unsigned short int numb_nodes_ = b_end - b_begin;
 		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);

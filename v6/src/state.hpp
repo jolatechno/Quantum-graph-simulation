@@ -244,7 +244,7 @@ public:
 
 		return hash_;
 	}
-	void inline hash_node(unsigned int gid, unsigned int node) {
+	void inline hash_node(unsigned int gid, unsigned short int node) {
 		unsigned int id = c_begin[gid] + node;
 		node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero_[id], right_idx__or_type_[id]);
 	}
@@ -253,41 +253,44 @@ public:
 	unsigned short int inline numb_nodes(unsigned int gid) const { return b_begin[gid + 1] - b_begin[gid]; }
 	unsigned short int inline c_size(unsigned int gid) const { return c_begin[gid + 1] - c_begin[gid]; }
 
-	unsigned short int inline node_id(unsigned int gid, unsigned int node) const { return nid[b_begin[gid] + node]; }
-	bool inline left(unsigned int gid, unsigned int node) const { return left_[b_begin[gid] + node]; }
-	bool inline right(unsigned int gid, unsigned int node) const { return right_[b_begin[gid] + node]; }
-	op_type_t inline operation(unsigned int gid, unsigned int node) const { return operations[b_begin[gid] + node]; }
+	unsigned short int inline node_id(unsigned int gid, unsigned short int node) const { return nid[b_begin[gid] + node]; }
+	bool inline left(unsigned int gid, unsigned short int node) const { return left_[b_begin[gid] + node]; }
+	bool inline right(unsigned int gid, unsigned short int node) const { return right_[b_begin[gid] + node]; }
+	op_type_t inline operation(unsigned int gid, unsigned short int node) const { return operations[b_begin[gid] + node]; }
 
-	size_t hash(unsigned int gid, unsigned int node) const { return node_hash[c_begin[gid] + node]; }
-	short int inline right_idx(unsigned int gid, unsigned int node) const { return right_idx__or_type_[c_begin[gid] + node]; }
-	short int inline &right_idx(unsigned int gid, unsigned int node) { return right_idx__or_type_[c_begin[gid] + node]; }
-	bool inline has_most_left_zero(unsigned int gid, unsigned int node) const {
-		return left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node] < 0;
+	size_t hash(unsigned int gid, unsigned short int node) const { return node_hash[c_begin[gid] + node]; }
+	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type_[c_begin[gid] + node]; }
+	short int inline &right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type_[c_begin[gid] + node]; }
+	short int inline raw_left_idx(unsigned int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node]; }
+	short int inline &raw_left_idx(unsigned int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node]; }
+	bool inline has_most_left_zero(unsigned int gid, unsigned short int node) const {
+		return raw_left_idx(gid, node) < 0;
 	}
-	unsigned short int inline left_idx(unsigned int gid, unsigned int node) const { 
-		return std::abs(left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node]) - 1;
+	unsigned short int inline left_idx(unsigned int gid, unsigned short int node) const { 
+		return std::abs(raw_left_idx(gid, node)) - 1;
 	}
-	unsigned short int inline element(unsigned int gid, unsigned int node) const { return left_idx(gid, node); }
-	node_type_t inline node_type(unsigned int gid, unsigned int node) const {
-		return std::min((node_type_t)right_idx__or_type_[c_begin[gid] + node], pair_t);
+	unsigned short int inline element(unsigned int gid, unsigned short int node) const { return left_idx(gid, node); }
+	node_type_t inline node_type(unsigned int gid, unsigned short int node) const {
+		return std::min((node_type_t)right_idx(gid, node), pair_t);
 	}
 
 	/* setters */
-	void inline set_node_id(unsigned int gid, unsigned int node, unsigned short int value) { nid[b_begin[gid] + node] = value; }
-	void inline set_left(unsigned int gid, unsigned int node, bool value) { left_[b_begin[gid] + node] = value; }
-	void inline set_right(unsigned int gid, unsigned int node, unsigned short int value) { right_[b_begin[gid] + node] = value; }
-	void inline set_operation(unsigned int gid, unsigned int node, op_type_t value) { operations[b_begin[gid] + node] = value; }
+	void inline set_node_id(unsigned int gid, unsigned short int node, unsigned short int value) { nid[b_begin[gid] + node] = value; }
+	void inline set_left(unsigned int gid, unsigned short int node, bool value) { left_[b_begin[gid] + node] = value; }
+	void inline set_right(unsigned int gid, unsigned short int node, unsigned short int value) { right_[b_begin[gid] + node] = value; }
+	void inline set_operation(unsigned int gid, unsigned short int node, op_type_t value) { operations[b_begin[gid] + node] = value; }
 
-	void inline set_right_idx(unsigned int gid, unsigned int node, unsigned short int value) { right_idx__or_type_[c_begin[gid] + node] = value; }
-	void inline set_type(unsigned int gid, unsigned int node, node_type_t value) { set_right_idx(gid, node, value); }
-	void inline set_left_idx(unsigned int gid, unsigned int node, unsigned short int value) {
+	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
+	void inline set_raw_left(unsigned int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
+	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { set_right_idx(gid, node, value); }
+	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) {
 		if (has_most_left_zero(gid, node)) {
 			left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node] = -value - 1;
 		} else
 			left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node] = value + 1;
 	}
-	void inline set_element(unsigned int gid, unsigned int node, unsigned short int value) { set_left_idx(gid, node, value); }
-	void inline set_most_left_zero(unsigned int gid, unsigned int node, bool has_most_left_zero_) {
+	void inline set_element(unsigned int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); }
+	void inline set_most_left_zero(unsigned int gid, unsigned short int node, bool has_most_left_zero_) {
 		short int &temp = left_idx__or_element__and_has_most_left_zero_[c_begin[gid] + node];
 
 		if (has_most_left_zero_ == (temp > 0))
@@ -379,9 +382,9 @@ public:
 			#pragma omp master
 			std::cout << "step 4\n";
 			#pragma omp barrier*/
-
-			#pragma omp barrier
-			#pragma omp for
+		}
+			//#pragma omp barrier
+			//#pragma omp for
 			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
 				auto [hash_, real_, imag_, size_b_, size_c_] = rule.child_properties(*this, parent_gid[gid], parent_sub_id[gid]);
 
@@ -392,7 +395,7 @@ public:
 				new_size_b[gid] = size_b_;
 				new_size_c[gid] = size_c_;
 			}
-		}
+		//}
 
 		/* !!!!!!!!!!!!!!!!
 		step (5) 
@@ -406,27 +409,32 @@ public:
 		});
 
 		/* compute is_first_index */
-		is_first_index[new_gid[0]] = true;
+		is_first_index[0] = true;
 
-		//#pragma omp parallel for
-		for (unsigned int gid = 1; gid < total_num_graphs; ++gid)
-			is_first_index[new_gid[gid]] = new_hash[new_gid[gid]] != new_hash[new_gid[gid - 1]];
+		__gnu_parallel::adjacent_difference(new_gid.begin(), new_gid.begin() + total_num_graphs, is_first_index.begin(),
+			[&](unsigned int const &gid1, unsigned int const &gid2) {
+				return new_hash[gid1] != new_hash[gid2];
+			});
 
 		#pragma omp parallel for
 		for (unsigned int gid = 0; gid < total_num_graphs; ++gid)
-			if (is_first_index[new_gid[gid]])
+			if (is_first_index[gid]) {
+				auto id = new_gid[gid];
 				/* sum magnitude of equal graphs */
-				for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[new_gid[gid_]]; ++gid_) {
-					new_real[new_gid[gid]] += new_real[new_gid[gid_]];
-					new_imag[new_gid[gid]] += new_imag[new_gid[gid_]];
+				for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[gid_]; ++gid_) {
+					auto id_ = new_gid[gid_];
+
+					new_real[id] += new_real[id_];
+					new_imag[id] += new_imag[id_];
+
+					/* discard this sgraph */
+					new_real[id_] = 0;
+					new_imag[id_] = 0;
 				}
+			}
 
 		/* get all graphs with a non zero probability */
 		auto partitioned_it = __gnu_parallel::partition(new_gid.begin(), new_gid.begin() + total_num_graphs, [&](unsigned int const &gid) {
-			/* check for duplicates */
-			if (!is_first_index[gid])
-				return false;
-
 			/* check for zero probability */
 			auto r = new_real[gid];
 			auto i = new_imag[gid];
@@ -467,8 +475,6 @@ public:
 		/* resize new step variables */
 		new_state.resize_a(new_state.numb_graphs);
 
-		//std::cout << "step 7 - a\n";
-
 		/* prepare for partial sum */
 		#pragma omp parallel for
 		for (unsigned int gid = 0; gid <  new_state.numb_graphs; ++gid) {
@@ -482,15 +488,11 @@ public:
 			new_state.imag[gid] = new_imag[id];
 		}
 
-		//std::cout << "step 7 - b\n";
-
 		new_state.b_begin[0] = 0;
 		__gnu_parallel::partial_sum(new_state.b_begin.begin() + 1, new_state.b_begin.begin() + new_state.numb_graphs + 1, new_state.b_begin.begin() + 1);
 
 		new_state.c_begin[0] = 0;
 		__gnu_parallel::partial_sum(new_state.c_begin.begin() + 1, new_state.c_begin.begin() + new_state.numb_graphs + 1, new_state.c_begin.begin() + 1);
-
-		//std::cout << "step 7 - d\n";
 
 		/* resize new step variables */
 		new_state.resize_b(new_state.b_begin[new_state.numb_graphs]);
@@ -503,7 +505,10 @@ public:
 		//std::cout << "step 8\n";
 
 		//#pragma omp parallel for
-		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {
+		////#pragma omp parallel master
+		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid)
+		////#pragma omp task firstprivate(gid)
+		{
 			auto id = new_gid[gid];
 
 			/* populate graphs */
@@ -562,7 +567,7 @@ void print(state_t &s) {
 		std::cout << s.real[gid] << (s.imag[gid] >= 0 ? "+" : "") << s.imag[gid] << "i   ";
 
 		unsigned int numb_nodes_ = s.numb_nodes(gid);
-		for (unsigned int node = 0; node < numb_nodes_; ++node) {
+		for (unsigned short int node = 0; node < numb_nodes_; ++node) {
 			std::cout << "-|" << (s.left(gid, node) ? "<" : " ") << "|";
 
 			print_node(gid, s.node_id(gid, node), false);

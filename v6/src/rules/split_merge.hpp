@@ -24,13 +24,11 @@ public:
 
 	/* rule implementation */
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
-		unsigned short int node_id = s.node_id(gid, node);
-		if (s.left(gid, node_id) && s.right(gid, node_id))
+		if (s.left(gid, node) && s.right(gid, node))
 			return split_t;
 
-		unsigned short int next_node = node_id == s.numb_nodes(gid) - 1 ? 0 : node + 1;
-		unsigned short int next_node_id = s.node_id(gid, next_node);
-		if (s.left(gid, node_id) && s.right(gid, next_node_id) && !s.left(gid, next_node_id))
+		unsigned short int next_node = node == s.numb_nodes(gid) - 1 ? 0 : node + 1;
+		if (s.left(gid, node) && s.right(gid, next_node) && !s.left(gid, next_node))
 			return merge_t;
 
 		return none_t;
@@ -50,7 +48,6 @@ public:
 
 	std::tuple<size_t, PROBA_TYPE, PROBA_TYPE, unsigned short int, unsigned short int> 
 	child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
-
 		PROBA_TYPE real = s.real[parent_id];
 		PROBA_TYPE imag = s.imag[parent_id];
 
@@ -78,7 +75,7 @@ public:
 
 		int displacement = -first_split_overflow;
 
-		unsigned short int numb_nodes_ = s.numb_nodes(parent_id);
+		unsigned short int numb_nodes_ = b_size;
 		for (unsigned short int node = first_split_overflow; node < numb_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
@@ -111,8 +108,11 @@ public:
 							c_size += 2;
 
 							/* update node hash */
-							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, node_id, state::left_t));
-							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, node_id, state::right_t));
+							boost::hash_combine(hash_, s.hash_node_by_value(parent_id,
+								node == 0 ? -node_id - 1 : node_id + 1,
+								state::left_t));
+
+							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, node_id + 1, state::right_t));
 						}
 
 						/* update probas */
@@ -155,13 +155,18 @@ public:
 							++c_size;
 
 							/* update node hash */
-							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, node_id, next_node_id));
+							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, 
+								node == 0 || node == numb_nodes_ - 1 ? -node_id - 1 : node_id + 1,
+								next_node_id));
 						}
 
 						/* update probas */
 						PROBA_TYPE temp = real;
 						real = temp*merge_real - imag*merge_imag;
 						imag = temp*merge_imag + imag*merge_real;
+
+						/* skip next node */
+						++node;
 					} else {
 						/* update probas */
 						real *= non_merge;
@@ -289,16 +294,24 @@ public:
 						new_state.set_node_id(gid, node + displacement - 1, s.left_idx(parent_id, node_id));
 						new_state.set_node_id(gid, node + displacement, s.right_idx(parent_id, node_id));
 					} else {
+						/* left node */
 						auto new_left_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement - 1, new_left_node_idx);
 						new_state.set_left_idx(gid, new_left_node_idx, node_id);
 						new_state.set_type(gid, new_left_node_idx, state::left_t);
-						new_state.set_most_left_zero(gid, new_left_node_idx, s.has_most_left_zero(parent_id, node_id));
+						/* set has_most_left_zero */
+						if (node == 0)
+							new_state.set_most_left_zero(gid, new_left_node_idx, true);
 
+						/* right node */
 						auto new_right_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement, new_right_node_idx);
 						new_state.set_left_idx(gid, new_right_node_idx, node_id);
 						new_state.set_type(gid, new_right_node_idx, state::right_t);
+
+						/* re-hash nodes */
+						new_state.hash_node(gid, new_left_node_idx);
+						new_state.hash_node(gid, new_right_node_idx);
 					}
 				} else {
 					/* set node values */
@@ -314,17 +327,25 @@ public:
 					s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
 						new_state.set_node_id(gid, node + displacement, s.left_idx(parent_id, node_id));
 					} else {
+						/* new node */
 						auto new_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement, new_node_idx);
-
 						new_state.set_left_idx(gid, new_node_idx, node_id);
 						new_state.set_right_idx(gid, new_node_idx, next_node_id);
 
-						new_state.set_most_left_zero(gid, new_node_idx, s.has_most_left_zero(parent_id, node_id) || s.has_most_left_zero(parent_id, next_node_id));
+						/* set has_most_left_zero */
+						if (node == 0 || node == numb_nodes_ - 1)
+							new_state.set_most_left_zero(gid, new_node_idx, true);
+
+						/* re-hash nodes */
+						new_state.hash_node(gid, new_node_idx);
 					}
 
 					/* update displacement */
 					--displacement;
+
+					/* skip next node */
+					++node;
 				}
 			} else {
 				new_state.set_node_id(gid, node + displacement, s.node_id(parent_id, node));
