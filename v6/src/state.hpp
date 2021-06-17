@@ -168,7 +168,7 @@ public:
 	std::vector<unsigned short int> num_childs; /* of size (a) */
 
 	// new graphs
-	std::vector<bool> is_first_index; /* of size (a) for the symbolic iteration */
+	std::vector</*bool*/ char> is_first_index; /* of size (a) for the symbolic iteration */
 	std::vector<unsigned int> next_gid; /* of size (a) for the symbolic iteration */
 	std::vector<unsigned int> parent_gid; /* of size (a) for the symbolic iteration */
 	std::vector<unsigned int> child_id_begin; /* of size (a) + 1 for the symbolic iteration */
@@ -404,36 +404,39 @@ public:
 		});
 
 		/* compute is_first_index */
-		__gnu_parallel::adjacent_difference(next_gid.begin(), next_gid.begin() + total_num_graphs, is_first_index.begin(),
-			[&](unsigned int const &gid1, unsigned int const &gid2) {
-				return new_hash[gid1] != new_hash[gid2];
-			});
+		is_first_index[next_gid[0]] = true;
 
-		is_first_index[0] = true;
+		#pragma omp parallel
+		{
+			#pragma omp for
+			for (unsigned int gid = 1; gid < total_num_graphs; ++gid)
+				is_first_index[next_gid[gid]] = new_hash[next_gid[gid]] != new_hash[next_gid[gid - 1]];
 
-		/* compute interferances */
-		/* !!!!!!!!!!!!!!!!!!!!!!!!
-		potentiel d'optimisation
-		!!!!!!!!!!!!!!!!!!!!!!!! */
-		#pragma omp parallel for
-		for (unsigned int gid = 0; gid < total_num_graphs; ++gid)
-			if (is_first_index[gid]) {
+			/* compute interferances */
+			/* !!!!!!!!!!!!!!!!!!!!!!!!
+			potentiel d'optimisation
+			!!!!!!!!!!!!!!!!!!!!!!!! */
+			#pragma omp for
+			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
 				auto id = next_gid[gid];
-				/* sum magnitude of equal graphs */
-				for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[gid_]; ++gid_) {
-					auto id_ = next_gid[gid_];
 
-					new_real[id] += new_real[id_];
-					new_imag[id] += new_imag[id_];
+				if (is_first_index[id])
+					/* sum magnitude of equal graphs */
+					for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !is_first_index[next_gid[gid_]]; ++gid_) {
+						auto id_ = next_gid[gid_];
 
-					/* discard this graph */
-					new_real[id_] = 0;
-					new_imag[id_] = 0;
-				}
+						new_real[id] += new_real[id_];
+						new_imag[id] += new_imag[id_];
+					}
 			}
+		}
 
 		/* get all graphs with a non zero probability */
 		auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + total_num_graphs, [&](unsigned int const &gid) {
+			/* check if graph is unique */
+			if (!is_first_index[gid])
+				return false;
+
 			/* check for zero probability */
 			auto r = new_real[gid];
 			auto i = new_imag[gid];
