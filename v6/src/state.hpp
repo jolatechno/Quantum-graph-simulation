@@ -148,8 +148,8 @@ public:
 	std::vector <unsigned int> sub_node_begin; /* of size (a + 1), refers to vectors of of size (c) */
 
 	// graph properties
-	std::vector<bool> left_; /* of size (b) */
-	std::vector<bool> right_; /* of size (b) */
+	std::vector</*bool*/ char> left_; /* of size (b) */
+	std::vector</*bool*/ char> right_; /* of size (b) */
 	std::vector<short int> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
 
 	// node properties
@@ -507,7 +507,7 @@ public:
 
 		//std::cout << "step 7\n";
 
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for (unsigned int gid = 0; gid < new_state.num_graphs; ++gid) {
 			auto id = next_gid[gid];
 

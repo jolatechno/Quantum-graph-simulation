@@ -23,9 +23,9 @@ int main() {
 	move_all(s);
 	print(s); std::cout << "\n";
 
-	auto rule = split_merge_rule/*erase_create_rule*/(M_PI_4, 0);
+	auto rule = /*split_merge_rule*/erase_create_rule(M_PI_4, 0);
 	
-	unsigned int n_iteration = 2; //20;
+	unsigned int n_iteration = 3; //20;
 
 	state new_state(1); //10000, 10000, 10000, 10000);
 	/*s.resize_num_graphs_symbolic(10000);

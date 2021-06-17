@@ -3,7 +3,7 @@
 #include "../state.hpp"
 
 void move_all(state_t &s) {
-	//#pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
 		unsigned int end = s.node_begin[gid + 1];
 		unsigned int begin = s.node_begin[gid];
@@ -15,7 +15,7 @@ void move_all(state_t &s) {
 }
 
 void reversed_move_all(state_t &s) {
-	//#pragma omp parallel for
+	#pragma omp parallel for
 	for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
 		unsigned int end = s.node_begin[gid + 1];
 		unsigned int begin = s.node_begin[gid];
