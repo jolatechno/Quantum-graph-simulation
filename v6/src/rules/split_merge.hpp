@@ -40,8 +40,8 @@ public:
 
 		unsigned int numb_op = 0;
 		unsigned int numb_nodes_ = s.numb_nodes(gid);
-		for (unsigned int nid = 0; nid < numb_nodes_; ++nid)
-			numb_op += s.operation(gid, nid) != none_t;
+		for (unsigned int node = 0; node < numb_nodes_; ++node)
+			numb_op += s.operation(gid, node) != none_t;
 
 		return std::pow(2, numb_op);
 	}

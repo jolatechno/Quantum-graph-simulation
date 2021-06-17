@@ -318,8 +318,8 @@ public:
 				auto numb_nodes_ = numb_nodes(gid);
 
 				/* get operations for each nodes of each graph */
-				for (unsigned int nid = 0; nid < numb_nodes_; ++nid)
-					set_operation(gid, nid, rule.operation(*this, gid, nid));
+				for (unsigned int node = 0; node < numb_nodes_; ++node)
+					set_operation(gid, node, rule.operation(*this, gid, node));
 			}
 
 			/* !!!!!!!!!!!!!!!!
@@ -489,6 +489,7 @@ public:
 			new_state.imag[gid] = new_imag[id];
 		}
 
+		/* compute the partial sums to get new b_begin and c_begin */
 		new_state.b_begin[0] = 0;
 		__gnu_parallel::partial_sum(new_state.b_begin.begin() + 1, new_state.b_begin.begin() + new_state.numb_graphs + 1, new_state.b_begin.begin() + 1);
 
@@ -506,10 +507,7 @@ public:
 		//std::cout << "step 8\n";
 
 		//#pragma omp parallel for
-		////#pragma omp parallel master
-		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid)
-		////#pragma omp task firstprivate(gid)
-		{
+		for (unsigned int gid = 0; gid < new_state.numb_graphs; ++gid) {
 			auto id = new_gid[gid];
 
 			/* populate graphs */
@@ -520,10 +518,10 @@ public:
 	void randomize() {
 		// random genearator
 		size_t size = left_.size();
-    	for (int i = 0; i < size; ++i) {
-    		left_[i] = std::rand() % 2;
-    		right_[i] = std::rand() % 2;
-    	}
+		for (int i = 0; i < size; ++i) {
+			left_[i] = std::rand() % 2;
+			right_[i] = std::rand() % 2;
+		}
 	}
 };
 

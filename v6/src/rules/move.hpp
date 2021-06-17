@@ -4,10 +4,7 @@
 
 void move_all(state_t &s) {
 	//#pragma omp parallel for
-	////#pragma omp parallel master
-	for (unsigned int gid = 0; gid < s.numb_graphs; ++gid)
-	////#pragma omp task
-	{
+	for (unsigned int gid = 0; gid < s.numb_graphs; ++gid) {
 		unsigned int end = s.b_begin[gid + 1];
 		unsigned int begin = s.b_begin[gid];
 
@@ -19,10 +16,7 @@ void move_all(state_t &s) {
 
 void reversed_move_all(state_t &s) {
 	//#pragma omp parallel for
-	////#pragma omp parallel master
-	for (unsigned int gid = 0; gid < s.numb_graphs; ++gid)
-	////#pragma omp task
-	{
+	for (unsigned int gid = 0; gid < s.numb_graphs; ++gid) {
 		unsigned int end = s.b_begin[gid + 1];
 		unsigned int begin = s.b_begin[gid];
 
