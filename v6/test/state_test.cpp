@@ -17,7 +17,7 @@ int main() {
 	tolerance = 1e-18; //0;
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
-	state s(5 /*10*/);
+	state s(4 /*10*/);
 	s.randomize();
 
 	move_all(s);
@@ -25,13 +25,13 @@ int main() {
 
 	auto rule = split_merge_rule/*erase_create_rule*/(M_PI_4, 0);
 	
-	unsigned int n_iteration = 1; //20;
+	unsigned int n_iteration = 2; //20;
 
 	state new_state(1); //10000, 10000, 10000, 10000);
-	/*s.resize_a_next(10000);
-	s.resize_a(10000);
-	s.resize_b(10000);
-	s.resize_c(10000);*/
+	/*s.resize_num_graphs_symbolic(10000);
+	s.resize_num_nodes(10000);
+	s.resize_num_graphs(10000);
+	s.resize_num_sub_nodes(10000);*/
 
 	for (int i = 0; i < n_iteration; ++i) {
 		//std::cout << "move...\n";
@@ -42,7 +42,7 @@ int main() {
 		std::swap(s, new_state);
 		//std::cout << "...swaped\n";
 
-		//std::cout << s.numb_graphs << "\n";
+		//std::cout << s.num_graphs << "\n";
 	}
 
 	for (int i = 0; i < n_iteration; ++i) {
