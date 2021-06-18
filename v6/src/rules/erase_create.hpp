@@ -148,8 +148,8 @@ public:
 
 				child_id >>= 1;
 			} else {
-				new_state.set_left(next_gid, node, s.left(parent_id, node_id));
-				new_state.set_right(next_gid, node, s.right(parent_id, node_id));
+				new_state.set_left(next_gid, node, s.left(parent_id, node));
+				new_state.set_right(next_gid, node, s.right(parent_id, node));
 			}
 
 		}

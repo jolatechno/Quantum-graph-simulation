@@ -37,7 +37,10 @@ typedef char op_type_t;
 
 // global variable definition
 PROBA_TYPE tolerance = 0;
-float resize_policy = 1.3;
+float resize_policy = 2;
+
+// debugging options
+unsigned short int verbose = 0;
 
 // rule interface definition
 class rule {
@@ -315,8 +318,9 @@ public:
 			step (1) 
 			 !!!!!!!!!!!!!!!! */
 
-			/*#pragma omp single
-			std::cout << "step 1\n";*/
+			#pragma omp single
+			if (verbose > 0)
+				std::cout << "step 1\n";
 
 			#pragma omp for
 			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
@@ -331,32 +335,32 @@ public:
 			step (2) 
 			 !!!!!!!!!!!!!!!! */
 
-			/*pragma omp single
-			std::cout << "step 2\n";*/
+			#pragma omp single
+			if (verbose > 0)
+				std::cout << "step 2\n";
 
-			#pragma omp for
-			for (unsigned int gid = 0; gid < num_graphs; ++gid)
+			#pragma omp for reduction(+:total_num_graphs)
+			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
 				/* get the numer of child for each graph */
 				num_childs[gid] = rule.num_childs(*this, gid);
 
-			/* !!!!!!!!!!!!!!!!
-			step (3) 
-			 !!!!!!!!!!!!!!!! */
-
-			/*#pragma omp single
-			std::cout << "step 3\n";*/
-			
-			/* compute the total numer of child in parallel */
-			#pragma omp for reduction(+:total_num_graphs)
-			for (auto &num_graph : num_childs)
-				total_num_graphs += num_graph;
+				/* compute the total numer of child in parallel */
+				total_num_graphs += num_childs[gid];
+			}
 		}
+
+		/* !!!!!!!!!!!!!!!!
+		step (3) 
+		 !!!!!!!!!!!!!!!! */
+		
+		if (verbose > 0)
+			std::cout << "step 3\n";
 
 		/* resize variables with the right_ numer of elements */
 		resize_num_graphs_symbolic(total_num_graphs);
 
 		child_id_begin[0] = 0;
-		__gnu_parallel::partial_sum(num_childs.begin(), num_childs.begin() + total_num_graphs, child_id_begin.begin() + 1);
+		__gnu_parallel::partial_sum(num_childs.begin(), num_childs.begin() + num_graphs, child_id_begin.begin() + 1);
 
 		#pragma omp parallel
 		{
@@ -376,8 +380,9 @@ public:
 			step (4) 
 			 !!!!!!!!!!!!!!!! */
 
-			/*#pragma omp single
-			std::cout << "step 4\n";*/
+			#pragma omp single
+			if (verbose > 0)
+				std::cout << "step 4\n";
 
 			#pragma omp for
 			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
@@ -396,7 +401,8 @@ public:
 		step (5) 
 		 !!!!!!!!!!!!!!!! */
 
-		//std::cout << "step 5\n";
+		if (verbose > 0)
+			std::cout << "step 5\n";
 		
 		/* sort graphs hash to compute interference */
 		__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + total_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -450,9 +456,11 @@ public:
 		step (5.1) 
 		 !!!!!!!!!!!!!!!! */
 
-		//std::cout << "step 5.1\n";
-
 		if (max_num_graphs > 0 && new_state.num_graphs > max_num_graphs) {
+
+			if (verbose > 0)
+				std::cout << "step 5.1\n";
+
 			/* sort graphs according to probability */
 			__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, next_gid.begin() + new_state.num_graphs,
 			[&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -472,7 +480,8 @@ public:
 		step (6) 
 		 !!!!!!!!!!!!!!!! */
 
-		//std::cout << "step 6\n";
+		if (verbose > 0)
+			std::cout << "step 6\n";
 
 		/* sort to make memory access more continuous */
 		__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + new_state.num_graphs);
@@ -508,7 +517,8 @@ public:
 		step (7) 
 		 !!!!!!!!!!!!!!!! */
 
-		//std::cout << "step 7\n";
+		if (verbose > 0)
+			std::cout << "step 7\n";
 
 		#pragma omp parallel for
 		for (unsigned int gid = 0; gid < new_state.num_graphs; ++gid) {
