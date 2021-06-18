@@ -3,11 +3,6 @@
 #include "../state.hpp"
 
 class split_merge_rule : public rule {
-private:
-	PROBA_TYPE merge_real = 1;
-	PROBA_TYPE merge_imag = 0;
-	PROBA_TYPE non_merge = 0;
-
 public:
 	enum {
 		none_t,
@@ -17,9 +12,9 @@ public:
 
 	/* constructor */
 	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		merge_real = precision::cos(teta)*precision::cos(phi);
-		merge_imag = precision::cos(teta)*precision::sin(phi);
-		non_merge = precision::sin(teta);
+		do_real = precision::cos(teta)*precision::cos(phi);
+		do_imag = precision::cos(teta)*precision::sin(phi);
+		do_not = precision::sin(teta);
 	}
 
 	/* rule implementation */
@@ -35,7 +30,7 @@ public:
 	}
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
-		if (non_merge == 0 || non_merge == 1)
+		if (do_not == 0 || do_not == 1)
 			return 1;
 
 		unsigned int num_op = 0;
@@ -117,12 +112,12 @@ public:
 
 						/* update probas */
 						PROBA_TYPE temp = real;
-						real = temp*merge_real + imag*merge_imag;
-						imag = temp*merge_imag - imag*merge_real;
+						real = temp*do_real + imag*do_imag;
+						imag = temp*do_imag - imag*do_real;
 					} else {
 						/* update probas */
-						real *= -non_merge;
-						imag *= -non_merge;
+						real *= -do_not;
+						imag *= -do_not;
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
@@ -162,15 +157,15 @@ public:
 
 						/* update probas */
 						PROBA_TYPE temp = real;
-						real = temp*merge_real - imag*merge_imag;
-						imag = temp*merge_imag + imag*merge_real;
+						real = temp*do_real - imag*do_imag;
+						imag = temp*do_imag + imag*do_real;
 
 						/* skip next node */
 						++node;
 					} else {
 						/* update probas */
-						real *= non_merge;
-						imag *= non_merge;
+						real *= do_not;
+						imag *= do_not;
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));

@@ -37,7 +37,7 @@ typedef char op_type_t;
 
 // global variable definition
 PROBA_TYPE tolerance = 0;
-float resize_policy = 2;
+float resize_policy = 1.3;
 
 // debugging options
 unsigned short int verbose = 0;
@@ -57,6 +57,11 @@ public:
 		child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const { return {0, 0., 0., 0, 0}; } /* step (4) */
 
 	virtual void populate_new_graph(state_t const &s, state_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const {} /* step (8) */
+
+	/* parameters of a unitary matrix */
+	PROBA_TYPE do_real = 1;
+	PROBA_TYPE do_imag = 0;
+	PROBA_TYPE do_not = 0;
 };
 
 /*

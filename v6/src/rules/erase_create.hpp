@@ -3,11 +3,6 @@
 #include "../state.hpp"
 
 class erase_create_rule : public rule {
-private:
-	PROBA_TYPE create_real = 1;
-	PROBA_TYPE create_imag = 0;
-	PROBA_TYPE non_create = 0;
-
 public:
 	enum {
 		none_t,
@@ -17,9 +12,9 @@ public:
 
 	/* constructor */
 	erase_create_rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		create_real = precision::cos(teta)*precision::cos(phi);
-		create_imag = precision::cos(teta)*precision::sin(phi);
-		non_create = precision::sin(teta);
+		do_real = precision::cos(teta)*precision::cos(phi);
+		do_imag = precision::cos(teta)*precision::sin(phi);
+		do_not = precision::sin(teta);
 	}
 
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
@@ -35,7 +30,7 @@ public:
 	}
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
-		if (non_create == 0 || non_create == 1)
+		if (do_not == 0 || do_not == 1)
 			return 1;
 
 		unsigned int num_op = 0;
@@ -78,20 +73,20 @@ public:
 				if (operation == create_t) {
 					if (do_) {
 						PROBA_TYPE temp = real;
-						real = temp*create_real - imag*create_imag;
-						imag = imag*create_real + temp*create_imag;
+						real = temp*do_real - imag*do_imag;
+						imag = imag*do_real + temp*do_imag;
 					} else {
-						real *= -non_create;
-						imag *= -non_create;
+						real *= -do_not;
+						imag *= -do_not;
 					}
 				} else {
 					if (do_) {
 						PROBA_TYPE temp = real;
-						real = temp*create_real + imag*create_imag;
-						imag = imag*create_real - temp*create_imag;
+						real = temp*do_real + imag*do_imag;
+						imag = imag*do_real - temp*do_imag;
 					} else {
-						real *= non_create;
-						imag *= non_create;
+						real *= do_not;
+						imag *= do_not;
 					}
 				}
 
