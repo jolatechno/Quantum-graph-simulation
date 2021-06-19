@@ -23,8 +23,6 @@ int main(int argc, char* argv[]) {
 	state new_state(1); //10000, 10000, 10000, 10000);
 
 	for (int i = 0; i < n_iter; ++i) {
-		//state new_state(1);
-
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "move...\n";
 
@@ -49,8 +47,6 @@ int main(int argc, char* argv[]) {
 
 	if (injectivity)
 		for (int i = 0; i < n_iter; ++i) {
-			//state new_state(1);
-
 			if (verbose >= TEST_STEP_DEBUG_LEVEL)
 				std::cout << "step...\n";
 			
@@ -73,6 +69,5 @@ int main(int argc, char* argv[]) {
 				std::cout << s.num_graphs << " graphs\n";
 		}
 
-	//std::cout << "print...\n";
 	print(s);
 }
