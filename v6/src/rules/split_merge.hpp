@@ -211,13 +211,17 @@ public:
 		short int last_trash_idx = -1;
 		short int old_sub_node_num = s.num_sub_node(parent_id);
 		auto const get_trash = [&]() {
-			while (true) {
-				++last_trash_idx;
-				if (new_state.is_trash(gid, last_trash_idx) || last_trash_idx >= old_sub_node_num) {
+			++last_trash_idx;
+
+			/* check for old trash sub-nodes */
+			for (; last_trash_idx < old_sub_node_num; ++last_trash_idx)
+				if (new_state.is_trash(gid, last_trash_idx)) {
 					new_state.set_is_trash(gid, last_trash_idx, false);
 					return last_trash_idx;
 				}
-			}
+			
+			/* return newly allocated sub-nodes */
+			return last_trash_idx;
 		};
 
 		int displacement = 0;

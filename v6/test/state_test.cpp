@@ -2,7 +2,7 @@
 #include "../src/utils/parser.hpp"
 
 // debug levels
-#define TEST_STEP_DEBUG_LEVEL 0.5
+#define TEST_STEP_DEBUG_LEVEL 0.2
 #define GRAPH_SIZE_DEBUG_LEVEL 0.1
 
 #define _USE_MATH_DEFINES
