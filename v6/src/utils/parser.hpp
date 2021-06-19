@@ -3,16 +3,20 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool> parser(
+std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool, bool> parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create_all"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
+        ("num-graph-print", "maximum number of graphs to print", cxxopts::value<unsigned int>()->default_value("20"))
+
+        ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
+
         ("N,normalize", "normalize after each iteration")
 
-        ("v,verbose", "show debugging informations", cxxopts::value<unsigned short int>()->default_value("0"))
+        ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
@@ -60,12 +64,16 @@ std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool> par
     unsigned int max_n_graphs = result["n-graphs"].as<int>();
 
     // ------------------------------------------
+    // global variables
+
+    tolerance = result["tol"].as<PROBA_TYPE>();
+    verbose = result["verbose"].as<float>();
+    max_num_graph_print = result["num-graph-print"].as<unsigned int>();
+
+    // ------------------------------------------
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
-
-    tolerance = result["tol"].as<PROBA_TYPE>();
-    verbose = result["verbose"].as<unsigned short int>();
 
     PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
@@ -107,5 +115,5 @@ std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool> par
 
     rule_ = result["rule"].as<std::string>();
 
-    return {size, rule, rule2, n_iter, max_n_graphs, rule_, result.count("normalize")};
+    return {size, rule, rule2, n_iter, max_n_graphs, rule_, result.count("injectivity"), result.count("normalize")};
 }

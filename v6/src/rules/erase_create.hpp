@@ -42,11 +42,11 @@ public:
 	}
 
 	std::tuple<size_t, PROBA_TYPE, PROBA_TYPE, unsigned short int, unsigned short int> 
-	child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
+	child_properties(state_t &s, unsigned int parent_id, unsigned int child_id) const override {
 		PROBA_TYPE real = s.real[parent_id];
 		PROBA_TYPE imag = s.imag[parent_id];
 
-		unsigned short int sub_node_size = s.sub_node_size(parent_id);
+		unsigned short int num_sub_node = s.num_sub_node(parent_id);
 
 		size_t hash_ = 0;
 		size_t left_hash_ = 0;
@@ -105,7 +105,7 @@ public:
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
 
-		return {hash_, real, imag, num_nodes_, sub_node_size};
+		return {hash_, real, imag, num_nodes_, num_sub_node};
 	}
 
 	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const override {
@@ -121,7 +121,7 @@ public:
 		std::copy(s.node_id_c.begin() + node_begin, s.node_id_c.begin() + node_end, new_state.node_id_c.begin() + new_node_begin);
 
 		std::copy(s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero_.begin() + new_sub_node_begin);
-		std::copy(s.right_idx__or_type_.begin() + sub_node_begin, s.right_idx__or_type_.begin() + sub_node_end, new_state.right_idx__or_type_.begin() + new_sub_node_begin);
+		std::copy(s.right_idx__or_type__and_is_trash_.begin() + sub_node_begin, s.right_idx__or_type__and_is_trash_.begin() + sub_node_end, new_state.right_idx__or_type__and_is_trash_.begin() + new_sub_node_begin);
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
 
 		unsigned short int num_nodes_ = node_end - node_begin;

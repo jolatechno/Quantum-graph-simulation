@@ -7,14 +7,17 @@
 #include <random>
 #include <iostream>
 
+// debug levels
+#define STEP_DEBUG_LEVEL 1
+
 #ifdef USE_MPRF
-	//import
+	// import
 	#include "utils/mpreal.h"
 	
 	// namespace for math functions
 	namespace precision = mpfr;
 
-	//type
+	// type
 	#define PROBA_TYPE precision::mpreal
 
 	// precision setter
@@ -40,7 +43,8 @@ PROBA_TYPE tolerance = 0;
 float resize_policy = 1.3;
 
 // debugging options
-unsigned short int verbose = 0;
+float verbose = 0;
+unsigned int max_num_graph_print = 20;
 
 // rule interface definition
 class rule {
@@ -54,7 +58,7 @@ public:
 	virtual std::tuple<size_t /* hash */,
 		PROBA_TYPE /* real*/, PROBA_TYPE /* imag */,
 		unsigned short int /* num_nodes */, unsigned short int /* num sub-nodes */> 
-		child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const { return {0, 0., 0., 0, 0}; } /* step (4) */
+		child_properties(state_t &s, unsigned int parent_id, unsigned int child_id) const { return {0, 0., 0., 0, 0}; } /* step (4) */
 
 	virtual void populate_new_graph(state_t const &s, state_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const {} /* step (8) */
 
@@ -95,7 +99,7 @@ class state {
 public:
 	// type definition of a node
 	typedef enum node_type {
-		left_t = -3,
+		left_t = 0,
 		right_t,
 		element_t,
 		pair_t,
@@ -116,7 +120,7 @@ public:
 		right_.resize(size, false);
 		node_id_c.resize(size);
 		left_idx__or_element__and_has_most_left_zero_.resize(size);
-		right_idx__or_type_.resize(size, element_t);
+		right_idx__or_type__and_is_trash_.resize(size, element_t + 1);
 		node_hash.resize(size);
 		operations.resize(size);
 		num_childs.resize(size);
@@ -162,7 +166,7 @@ public:
 
 	// node properties
 	std::vector<short int> left_idx__or_element__and_has_most_left_zero_; /* of size (c) */
-	std::vector<short int> right_idx__or_type_; /* of size (c) */
+	std::vector<short int> right_idx__or_type__and_is_trash_; /* of size (c) */
 	std::vector<size_t> node_hash; /* of size (c) */
 
 	/*
@@ -235,7 +239,7 @@ public:
 	void resize_num_sub_nodes(size_t size) {
 		if (node_hash.size() < size) {
 			left_idx__or_element__and_has_most_left_zero_.resize(resize_policy * size);
-			right_idx__or_type_.resize(resize_policy * size);
+			right_idx__or_type__and_is_trash_.resize(resize_policy * size);
 			node_hash.resize(resize_policy * size);
 		}
 	}
@@ -250,65 +254,95 @@ public:
 		} else
 			hash_ = hash(gid, left_idx);
 
-		if (right_idx__or_type < 0) {
+		if (right_idx__or_type < pair_t) {
 			boost::hash_combine(hash_, right_idx__or_type);
 		} else
-			boost::hash_combine(hash_, hash(gid, right_idx__or_type));
+			boost::hash_combine(hash_, hash(gid, right_idx__or_type - pair_t));
 
 		return hash_;
 	}
 	void inline hash_node(unsigned int gid, unsigned short int node) {
 		unsigned int id = sub_node_begin[gid] + node;
-		node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero_[id], right_idx__or_type_[id]);
+		node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero_[id], right_idx__or_type__and_is_trash_[id]);
 	}
 
 	/* getters */
+	// sizes
 	unsigned short int inline num_nodes(unsigned int gid) const { return node_begin[gid + 1] - node_begin[gid]; }
-	unsigned short int inline sub_node_size(unsigned int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; }
+	unsigned short int inline num_sub_node(unsigned int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; }
 
+	// getter for nodes
 	unsigned short int inline node_id(unsigned int gid, unsigned short int node) const { return node_id_c[node_begin[gid] + node]; }
 	bool inline left(unsigned int gid, unsigned short int node) const { return left_[node_begin[gid] + node]; }
 	bool inline right(unsigned int gid, unsigned short int node) const { return right_[node_begin[gid] + node]; }
 	op_type_t inline operation(unsigned int gid, unsigned short int node) const { return operations[node_begin[gid] + node]; }
 
+	// raw getters for sub-nodes
 	size_t hash(unsigned int gid, unsigned short int node) const { return node_hash[sub_node_begin[gid] + node]; }
-	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type_[sub_node_begin[gid] + node]; }
-	short int inline &right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type_[sub_node_begin[gid] + node]; }
+	short int inline raw_right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
+	short int inline &raw_right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
 	short int inline raw_left_idx(unsigned int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
 	short int inline &raw_left_idx(unsigned int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
+	
+	// composits getters for raw_left_idx
+	unsigned short int inline element(unsigned int gid, unsigned short int node) const { return left_idx(gid, node); }
 	bool inline has_most_left_zero(unsigned int gid, unsigned short int node) const {
 		return raw_left_idx(gid, node) < 0;
 	}
 	unsigned short int inline left_idx(unsigned int gid, unsigned short int node) const { 
 		return std::abs(raw_left_idx(gid, node)) - 1;
 	}
-	unsigned short int inline element(unsigned int gid, unsigned short int node) const { return left_idx(gid, node); }
+
+	// composits getters for raw_right_idx
+	short int inline right_idx__or_type(unsigned int gid, unsigned short int node) const { return std::abs(raw_right_idx(gid, node)) - 1; }
 	node_type_t inline node_type(unsigned int gid, unsigned short int node) const {
-		return std::min((node_type_t)right_idx(gid, node), pair_t);
+		return std::min((node_type_t)right_idx__or_type(gid, node), pair_t);
 	}
+	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type(gid, node) - pair_t; }
+	bool inline is_trash(unsigned int gid, unsigned short int node) const { return raw_right_idx(gid, node) < 0; }
 
 	/* setters */
+	// setters for nodes
 	void inline set_node_id(unsigned int gid, unsigned short int node, unsigned short int value) { node_id_c[node_begin[gid] + node] = value; }
 	void inline set_left(unsigned int gid, unsigned short int node, bool value) { left_[node_begin[gid] + node] = value; }
 	void inline set_right(unsigned int gid, unsigned short int node, unsigned short int value) { right_[node_begin[gid] + node] = value; }
 	void inline set_operation(unsigned int gid, unsigned short int node, op_type_t value) { operations[node_begin[gid] + node] = value; }
 
-	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
+	// raw setters for sub-nodes
 	void inline set_raw_left(unsigned int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
-	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { set_right_idx(gid, node, value); }
+	void inline set_raw_right(unsigned int gid, unsigned short int node, short int value) { raw_right_idx(gid, node) = value; }
+	
+	// composite setters for raw_left_idx
 	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) {
 		if (has_most_left_zero(gid, node)) {
-			left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node] = -value - 1;
+			raw_left_idx(gid, node) = -value - 1;
 		} else
-			left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node] = value + 1;
+			raw_left_idx(gid, node) = value + 1;
 	}
 	void inline set_element(unsigned int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); }
 	void inline set_most_left_zero(unsigned int gid, unsigned short int node, bool has_most_left_zero_) {
-		short int &temp = left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node];
+		short int &temp = raw_right_idx(gid, node);
 
 		if (has_most_left_zero_ == (temp > 0))
 			temp *= -1;
 	}
+
+	// composite setters for raw_right_idx
+	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { set_right_idx__or_type(gid, node, value + pair_t); }
+	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { set_right_idx__or_type(gid, node, value); }
+	void inline set_right_idx__or_type(unsigned int gid, unsigned short int node, unsigned short int value) {
+		if (is_trash(gid, node)) {
+			raw_right_idx(gid, node) = -value - 1;
+		} else
+			raw_right_idx(gid, node) = value + 1;
+	}
+	void inline set_is_trash(unsigned int gid, unsigned short int node, bool is_trash) {
+		short int &temp = raw_right_idx(gid, node);
+
+		if (is_trash == (temp > 0))
+			temp *= -1;
+	}
+	
 	
 
 	/* step function */
@@ -316,17 +350,15 @@ public:
 	void step(state_t &new_state, rule_t &rule, unsigned int max_num_graphs) {
 		size_t total_num_graphs = 0;
 
+		/* !!!!!!!!!!!!!!!!
+		step (1) 
+		 !!!!!!!!!!!!!!!! */
+
+		if (verbose >= STEP_DEBUG_LEVEL)
+			std::cout << "step 1\n";
+
 		#pragma omp parallel
 		{
-
-			/* !!!!!!!!!!!!!!!!
-			step (1) 
-			 !!!!!!!!!!!!!!!! */
-
-			#pragma omp single
-			if (verbose > 0)
-				std::cout << "step 1\n";
-
 			#pragma omp for
 			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
 				auto num_nodes_ = num_nodes(gid);
@@ -341,7 +373,7 @@ public:
 			 !!!!!!!!!!!!!!!! */
 
 			#pragma omp single
-			if (verbose > 0)
+			if (verbose >= STEP_DEBUG_LEVEL)
 				std::cout << "step 2\n";
 
 			#pragma omp for reduction(+:total_num_graphs)
@@ -358,7 +390,7 @@ public:
 		step (3) 
 		 !!!!!!!!!!!!!!!! */
 		
-		if (verbose > 0)
+		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 3\n";
 
 		/* resize variables with the right_ numer of elements */
@@ -367,9 +399,9 @@ public:
 		child_id_begin[0] = 0;
 		__gnu_parallel::partial_sum(num_childs.begin(), num_childs.begin() + num_graphs, child_id_begin.begin() + 1);
 
-		#pragma omp parallel
-		{
-			#pragma omp for
+		//#pragma omp parallel
+		//{
+			//#pragma omp for
 			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
 				unsigned int const num_child = num_childs[gid];
 				unsigned int const child_begin = child_id_begin[gid];
@@ -385,11 +417,11 @@ public:
 			step (4) 
 			 !!!!!!!!!!!!!!!! */
 
-			#pragma omp single
-			if (verbose > 0)
+			//#pragma omp single
+			if (verbose >= STEP_DEBUG_LEVEL)
 				std::cout << "step 4\n";
 
-			#pragma omp for
+			#pragma omp parallel for
 			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
 				auto [hash_, real_, imag_, size_node_, size_sub_node_] = rule.child_properties(*this, parent_gid[gid], child_id[gid]);
 
@@ -400,13 +432,13 @@ public:
 				new_size_b[gid] = size_node_;
 				new_size_c[gid] = size_sub_node_;
 			}
-		}
+		//}
 
 		/* !!!!!!!!!!!!!!!!
 		step (5) 
 		 !!!!!!!!!!!!!!!! */
 
-		if (verbose > 0)
+		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 5\n";
 		
 		/* sort graphs hash to compute interference */
@@ -463,7 +495,7 @@ public:
 
 		if (max_num_graphs > 0 && new_state.num_graphs > max_num_graphs) {
 
-			if (verbose > 0)
+			if (verbose >= STEP_DEBUG_LEVEL)
 				std::cout << "step 5.1\n";
 
 			/* sort graphs according to probability */
@@ -485,7 +517,7 @@ public:
 		step (6) 
 		 !!!!!!!!!!!!!!!! */
 
-		if (verbose > 0)
+		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 6\n";
 
 		/* sort to make memory access more continuous */
@@ -522,7 +554,7 @@ public:
 		step (7) 
 		 !!!!!!!!!!!!!!!! */
 
-		if (verbose > 0)
+		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 7\n";
 
 		#pragma omp parallel for
@@ -581,7 +613,25 @@ void print(state_t &s) {
 		}
 	};
 
-	for (int gid = 0; gid < s.num_graphs; ++gid) {
+	std::vector<unsigned int> gids(s.num_graphs);
+	std::iota(gids.begin(), gids.end(), 0);
+
+	unsigned int num_graphs = std::min(s.num_graphs, (size_t)max_num_graph_print);
+
+	__gnu_parallel::partial_sort(gids.begin(), gids.begin() + num_graphs, gids.end(),
+	[&](unsigned int const &gid1, unsigned int const &gid2) {
+		auto r1 = s.real[gid1];
+		auto i1 = s.imag[gid1];
+
+		auto r2 = s.real[gid2];
+		auto i2 = s.imag[gid2];
+
+		return r1*r1 + i1*i1 > r2*r2 + i2*i2;
+	});
+
+	for (int i = 0; i < num_graphs; ++i) {
+		unsigned int gid = gids[i];
+
 		std::cout << s.real[gid] << (s.imag[gid] >= 0 ? "+" : "") << s.imag[gid] << "i   ";
 
 		unsigned int num_nodes_ = s.num_nodes(gid);
