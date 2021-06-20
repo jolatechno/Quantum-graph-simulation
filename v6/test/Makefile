@@ -3,6 +3,9 @@ U_CFLAGS=$(CFLAGS) -fopenmp
 
 targets=$(basename $(wildcard **.cpp))
 
+clean:
+	rm *.out ../**/**.gch ../**/**/**.gch
+
 all: $(targets)
 
 libs:

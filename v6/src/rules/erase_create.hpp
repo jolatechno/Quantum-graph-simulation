@@ -11,11 +11,7 @@ public:
 	};
 
 	/* constructor */
-	erase_create_rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		do_real = precision::cos(teta)*precision::cos(phi);
-		do_imag = precision::cos(teta)*precision::sin(phi);
-		do_not = precision::sin(teta);
-	}
+	erase_create_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
 
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
 		short int sum = s.left(gid, node) + s.right(gid, node);

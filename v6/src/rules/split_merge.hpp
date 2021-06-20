@@ -11,11 +11,7 @@ public:
 	};
 
 	/* constructor */
-	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		do_real = precision::cos(teta)*precision::cos(phi);
-		do_imag = precision::cos(teta)*precision::sin(phi);
-		do_not = precision::sin(teta);
-	}
+	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
 
 	/* rule implementation */
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {

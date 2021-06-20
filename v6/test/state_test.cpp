@@ -2,7 +2,7 @@
 #include "../src/utils/parser.hpp"
 
 // debug levels
-#define TEST_STEP_DEBUG_LEVEL 0.2
+#define TEST_STEP_DEBUG_LEVEL 0.9
 #define GRAPH_SIZE_DEBUG_LEVEL 0.1
 
 #define _USE_MATH_DEFINES
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 	move_all(s);
 	print(s); std::cout << "\n";
 
-	state new_state(1); //10000, 10000, 10000, 10000);
+	state new_state(1);
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
