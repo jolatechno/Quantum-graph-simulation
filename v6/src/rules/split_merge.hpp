@@ -128,7 +128,7 @@ public:
 						boost::hash_combine(left_hash_, node + displacement);
 						boost::hash_combine(right_hash_, node + displacement);
 
-						/* update b size */
+						/* update displacement */
 						--displacement;
 
 						unsigned short int next_node = node == num_nodes_ - 1 ? 0 : node + 1;
@@ -178,7 +178,7 @@ public:
 		}
 
 		/* update node_size */
-		node_size += displacement;
+		node_size += displacement + first_split_overflow;
 
 		if (first_split_overflow) {
 			/* update hashes */
@@ -186,6 +186,18 @@ public:
 			boost::hash_combine(left_hash_, node_size - 1);
 		}
 
+		/* !!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!!
+		debuging
+		!!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!! */
+		hash_ = 0;
+		/* !!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!!
+		debuging
+		!!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!! */
+		
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
 

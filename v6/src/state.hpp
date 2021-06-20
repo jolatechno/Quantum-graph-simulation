@@ -7,10 +7,17 @@
 #include <random>
 #include <iostream>
 
+/* !!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!!
+		debuging
+		!!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!! */
+#include "utils/debuging.hpp"
+
 // debug levels
 #define STEP_DEBUG_LEVEL 1
-#define PRINT_DEBUG_LEVEL 0.5
-#define SYMBOLIC_SIZE_DEBUG_LEVEL 0.75
+#define PRINT_DEBUG_LEVEL_1 0.5
+#define PRINT_DEBUG_LEVEL_2 0.75
 
 #ifdef USE_MPRF
 	// import
@@ -140,10 +147,10 @@ public:
 	}
 
 	/* constructor for a temp state */
-	state(size_t size_a, size_t size_b, size_t size_c) {
-		resize_num_graphs(size_a);
-		resize_num_nodes(size_b);
-		resize_num_sub_nodes(size_c);
+	state(size_t num_a, size_t num_b, size_t num_c) {
+		resize_num_graphs(num_a);
+		resize_num_nodes(num_b);
+		resize_num_sub_nodes(num_c);
 	}
 
 	/* vectors can have 3 different sizes :
@@ -184,6 +191,8 @@ public:
 
 	/* symbolic iteration */
 	struct symbolic_t {
+		size_t num_graphs = 0;
+
 		// new graphs
 		std::vector</*bool*/ char> is_first_index; /* of size (a) for the symbolic iteration */
 		std::vector<unsigned int> next_gid; /* of size (a) for the symbolic iteration */
@@ -215,9 +224,9 @@ public:
 
 	// resize operators
 	void resize_num_graphs_symbolic(size_t size) {
-		if (node_begin.size() < size) {
-			node_begin.resize(resize_policy * size);
-			sub_node_begin.resize(resize_policy * size);
+		if (node_begin.size() < size + 1) {
+			node_begin.resize(resize_policy * size + 1);
+			sub_node_begin.resize(resize_policy * size + 1);
 		}
 
 		symbolic_iteration.resize_num_graphs(size);
@@ -354,10 +363,13 @@ public:
 	/* step function */
 	void step(state_t &next_state, rule_t &rule) { step(next_state, rule, -1); }
 	void step(state_t &next_state, rule_t &rule, unsigned int max_num_graphs) {
-		size_t total_num_graphs = 0;
+		symbolic_iteration.num_graphs = 0;
 
 		/* for memory management */
-		std::swap(symbolic_iteration, next_state.symbolic_iteration);
+		next_state.symbolic_iteration = std::move(symbolic_iteration);
+
+		/* for reduction */
+		size_t &total_num_graphs = next_state.symbolic_iteration.num_graphs;
 
 		/* !!!!!!!!!!!!!!!!
 		step (1) 
@@ -401,11 +413,9 @@ public:
 		
 		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 3\n";
-		if (verbose >= SYMBOLIC_SIZE_DEBUG_LEVEL)
-			std::cout << total_num_graphs << " at symbolic_iteration\n";
 
 		/* resize variables with the right_ numer of elements */
-		next_state.resize_num_graphs_symbolic(total_num_graphs);
+		next_state.resize_num_graphs_symbolic(next_state.symbolic_iteration.num_graphs);
 		
 		unsigned int id = 0;
 		for (unsigned int gid = 0; gid < num_graphs; ++gid) {
@@ -418,26 +428,24 @@ public:
 			}
 		}
 
-			/* !!!!!!!!!!!!!!!!
-			step (4) 
-			 !!!!!!!!!!!!!!!! */
+		/* !!!!!!!!!!!!!!!!
+		step (4) 
+		 !!!!!!!!!!!!!!!! */
 
-			//#pragma omp single
-			if (verbose >= STEP_DEBUG_LEVEL)
-				std::cout << "step 4\n";
+		if (verbose >= STEP_DEBUG_LEVEL)
+			std::cout << "step 4\n";
 
-			#pragma omp parallel for
-			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
-				auto [hash_, real_, imag_, size_node_, size_sub_node_] = rule.child_properties(*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
+		#pragma omp parallel for
+		for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid) {
+			auto [hash_, real_, imag_, num_node_, num_sub_node_] = rule.child_properties(*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
 
-				/* assign propreties for each child */
-				next_state.symbolic_iteration.next_hash[gid] = hash_;
-				next_state.symbolic_iteration.next_real[gid] = real_;
-				next_state.symbolic_iteration.next_imag[gid] = imag_;
-				next_state.node_begin[gid] = size_node_;
-				next_state.sub_node_begin[gid] = size_sub_node_;
-			}
-		//}
+			/* assign propreties for each child */
+			next_state.symbolic_iteration.next_hash[gid] = hash_;
+			next_state.symbolic_iteration.next_real[gid] = real_;
+			next_state.symbolic_iteration.next_imag[gid] = imag_;
+			next_state.node_begin[gid + 1] = num_node_;
+			next_state.sub_node_begin[gid + 1] = num_sub_node_;
+		}
 
 		/* !!!!!!!!!!!!!!!!
 		step (5) 
@@ -447,17 +455,24 @@ public:
 			std::cout << "step 5\n";
 		
 		/* sort graphs hash to compute interference */
-		__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + total_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
-			return next_state.symbolic_iteration.next_hash[gid1] > next_state.symbolic_iteration.next_hash[gid2];
+		__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
+			size_t hash1 = next_state.symbolic_iteration.next_hash[gid1];
+			size_t hash2 = next_state.symbolic_iteration.next_hash[gid2];
+
+			if (hash1 != hash2)
+				return hash1 > hash2;
+
+			/* graph with less child are less costly to compute */
+			return num_childs[next_state.symbolic_iteration.parent_gid[gid1]] < num_childs[next_state.symbolic_iteration.parent_gid[gid2]];
 		});
 
 		/* compute is_first_index */
 		next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[0]] = true;
 
-		#pragma omp parallel
+		#pragma omp 
 		{
 			#pragma omp for
-			for (unsigned int gid = 1; gid < total_num_graphs; ++gid)
+			for (unsigned int gid = 1; gid < next_state.symbolic_iteration.num_graphs; ++gid)
 				next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[gid]] = next_state.symbolic_iteration.next_hash[next_state.symbolic_iteration.next_gid[gid]] != next_state.symbolic_iteration.next_hash[next_state.symbolic_iteration.next_gid[gid - 1]];
 
 			/* compute interferances */
@@ -465,12 +480,12 @@ public:
 			potentiel d'optimisation
 			!!!!!!!!!!!!!!!!!!!!!!!! */
 			#pragma omp for
-			for (unsigned int gid = 0; gid < total_num_graphs; ++gid) {
+			for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid) {
 				auto id = next_state.symbolic_iteration.next_gid[gid];
 
 				if (next_state.symbolic_iteration.is_first_index[id])
 					/* sum magnitude of equal graphs */
-					for (unsigned int gid_ = gid + 1; gid_ < total_num_graphs && !next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[gid_]]; ++gid_) {
+					for (unsigned int gid_ = gid + 1; gid_ < next_state.symbolic_iteration.num_graphs && !next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[gid_]]; ++gid_) {
 						auto id_ = next_state.symbolic_iteration.next_gid[gid_];
 
 						next_state.symbolic_iteration.next_real[id] += next_state.symbolic_iteration.next_real[id_];
@@ -480,7 +495,7 @@ public:
 		}
 
 		/* get all graphs with a non zero probability */
-		auto partitioned_it = __gnu_parallel::partition(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + total_num_graphs, [&](unsigned int const &gid) {
+		auto partitioned_it = __gnu_parallel::partition(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid) {
 			/* check if graph is unique */
 			if (!next_state.symbolic_iteration.is_first_index[gid])
 				return false;
@@ -535,13 +550,26 @@ public:
 		for (unsigned int gid = 0; gid <  next_state.num_graphs; ++gid) {
 			unsigned int id = next_state.symbolic_iteration.next_gid[gid];
 
-			next_state.node_begin[gid + 1] = next_state.node_begin[id];
-			next_state.sub_node_begin[gid + 1] = next_state.sub_node_begin[id];
+			next_state.node_begin[gid + 1] = next_state.node_begin[id + 1];
+			next_state.sub_node_begin[gid + 1] = next_state.sub_node_begin[id + 1];
 
 			/* assign magnitude */
 			next_state.real[gid] = next_state.symbolic_iteration.next_real[id];
 			next_state.imag[gid] = next_state.symbolic_iteration.next_imag[id];
 		}
+
+		/* !!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!!
+		debuging
+		!!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!! */
+		//print_vector(next_state.node_begin);
+		//print_vector(next_state.sub_node_begin);
+		/* !!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!!
+		debuging
+		!!!!!!!!!!!!!!!
+		!!!!!!!!!!!!!!! */
 
 		/* compute the partial sums to get new node_begin and sub_node_begin */
 		next_state.node_begin[0] = 0;
@@ -638,7 +666,7 @@ void print(state_t &s) {
 
 		std::cout << s.real[gid] << (s.imag[gid] >= 0 ? "+" : "") << s.imag[gid] << "i   ";
 
-		if (verbose >= PRINT_DEBUG_LEVEL)
+		if (verbose >= PRINT_DEBUG_LEVEL_1)
 			std::cout << s.symbolic_iteration.next_hash[gid] << "   ";
 
 		unsigned int num_nodes_ = s.num_nodes(gid);
@@ -646,6 +674,9 @@ void print(state_t &s) {
 			std::cout << "-|" << (s.left(gid, node) ? "<" : " ") << "|";
 
 			print_node(gid, s.node_id(gid, node), false);
+
+			if (verbose >= PRINT_DEBUG_LEVEL_2)
+				std::cout << "-" << s.hash(gid, s.node_id(gid, node));
 
 			std::cout << "|" << (s.right(gid, node) ? ">" : " ") << "|-";
 		}
