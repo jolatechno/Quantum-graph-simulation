@@ -100,7 +100,9 @@ Iteration protocol is:
   - (4): by iterating on "next_gid" and using the rule, populate "next_hash" and "next_real" and "next_imag" through a symbolic iteration (**),
   	and populate "node_begin" and "sub_node_begin" which are respectively the numer of node and of sub-nodes for each new graph
 
-  - (5): using "next_hash" sum the probability ("next_real" and "next_imag") of equal graphs, while setting the probability of graph which are equal to 0
+  - (5): using "next_hash" sum their probability ("next_real" and "next_imag") of equal graphs, while setting the probability of graph which are equal to 0.
+  	when sorting graphs according to "next_hash" to sum their probability, we also sort accroding to "num_childs" so the graphs with the smallest number of child
+  	are the one for which we end up computing the dynamic since they also tend to be simpler to compute (since they have less interactions).  
 
   - (5.1): partition "next_gid" based on probability ("next_real" and "next_imag"), and keep only the max_num_graphs most probable graph
 
@@ -117,7 +119,8 @@ class state {
 public:
 	// type definition of a node
 	typedef enum node_type {
-		left_t = 0,
+		trash_t = -4,
+		left_t,
 		right_t,
 		element_t,
 		pair_t,
@@ -138,7 +141,7 @@ public:
 		sub_node_begin[1] = size;
 
 		std::iota(node_id_c.begin(), node_id_c.begin() + size, 0);
-		std::fill(right_idx__or_type__and_is_trash_.begin(), right_idx__or_type__and_is_trash_.begin() + size, element_t + 1);
+		std::fill(right_idx__or_type__and_is_trash_.begin(), right_idx__or_type__and_is_trash_.begin() + size, element_t);
 		std::iota(left_idx__or_element__and_has_most_left_zero_.begin(), left_idx__or_element__and_has_most_left_zero_.end(), 1);
 		left_idx__or_element__and_has_most_left_zero_[0] = -1;
 
@@ -272,7 +275,7 @@ public:
 		if (right_idx__or_type < pair_t) {
 			boost::hash_combine(hash_, right_idx__or_type);
 		} else
-			boost::hash_combine(hash_, hash(gid, right_idx__or_type - pair_t));
+			boost::hash_combine(hash_, hash(gid, right_idx__or_type));
 
 		return hash_;
 	}
@@ -294,8 +297,8 @@ public:
 
 	// raw getters for sub-nodes
 	size_t hash(unsigned int gid, unsigned short int node) const { return node_hash[sub_node_begin[gid] + node]; }
-	short int inline raw_right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
-	short int inline &raw_right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
+	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
+	short int inline &right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
 	short int inline raw_left_idx(unsigned int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
 	short int inline &raw_left_idx(unsigned int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
 	
@@ -309,12 +312,10 @@ public:
 	}
 
 	// composits getters for raw_right_idx
-	short int inline right_idx__or_type(unsigned int gid, unsigned short int node) const { return std::abs(raw_right_idx(gid, node)) - 1; }
 	node_type_t inline node_type(unsigned int gid, unsigned short int node) const {
-		return std::min((node_type_t)right_idx__or_type(gid, node), pair_t);
+		return std::min((node_type_t)right_idx(gid, node), pair_t);
 	}
-	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type(gid, node) - pair_t; }
-	bool inline is_trash(unsigned int gid, unsigned short int node) const { return raw_right_idx(gid, node) < 0; }
+	bool inline is_trash(unsigned int gid, unsigned short int node) const { return right_idx(gid, node) == trash_t; }
 
 	/* setters */
 	// setters for nodes
@@ -325,7 +326,6 @@ public:
 
 	// raw setters for sub-nodes
 	void inline set_raw_left(unsigned int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
-	void inline set_raw_right(unsigned int gid, unsigned short int node, short int value) { raw_right_idx(gid, node) = value; }
 	
 	// composite setters for raw_left_idx
 	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) {
@@ -335,31 +335,18 @@ public:
 			raw_left_idx(gid, node) = value + 1;
 	}
 	void inline set_element(unsigned int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); }
-	void inline set_most_left_zero(unsigned int gid, unsigned short int node, bool has_most_left_zero_) {
-		short int &temp = raw_right_idx(gid, node);
+	void inline set_has_most_left_zero(unsigned int gid, unsigned short int node, bool has_most_left_zero_) {
+		short int &temp = raw_left_idx(gid, node);
 
 		if (has_most_left_zero_ == (temp > 0))
 			temp *= -1;
 	}
 
 	// composite setters for raw_right_idx
-	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { set_right_idx__or_type(gid, node, value + pair_t); }
-	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { set_right_idx__or_type(gid, node, value); }
-	void inline set_right_idx__or_type(unsigned int gid, unsigned short int node, unsigned short int value) {
-		if (is_trash(gid, node)) {
-			raw_right_idx(gid, node) = -value - 1;
-		} else
-			raw_right_idx(gid, node) = value + 1;
-	}
-	void inline set_is_trash(unsigned int gid, unsigned short int node, bool is_trash) {
-		short int &temp = raw_right_idx(gid, node);
-
-		if (is_trash == (temp > 0))
-			temp *= -1;
-	}
+	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
+	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
+	void inline set_is_trash(unsigned int gid, unsigned short int node) { set_type(gid, node, trash_t); }
 	
-	
-
 	/* step function */
 	void step(state_t &next_state, rule_t &rule) { step(next_state, rule, -1); }
 	void step(state_t &next_state, rule_t &rule, unsigned int max_num_graphs) {
@@ -558,19 +545,6 @@ public:
 			next_state.imag[gid] = next_state.symbolic_iteration.next_imag[id];
 		}
 
-		/* !!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!
-		debuging
-		!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!! */
-		//print_vector(next_state.node_begin);
-		//print_vector(next_state.sub_node_begin);
-		/* !!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!
-		debuging
-		!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!! */
-
 		/* compute the partial sums to get new node_begin and sub_node_begin */
 		next_state.node_begin[0] = 0;
 		__gnu_parallel::partial_sum(next_state.node_begin.begin() + 1, next_state.node_begin.begin() + next_state.num_graphs + 1, next_state.node_begin.begin() + 1);
@@ -589,9 +563,12 @@ public:
 		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 7\n";
 
-		#pragma omp parallel for
+		//#pragma omp parallel for
+		printf("\n-----------------\n");
 		for (unsigned int gid = 0; gid < next_state.num_graphs; ++gid) {
 			auto id = next_state.symbolic_iteration.next_gid[gid];
+
+			printf("\n");
 
 			/* populate graphs */
 			rule.populate_new_graph(*this, next_state, gid, next_state.symbolic_iteration.parent_gid[id], next_state.symbolic_iteration.child_id[id]);
@@ -648,7 +625,7 @@ void print(state_t &s) {
 	std::vector<unsigned int> gids(s.num_graphs);
 	std::iota(gids.begin(), gids.end(), 0);
 
-	unsigned int num_graphs = std::min(s.num_graphs, (size_t)max_num_graph_print);
+	unsigned int num_graphs = s.num_graphs; /*std::min(s.num_graphs, (size_t)max_num_graph_print);
 
 	__gnu_parallel::partial_sort(gids.begin(), gids.begin() + num_graphs, gids.end(),
 	[&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -659,7 +636,7 @@ void print(state_t &s) {
 		auto i2 = s.imag[gid2];
 
 		return r1*r1 + i1*i1 > r2*r2 + i2*i2;
-	});
+	});*/
 
 	for (int i = 0; i < num_graphs; ++i) {
 		unsigned int gid = gids[i];

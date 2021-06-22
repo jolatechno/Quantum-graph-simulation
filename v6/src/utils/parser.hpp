@@ -3,7 +3,7 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool, bool> parser(
+std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::string, bool> parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -16,9 +16,10 @@ std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool, boo
 
         ("N,normalize", "normalize after each iteration")
 
-        ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
+        ("v,verbose", "debuging level (float, default = 0)", cxxopts::value<float>()->default_value("0"))
 
-        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+        ("n,n-iter", "number of iteration (default = 3)", cxxopts::value<unsigned int>()->default_value("3"))
+        ("R,n-reversed-iter", "number of reversed iteration (default = 0)", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
@@ -61,6 +62,9 @@ std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool, boo
     // parameters
 
     unsigned int n_iter = result["n-iter"].as<unsigned int>();
+    unsigned int n_reversed_iteration = result["n-reversed-iter"].as<unsigned int>();
+    if (result.count("injectivity"))
+        n_reversed_iteration = n_iter;
     unsigned int max_n_graphs = result["n-graphs"].as<int>();
 
     // ------------------------------------------
@@ -115,5 +119,5 @@ std::tuple<unsigned int, void*, void*, unsigned int, int, std::string, bool, boo
 
     rule_ = result["rule"].as<std::string>();
 
-    return {size, rule, rule2, n_iter, max_n_graphs, rule_, result.count("injectivity"), result.count("normalize")};
+    return {size, rule, rule2, n_iter, n_reversed_iteration, max_n_graphs, rule_, result.count("normalize")};
 }

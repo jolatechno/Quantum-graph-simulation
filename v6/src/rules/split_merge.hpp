@@ -68,9 +68,34 @@ public:
 			boost::hash_combine(right_hash_, 0);
 		}
 
+		/* check for last merge */
+		bool last_merge = s.operation(parent_id, node_size - 1) == merge_t;
+
+		if (last_merge) {
+			boost::hash_combine(left_hash_, 0);
+			boost::hash_combine(right_hash_, 0);
+
+			unsigned short int node_id = s.node_id(parent_id, node_size - 1);
+			unsigned short int next_node_id = s.node_id(parent_id, 0);
+
+			if (s.node_type(parent_id, node_id) == state_t::left_t &&
+				s.node_type(parent_id, next_node_id) == state_t::right_t &&
+				s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
+					/* update node hash */
+					boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
+
+			} else {
+				/* update sub node size */
+				++num_sub_node;
+
+				/* update node hash */
+				boost::hash_combine(hash_, s.hash_node_by_value(parent_id, -node_id - 1, next_node_id));
+			}
+		}
+
 		int displacement = -first_split_overflow;
 
-		unsigned short int num_nodes_ = node_size;
+		unsigned short int num_nodes_ = node_size - last_merge;
 		for (unsigned short int node = first_split_overflow; node < num_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
@@ -124,12 +149,11 @@ public:
 					
 				} else
 					if (do_) {
-						/* update left and right hashes */
+						/* check for last merge */
+						bool last_merge = node == num_nodes_ - 1;
+
 						boost::hash_combine(left_hash_, node + displacement);
 						boost::hash_combine(right_hash_, node + displacement);
-
-						/* update displacement */
-						--displacement;
 
 						unsigned short int next_node = node == num_nodes_ - 1 ? 0 : node + 1;
 						unsigned short int next_node_id = s.node_id(parent_id, next_node);
@@ -139,14 +163,15 @@ public:
 						s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
+
 						} else {
 							/* update sub node size */
 							++num_sub_node;
 
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, 
-								node == 0 || node == num_nodes_ - 1 ? -node_id - 1 : node_id + 1,
-								next_node_id + state_t::pair_t));
+								node == 0 ? -node_id - 1 : node_id + 1,
+								next_node_id));
 						}
 
 						/* update probas */
@@ -156,6 +181,9 @@ public:
 
 						/* skip next node */
 						++node;
+
+						/* update displacement */
+						--displacement;
 					} else {
 						/* update probas */
 						real *= do_not;
@@ -186,18 +214,6 @@ public:
 			boost::hash_combine(left_hash_, node_size - 1);
 		}
 
-		/* !!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!
-		debuging
-		!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!! */
-		hash_ = 0;
-		/* !!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!
-		debuging
-		!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!! */
-		
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
 
@@ -206,9 +222,9 @@ public:
 
 	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int gid, unsigned int parent_id, unsigned int child_id) const override {
 		/* copy nodes */
-		auto sub_node_begin = s.sub_node_begin[parent_id];
-		auto sub_node_end = s.sub_node_begin[parent_id + 1];
-		auto new_sub_node_begin = new_state.sub_node_begin[gid];
+		unsigned int sub_node_begin = s.sub_node_begin[parent_id];
+		unsigned int sub_node_end = s.sub_node_begin[parent_id + 1];
+		unsigned int new_sub_node_begin = new_state.sub_node_begin[gid];
 
 		/* copy nodes */
 		std::copy(s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero_.begin() + new_sub_node_begin);
@@ -216,17 +232,17 @@ public:
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
 
 		/* get trash */
-		short int last_trash_idx = -1;
 		short int old_sub_node_num = s.num_sub_node(parent_id);
-		auto const get_trash = [&]() {
+		auto get_trash = [&, last_trash_idx = -1]() mutable {
 			++last_trash_idx;
 
 			/* check for old trash sub-nodes */
 			for (; last_trash_idx < old_sub_node_num; ++last_trash_idx)
-				if (new_state.is_trash(gid, last_trash_idx)) {
-					new_state.set_is_trash(gid, last_trash_idx, false);
+				if (new_state.is_trash(gid, last_trash_idx))
 					return last_trash_idx;
-				}
+
+			if (last_trash_idx >= new_state.num_sub_node(gid))
+				throw;
 			
 			/* return newly allocated sub-nodes */
 			return last_trash_idx;
@@ -254,6 +270,8 @@ public:
 				child_id >>= 1;
 			}
 
+			printf("gid:%d, parent id:%d, child id:%d, node:%d, disp.:%d operation:%d, do:%d\n", gid, parent_id, child_id, node, displacement, operation, do_);
+
 			if (do_) {
 				if (operation == split_t) {
 					/* set left node values */
@@ -269,12 +287,17 @@ public:
 
 					/* split node */
 					if (s.node_type(parent_id, node_id) == state_t::pair_t) {
+						printf("	split-0, node id:%d\n", node_id);
+
 						new_state.set_node_id(gid, node + displacement - 1, s.left_idx(parent_id, node_id));
 						new_state.set_node_id(gid, node + displacement, s.right_idx(parent_id, node_id));
 
 						/* set trash */
-						new_state.set_is_trash(gid, node_id, true);
+						new_state.set_is_trash(gid, node_id);
 					} else {
+
+						printf("	split-1, ");
+
 						/* left node */
 						auto new_left_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement - 1, new_left_node_idx);
@@ -282,7 +305,7 @@ public:
 						new_state.set_type(gid, new_left_node_idx, state::left_t);
 						/* set has_most_left_zero */
 						if (node == 0)
-							new_state.set_most_left_zero(gid, new_left_node_idx, true);
+							new_state.set_has_most_left_zero(gid, new_left_node_idx, true);
 
 						/* right node */
 						auto new_right_node_idx = get_trash();
@@ -290,11 +313,17 @@ public:
 						new_state.set_left_idx(gid, new_right_node_idx, node_id);
 						new_state.set_type(gid, new_right_node_idx, state::right_t);
 
+						printf("node id:%d, left node id:%d, right node id:%d\n", node_id, new_left_node_idx, new_right_node_idx);
+
 						/* re-hash nodes */
 						new_state.hash_node(gid, new_left_node_idx);
 						new_state.hash_node(gid, new_right_node_idx);
 					}
 				} else {
+					/* check for last merge */
+					if (node == num_nodes_ - 1)
+						displacement = -node;
+
 					/* set node values */
 					new_state.set_left(gid, node + displacement, true);
 					new_state.set_right(gid, node + displacement, true);
@@ -308,19 +337,32 @@ public:
 					s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
 						new_state.set_node_id(gid, node + displacement, s.left_idx(parent_id, node_id));
 
+						printf("	merge-0, node id:%d, next node id:%d\n", node_id, next_node_id);
+
 						/* set trash */
-						new_state.set_is_trash(gid, node_id, true);
-						new_state.set_is_trash(gid, next_node_id, true);
+						new_state.set_is_trash(gid, node_id);
+						new_state.set_is_trash(gid, next_node_id);
 					} else {
+
+						printf("	merge-1, left hash:%ld, right hash:%ld\n",
+							s.hash(parent_id, s.left_idx(parent_id, node_id)),
+							s.hash(parent_id, s.left_idx(parent_id, next_node_id)));
+						printf("	left idx:%d, right idx:%d\n",
+							s.left_idx(parent_id, node_id),
+							s.left_idx(parent_id, next_node_id));
+						printf("	node id:%d, next node id:%d, ", node_id, next_node_id);
+
 						/* new node */
 						auto new_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement, new_node_idx);
 						new_state.set_left_idx(gid, new_node_idx, node_id);
 						new_state.set_right_idx(gid, new_node_idx, next_node_id);
 
+						printf("new node id:%d\n", new_node_idx);
+
 						/* set has_most_left_zero */
 						if (node == 0 || node == num_nodes_ - 1)
-							new_state.set_most_left_zero(gid, new_node_idx, true);
+							new_state.set_has_most_left_zero(gid, new_node_idx, true);
 
 						/* re-hash nodes */
 						new_state.hash_node(gid, new_node_idx);
@@ -333,7 +375,7 @@ public:
 					++node;
 				}
 			} else {
-				new_state.set_node_id(gid, node + displacement, s.node_id(parent_id, node));
+				new_state.set_node_id(gid, node + displacement, node_id);
 				new_state.set_left(gid, node + displacement, s.left(parent_id, node));
 				new_state.set_right(gid, node + displacement, s.right(parent_id, node));
 			}
