@@ -89,30 +89,31 @@ int main(int argc, char* argv[]) {
 				std::string type;
 
 				auto node_type = s.node_type(i, j - s.sub_node_begin[i]);
-				switch (node_type) {
-					case state_t::left_t:
-						type = "l";
-						break;
 
-					case state_t::right_t:
-						type = "r";
-						break;
+				if (s.is_trash(i, j - s.sub_node_begin[i])) {
+					type = "x";
+				} else
+					switch (node_type) {
+						case state_t::left_t:
+							type = "l";
+							break;
 
-					case state_t::element_t:
-						type = "e";
-						break;
+						case state_t::right_t:
+							type = "r";
+							break;
 
-					case state_t::pair_t:
-						type = "p";
-						break;
+						case state_t::element_t:
+							type = "e";
+							break;
 
-					default:
-						if (s.is_trash(i, j - s.sub_node_begin[i])) {
-							type = "x";
-						} else
+						case state_t::pair_t:
+							type = "p";
+							break;
+
+						default:
 							type = "!";
-						break;
-				}
+							break;
+					}
 
 				printf("(l:%d, r:%d, t:%s, h:%ld), ", s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
 					s.right_idx__or_type_[j],

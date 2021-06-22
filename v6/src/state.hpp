@@ -421,10 +421,12 @@ public:
 		if (verbose >= STEP_DEBUG_LEVEL)
 			std::cout << "step 4\n";
 
-		#pragma omp parallel for
+		//#pragma omp parallel for
 		for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid) {
 			auto [hash_, real_, imag_, num_node_, num_sub_node_] = rule.child_properties(*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
 
+			printf("\n");
+			
 			/* assign propreties for each child */
 			next_state.symbolic_iteration.next_hash[gid] = hash_;
 			next_state.symbolic_iteration.next_real[gid] = real_;
