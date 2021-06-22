@@ -46,7 +46,7 @@ public:
 		unsigned short int num_sub_node = s.num_sub_node(parent_id);
 
 		/* start dicreasing num_sub_node */
-		for (unsigned int node = s.sub_node_begin[parent_id]; node < s.sub_node_begin[parent_id + 1]; ++node)
+		for (unsigned int node = 0; node < num_sub_node; ++node)
 			num_sub_node -= s.is_trash(parent_id, node);
 
 		size_t hash_ = 0;
@@ -66,11 +66,26 @@ public:
 			/* update hashes */
 			boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
 			boost::hash_combine(right_hash_, 0);
+
+			/* update probas */
+			PROBA_TYPE temp = real;
+			real = temp*do_real + imag*do_imag;
+			imag = temp*do_imag - imag*do_real;
 		}
 
 		/* check for last merge */
 		bool last_merge = s.operation(parent_id, node_size - 1) == merge_t;
 
+		if (last_merge) {
+			unsigned int child_id_ = child_id;
+			for (unsigned short int node = 0; node < node_size - 1; ++node, child_id_ >>= 1)
+				if (child_id_ == 0) {
+					last_merge = false;
+					break;
+				}
+		}
+
+		/* do last merge */
 		if (last_merge) {
 			boost::hash_combine(left_hash_, 0);
 			boost::hash_combine(right_hash_, 0);
@@ -91,12 +106,18 @@ public:
 				/* update node hash */
 				boost::hash_combine(hash_, s.hash_node_by_value(parent_id, -node_id - 1, next_node_id));
 			}
+
+			/* update probas */
+			PROBA_TYPE temp = real;
+			real = temp*do_real + imag*do_imag;
+			imag = temp*do_imag - imag*do_real;
 		}
 
+		/* update displacement */
 		int displacement = -first_split_overflow;
 
 		unsigned short int num_nodes_ = node_size - last_merge;
-		for (unsigned short int node = first_split_overflow; node < num_nodes_; ++node) {
+		for (unsigned short int node = first_split_overflow + last_merge; node < num_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
 			auto operation = s.operation(parent_id, node);
@@ -206,7 +227,7 @@ public:
 		}
 
 		/* update node_size */
-		node_size += displacement + first_split_overflow;
+		node_size += displacement + 2*first_split_overflow - last_merge;
 
 		if (first_split_overflow) {
 			/* update hashes */
@@ -227,8 +248,8 @@ public:
 		unsigned int new_sub_node_begin = new_state.sub_node_begin[gid];
 
 		/* copy nodes */
-		std::copy(s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero_.begin() + new_sub_node_begin);
-		std::copy(s.right_idx__or_type__and_is_trash_.begin() + sub_node_begin, s.right_idx__or_type__and_is_trash_.begin() + sub_node_end, new_state.right_idx__or_type__and_is_trash_.begin() + new_sub_node_begin);
+		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);
+		std::copy(s.right_idx__or_type_.begin() + sub_node_begin, s.right_idx__or_type_.begin() + sub_node_end, new_state.right_idx__or_type_.begin() + new_sub_node_begin);
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
 
 		/* get trash */

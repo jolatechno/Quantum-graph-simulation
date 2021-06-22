@@ -119,8 +119,7 @@ class state {
 public:
 	// type definition of a node
 	typedef enum node_type {
-		trash_t = -4,
-		left_t,
+		left_t = -3,
 		right_t,
 		element_t,
 		pair_t,
@@ -141,9 +140,9 @@ public:
 		sub_node_begin[1] = size;
 
 		std::iota(node_id_c.begin(), node_id_c.begin() + size, 0);
-		std::fill(right_idx__or_type__and_is_trash_.begin(), right_idx__or_type__and_is_trash_.begin() + size, element_t);
-		std::iota(left_idx__or_element__and_has_most_left_zero_.begin(), left_idx__or_element__and_has_most_left_zero_.end(), 1);
-		left_idx__or_element__and_has_most_left_zero_[0] = -1;
+		std::fill(right_idx__or_type_.begin(), right_idx__or_type_.begin() + size, element_t);
+		std::iota(left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin(), left_idx__or_element__and_has_most_left_zero__or_is_trash_.end(), 1);
+		left_idx__or_element__and_has_most_left_zero__or_is_trash_[0] = -1;
 
 		for (unsigned int i = 0; i < size; ++i)
 			hash_node(0, i);
@@ -178,8 +177,8 @@ public:
 	std::vector<short int> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
 
 	// node properties
-	std::vector<short int> left_idx__or_element__and_has_most_left_zero_; /* of size (c) */
-	std::vector<short int> right_idx__or_type__and_is_trash_; /* of size (c) */
+	std::vector<short int> left_idx__or_element__and_has_most_left_zero__or_is_trash_; /* of size (c) */
+	std::vector<short int> right_idx__or_type_; /* of size (c) */
 	std::vector<size_t> node_hash; /* of size (c) */
 
 	/*
@@ -256,8 +255,8 @@ public:
 
 	void resize_num_sub_nodes(size_t size) {
 		if (node_hash.size() < size) {
-			left_idx__or_element__and_has_most_left_zero_.resize(resize_policy * size);
-			right_idx__or_type__and_is_trash_.resize(resize_policy * size);
+			left_idx__or_element__and_has_most_left_zero__or_is_trash_.resize(resize_policy * size);
+			right_idx__or_type_.resize(resize_policy * size);
 			node_hash.resize(resize_policy * size);
 		}
 	}
@@ -281,7 +280,7 @@ public:
 	}
 	void inline hash_node(unsigned int gid, unsigned short int node) {
 		unsigned int id = sub_node_begin[gid] + node;
-		node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero_[id], right_idx__or_type__and_is_trash_[id]);
+		node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero__or_is_trash_[id], right_idx__or_type_[id]);
 	}
 
 	/* getters */
@@ -297,13 +296,14 @@ public:
 
 	// raw getters for sub-nodes
 	size_t hash(unsigned int gid, unsigned short int node) const { return node_hash[sub_node_begin[gid] + node]; }
-	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
-	short int inline &right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type__and_is_trash_[sub_node_begin[gid] + node]; }
-	short int inline raw_left_idx(unsigned int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
-	short int inline &raw_left_idx(unsigned int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero_[sub_node_begin[gid] + node]; }
+	short int inline right_idx(unsigned int gid, unsigned short int node) const { return right_idx__or_type_[sub_node_begin[gid] + node]; }
+	short int inline &right_idx(unsigned int gid, unsigned short int node) { return right_idx__or_type_[sub_node_begin[gid] + node]; }
+	short int inline raw_left_idx(unsigned int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
+	short int inline &raw_left_idx(unsigned int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
 	
 	// composits getters for raw_left_idx
 	unsigned short int inline element(unsigned int gid, unsigned short int node) const { return left_idx(gid, node); }
+	bool inline is_trash(unsigned int gid, unsigned short int node) const { return raw_left_idx(gid, node) == 0; }	
 	bool inline has_most_left_zero(unsigned int gid, unsigned short int node) const {
 		return raw_left_idx(gid, node) < 0;
 	}
@@ -315,7 +315,6 @@ public:
 	node_type_t inline node_type(unsigned int gid, unsigned short int node) const {
 		return std::min((node_type_t)right_idx(gid, node), pair_t);
 	}
-	bool inline is_trash(unsigned int gid, unsigned short int node) const { return right_idx(gid, node) == trash_t; }
 
 	/* setters */
 	// setters for nodes
@@ -328,6 +327,7 @@ public:
 	void inline set_raw_left(unsigned int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
 	
 	// composite setters for raw_left_idx
+	void inline set_is_trash(unsigned int gid, unsigned short int node) { set_raw_left(gid, node, 0); }
 	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) {
 		if (has_most_left_zero(gid, node)) {
 			raw_left_idx(gid, node) = -value - 1;
@@ -345,7 +345,6 @@ public:
 	// composite setters for raw_right_idx
 	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
 	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
-	void inline set_is_trash(unsigned int gid, unsigned short int node) { set_type(gid, node, trash_t); }
 	
 	/* step function */
 	void step(state_t &next_state, rule_t &rule) { step(next_state, rule, -1); }

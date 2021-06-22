@@ -106,17 +106,16 @@ int main(int argc, char* argv[]) {
 						type = "p";
 						break;
 
-					case state_t::trash_t:
-						type = "x";
-						break;
-
 					default:
-						type = "!";
+						if (s.is_trash(i, j - s.sub_node_begin[i])) {
+							type = "x";
+						} else
+							type = "!";
 						break;
 				}
 
-				printf("(l:%d, r:%d, t:%s, h:%ld), ", s.left_idx__or_element__and_has_most_left_zero_[j],
-					s.right_idx__or_type__and_is_trash_[j],
+				printf("(l:%d, r:%d, t:%s, h:%ld), ", s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+					s.right_idx__or_type_[j],
 					type.c_str(),
 					s.node_hash[j]);
 			}
