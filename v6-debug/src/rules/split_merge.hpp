@@ -89,9 +89,15 @@ public:
 				last_merge = false;
 		}
 
+		printf("parent id:%d, child id:%d, first split:%d, last merge:%d\n", parent_id, child_id, first_split_overflow, last_merge);
+
 		if (first_split_overflow) {
 			/* update child id */
 			child_id >>= 1;
+
+			printf("		(first-split-0)\n");
+			/*printf("		combine hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
+			printf("		combine right_hash_ = (%ld,%d)\n", right_hash_, 0);
 
 			/* update hashes */
 			boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
@@ -105,6 +111,10 @@ public:
 
 		/* do last merge */
 		if (last_merge) {
+
+			/*printf("		combine left_hash_ = (%ld,%d)\n", left_hash_, 0);
+			printf("		combine right_hash_ = (%ld,%d)\n", right_hash_, 0);
+			
 			/* update hashses */
 			boost::hash_combine(left_hash_, 0);
 			boost::hash_combine(right_hash_, 0);
@@ -115,11 +125,19 @@ public:
 			if (s.node_type(parent_id, node_id) == state_t::left_t &&
 				s.node_type(parent_id, next_node_id) == state_t::right_t &&
 				s.hash(parent_id, s.left_idx(parent_id, node_id)) == s.hash(parent_id, s.left_idx(parent_id, next_node_id))) {
+					/* update node hash */
+
+					printf("		(last-merge-0)\n");
+					//printf("		combine hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
+
 					boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
 
 			} else {
 				/* update sub node size */
 				++num_sub_node;
+
+				printf("		(last-merge-1)\n");
+				//printf("		combine hash_ = (%ld,%ld)\n", hash_, s.hash_node_by_value(parent_id, -node_id - 1, next_node_id));
 
 				/* update node hash */
 				boost::hash_combine(hash_, s.hash_node_by_value(parent_id, -node_id - 1, next_node_id));
@@ -143,8 +161,13 @@ public:
 				bool do_ = child_id & 1;
 				child_id >>= 1;
 
+				printf("	node:%d, disp.:%d operation:%d, do:%d\n", node, displacement, operation, do_);
+
 				if (operation == split_t) {
 					if (do_) {
+
+						/*printf("		combine (split) left_hash_ = (%ld,%d)\n", left_hash_, node + displacement);
+						printf("		combine (split) right_hash_ = (%ld,%d)\n", right_hash_, node + displacement + 1);
 
 						/* update left hash */
 						boost::hash_combine(left_hash_, node + displacement);
@@ -156,11 +179,23 @@ public:
 						boost::hash_combine(right_hash_, node + displacement);
 
 						if (s.node_type(parent_id, node_id) == state_t::pair_t) {
+							
+							printf("		(split-0)\n");
+							/*printf("		combine (split-0) hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
+							printf("		combine (split-0) hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, s.right_idx(parent_id, node_id)));
+
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
 							boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, node_id)));
 
 						} else {
+
+							printf("		(split-1)\n");
+							/*printf("		combine (split-1) hash_ = (%ld,%ld)\n", hash_, s.hash_node_by_value(parent_id,
+								node == 0 ? -node_id - 1 : node_id + 1,
+								state::left_t));
+							printf("		combine (split-1) hash_ = (%ld,%ld)\n", hash_, s.hash_node_by_value(parent_id, node_id + 1, state::right_t));
+
 							/* update sub node size */
 							num_sub_node += 2;
 
@@ -177,6 +212,12 @@ public:
 						real = temp*do_real + imag*do_imag;
 						imag = temp*do_imag - imag*do_real;
 					} else {
+
+						printf("		(non-split)\n");
+						/*printf("		combine (non-split) left_hash_ = (%ld,%d)\n", left_hash_, node + displacement);
+						printf("		combine (non-split) right_hash_ = (%ld,%d)\n", right_hash_, node + displacement);
+						printf("		combine (non-split) hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, node_id));
+
 						/* update probas */
 						real *= -do_not;
 						imag *= -do_not;
@@ -189,6 +230,10 @@ public:
 					
 				} else
 					if (do_) {
+
+						/*printf("		combine (merge) left_hash_ = (%ld,%d)\n", left_hash_, node + displacement);
+						printf("		combine (merge) right_hash_ = (%ld,%d)\n", right_hash_, node + displacement);*/
+
 						/* update hashes */
 						boost::hash_combine(left_hash_, node + displacement);
 						boost::hash_combine(right_hash_, node + displacement);
@@ -202,7 +247,11 @@ public:
 							/* update node hash */
 							boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, node_id)));
 
+							printf("		(merge-0)\n");
+
 						} else {
+							printf("		(merge-1)\n");
+
 							/* update sub node size */
 							++num_sub_node;
 
@@ -223,6 +272,11 @@ public:
 						/* update displacement */
 						--displacement;
 					} else {
+
+						printf("		(non-merge)\n");
+						/*printf("		combine (non-merge) left_hash_ = (%ld,%d)\n", left_hash_, node + displacement);
+						printf("		combine (non-merge) hash_ = (%ld,%ld)\n", hash_,  s.hash(parent_id, node_id));
+
 						/* update probas */
 						real *= do_not;
 						imag *= do_not;
@@ -232,6 +286,15 @@ public:
 						boost::hash_combine(left_hash_, node + displacement);
 					}
 			} else {
+
+				printf("	node:%d, disp.:%d operation:%d, do:0\n", node, displacement, operation);
+
+				/*if (s.left(parent_id, node))
+					printf("		combine left_hash_ = (%ld,%d)\n", left_hash_, node + displacement);
+				if (s.right(parent_id, node))
+					printf("		combine right_hash_ = (%ld,%d)\n", right_hash_, node + displacement);
+				printf("		combine hash_ = (%ld,%ld)\n", hash_,  s.hash(parent_id, node_id));
+
 				/* update hashes */
 				boost::hash_combine(hash_, s.hash(parent_id, node_id));
 
@@ -247,10 +310,16 @@ public:
 		node_size += displacement + first_split_overflow - last_merge;
 
 		if (first_split_overflow) {
+
+			printf("		combine left_hash_ = (%ld,%d)\n", left_hash_, node_size - 1);
+			printf("		combine hash_ = (%ld,%ld)\n", hash_, s.hash(parent_id, s.left_idx(parent_id, s.node_id(parent_id, 0))));
+
 			/* update hashes */
 			boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, s.node_id(parent_id, 0))));
 			boost::hash_combine(left_hash_, node_size - 1);
 		}
+
+		printf("	hash_=%ld, right_hash_=%ld, left_hash_=%ld\n", hash_, right_hash_, left_hash_);
 
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
@@ -263,6 +332,46 @@ public:
 		unsigned int sub_node_begin = s.sub_node_begin[parent_id];
 		unsigned int sub_node_end = s.sub_node_begin[parent_id + 1];
 		unsigned int new_sub_node_begin = new_state.sub_node_begin[gid];
+
+		for (unsigned int j = sub_node_begin; j < sub_node_end; ++j) {
+			std::string type;
+
+			auto node_type = s.node_type(parent_id, j - sub_node_begin);
+
+			if (s.is_trash(parent_id, j - sub_node_begin)) {
+				type = "x";
+			} else
+				switch (node_type) {
+					case state_t::left_t:
+						type = "l";
+						break;
+
+					case state_t::right_t:
+						type = "r";
+						break;
+
+					case state_t::element_t:
+						type = "e";
+						break;
+
+					case state_t::pair_t:
+						type = "p";
+						break;
+
+					default:
+						type = "!";
+						break;
+				}
+
+			printf("(l:%d, r:%d, t:%s), ", s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+				s.right_idx__or_type_[j],
+				type.c_str());
+		}
+
+		printf("\ngid:%d, parent id:%d, child id:%d, num nodes:%d, old num nodes:%d, num sub nodes:%d, old num sub nodes:%d\n",
+			gid, parent_id, child_id, s.num_nodes(parent_id), new_state.num_nodes(gid), new_state.num_sub_node(gid), s.num_sub_node(parent_id));
+		printf("--------------------child property:\n"); child_properties(s, parent_id, child_id);
+		printf("--------------------populate:\n");
 
 		/* copy nodes */
 		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);
@@ -314,6 +423,8 @@ public:
 				child_id >>= 1;
 			}
 
+			printf("	node:%d, disp.:%d operation:%d, do:%d\n", node, displacement, operation, do_);
+
 			if (do_) {
 				if (operation == split_t) {
 					/* set left node values */
@@ -329,12 +440,17 @@ public:
 
 					/* split node */
 					if (s.node_type(parent_id, node_id) == state_t::pair_t) {
+						printf("		split-0, node id:%d\n", node_id);
+
 						new_state.set_node_id(gid, node + displacement - 1, s.left_idx(parent_id, node_id));
 						new_state.set_node_id(gid, node + displacement, s.right_idx(parent_id, node_id));
 
 						/* set trash */
 						set_trash(node_id);
 					} else {
+
+						printf("		split-1, ");
+
 						/* left node */
 						auto new_left_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement - 1, new_left_node_idx);
@@ -349,6 +465,8 @@ public:
 						new_state.set_node_id(gid, node + displacement, new_right_node_idx);
 						new_state.set_left_idx(gid, new_right_node_idx, node_id);
 						new_state.set_type(gid, new_right_node_idx, state::right_t);
+
+						printf("node id:%d, left node id:%d, right node id:%d\n", node_id, new_left_node_idx, new_right_node_idx);
 
 						/* re-hash nodes */
 						new_state.hash_node(gid, new_left_node_idx);
@@ -367,9 +485,15 @@ public:
 					unsigned short int next_node = node == num_nodes_ - 1 ? 0 : node + 1;
 					unsigned short int next_node_id = s.node_id(parent_id, next_node);
 
+					printf("		merge node:%d, displacement:%d, node id:%d, next node id:%d\n", node, displacement, node_id, next_node_id);
+
+					printf("-\n");
+
 					if (s.node_type(parent_id, node_id) == state_t::left_t &&
 					s.node_type(parent_id, next_node_id) == state_t::right_t &&
 					/*s.hash(parent_id, */s.left_idx(parent_id, node_id)/*)*/ == /*s.hash(parent_id, */s.left_idx(parent_id, next_node_id))/*)*/ {
+						printf("		merge-0, node id:%d, next node id:%d\n", node_id, next_node_id);
+
 						new_state.set_node_id(gid, node + displacement, s.left_idx(parent_id, node_id));
 
 						/* set trash */
@@ -377,11 +501,22 @@ public:
 						set_trash(next_node_id);
 					} else {
 
+						printf("		merge-1, ");
+
+						/*printf("left hash:%ld, right hash:%ld\n",
+							s.hash(parent_id, s.left_idx(parent_id, node_id)),
+							s.hash(parent_id, s.left_idx(parent_id, next_node_id)));*/
+						printf("left idx:%d, right idx:%d\n",
+							s.left_idx(parent_id, node_id),
+							s.left_idx(parent_id, next_node_id));
+
 						/* new node */
 						auto new_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement, new_node_idx);
 						new_state.set_left_idx(gid, new_node_idx, node_id);
 						new_state.set_right_idx(gid, new_node_idx, next_node_id);
+
+						printf("new node id:%d\n", new_node_idx);
 
 						/* set has_most_left_zero */
 						if (node == 0 || node == num_nodes_ - 1)

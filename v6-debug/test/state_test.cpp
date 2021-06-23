@@ -69,5 +69,68 @@ int main(int argc, char* argv[]) {
 			std::cout << s.symbolic_iteration.num_graphs << " -> " << s.num_graphs << " graphs\n";
 	}
 
+	/* !!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!
+	debuging
+	!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!! */
+
+	if (verbose >= .05) {
+		printf("\n");
+
+		for (unsigned int i = 0; i < s.num_graphs; ++i) {
+			printf("gid:%d, n:", i);
+			for (unsigned int j = s.node_begin[i]; j < s.node_begin[i + 1]; ++j)
+				printf("%d,", s.node_id_c[j]);
+
+			printf("  ");
+
+			for (unsigned int j = s.sub_node_begin[i]; j < s.sub_node_begin[i + 1]; ++j) {
+				std::string type;
+
+				auto node_type = s.node_type(i, j - s.sub_node_begin[i]);
+
+				if (s.is_trash(i, j - s.sub_node_begin[i])) {
+					type = "x";
+				} else
+					switch (node_type) {
+						case state_t::left_t:
+							type = "l";
+							break;
+
+						case state_t::right_t:
+							type = "r";
+							break;
+
+						case state_t::element_t:
+							type = "e";
+							break;
+
+						case state_t::pair_t:
+							type = "p";
+							break;
+
+						default:
+							type = "!";
+							break;
+					}
+
+				printf("(l:%d, r:%d, t:%s, h:%ld), ", s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+					s.right_idx__or_type_[j],
+					type.c_str(),
+					s.node_hash[j]);
+			}
+
+			std::cout << "\n";
+		}
+
+		std::cout << "\n";
+	}
+	/* !!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!!
+	debuging
+	!!!!!!!!!!!!!!!
+	!!!!!!!!!!!!!!! */
+
 	print(s);
 }
