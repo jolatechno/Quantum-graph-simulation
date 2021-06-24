@@ -576,6 +576,81 @@ public:
 	}
 };
 
+
+/*
+-----------------------------------------------------------------
+for graphing
+-----------------------------------------------------------------
+*/
+
+
+void serialize_state_to_json(state_t const &s, bool first) {
+	if (!first)
+		std::cout << ",";
+
+	// final vectors
+	std::vector<unsigned short int> nums{0};
+	std::vector<float> probas{0.};
+
+	for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
+		size_t size = s.num_nodes(gid);
+
+		PROBA_TYPE real = s.real[gid];
+		PROBA_TYPE imag = s.imag[gid];
+
+		float proba = real*real + imag*imag;
+
+		if (size >= nums.size()) {
+			nums.resize(size + 1, 0);
+			probas.resize(size + 1, 0);
+		}
+
+		nums[size] += 1;
+		probas[size] += proba;
+	}
+
+	// print ratio of graphs
+	float ratio = first ? 1 : (float)s.num_graphs / (float)s.symbolic_iteration.num_graphs;
+	std::cout << "\n\t\t{\n\t\t\t\"ratio\":" << ratio;
+
+	// print number of graphs
+	std::cout << ",\n\t\t\t\"nums\" : [" << nums[0];
+	for (auto it = nums.begin() + 1; it < nums.end(); ++it)
+		std::cout << ", " << *it;
+
+	// print total probability
+	std::cout << "],\n\t\t\t\"probas\" : [" << probas[0];
+	for (auto it = probas.begin() + 1; it < probas.end(); ++it)
+		std::cout << ", " << *it;
+
+	// print separator
+	printf("]\n\t\t}");
+}
+
+void start_json(state_t const &s, char const* rule) {
+	// print rule
+	std::cout << "{\n\t\"rule\" : \"" << rule << "\",";
+
+	std::cout << "\n\t\"iterations\" : [";
+	serialize_state_to_json(s, true);
+}
+
+void serialize_state_to_json(state_t const &s) {
+	serialize_state_to_json(s, false);
+}
+
+void end_json() {
+	std::cout << "\n\t]\n}\n";
+}
+
+
+/*
+-----------------------------------------------------------------
+for debugging
+-----------------------------------------------------------------
+*/
+
+
 void print(state_t &s) {
 	std::function<void(unsigned int, unsigned short int, bool)> const print_node = [&] (unsigned int gid, unsigned short int node, bool parenthesis) {
 		switch (s.node_type(gid, node)) {

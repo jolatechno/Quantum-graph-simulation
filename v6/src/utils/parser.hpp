@@ -7,7 +7,7 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
-        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create_all"))
+        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
         ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
@@ -97,9 +97,9 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     void* rule2;
 
     std::string rule_ = result["rule"].as<std::string>();
-    if (rule_ == "split_merge_all") {
+    if (rule_ == "split_merge") {
         rule = new split_merge_rule(teta_pi, phi_pi);
-    } else if (rule_ == "erase_create_all") {
+    } else if (rule_ == "erase_create") {
         rule = new erase_create_rule(teta_pi, phi_pi);
     } else
         throw;
@@ -108,10 +108,10 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     // read second rule
 
     rule_ = result["rule2"].as<std::string>();
-    if (rule_ == "split_merge_all") {
+    if (rule_ == "split_merge") {
         rule2 = new split_merge_rule(teta2_pi, phi2_pi);
         rule_ += "_";
-    } else if (rule_ == "erase_create_all") {
+    } else if (rule_ == "erase_create") {
         rule2 = new erase_create_rule(teta2_pi, phi2_pi);
         rule_ += "_";
     } else
