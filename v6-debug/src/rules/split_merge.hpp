@@ -363,7 +363,7 @@ public:
 						break;
 				}
 
-			printf("(l:%d, r:%d, t:%s), ", s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+			printf("%d:(l:%d, r:%d, t:%s), ", j - sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
 				s.right_idx__or_type_[j],
 				type.c_str());
 		}
@@ -454,19 +454,44 @@ public:
 						/* left node */
 						auto new_left_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement - 1, new_left_node_idx);
+
+						printf("left idx idx:%d, ", new_left_node_idx + new_state.sub_node_begin[gid]);
+						printf("left idx:%d->", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_left_node_idx +
+							new_state.sub_node_begin[gid]]); 
+
 						new_state.set_left_idx(gid, new_left_node_idx, node_id);
+
+						printf("%d, ", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_left_node_idx +
+							new_state.sub_node_begin[gid]]);
+
 						new_state.set_type(gid, new_left_node_idx, state::left_t);
 						/* set has_most_left_zero */
-						if (node == 0)
+						if (node == 0) {
+							printf("left idx:%d->", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_left_node_idx +
+							new_state.sub_node_begin[gid]]); 
+
 							new_state.set_has_most_left_zero(gid, new_left_node_idx, true);
+
+							printf("%d, ", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_left_node_idx +
+							new_state.sub_node_begin[gid]]);
+						}
 
 						/* right node */
 						auto new_right_node_idx = get_trash();
 						new_state.set_node_id(gid, node + displacement, new_right_node_idx);
+
+						printf("right idx idx:%d, ", new_right_node_idx + new_state.sub_node_begin[gid]);
+						printf("right idx:%d->", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_right_node_idx +
+							new_state.sub_node_begin[gid]]); 
+
 						new_state.set_left_idx(gid, new_right_node_idx, node_id);
+
+						printf("%d, ", new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_[new_right_node_idx +
+							new_state.sub_node_begin[gid]]);
+
 						new_state.set_type(gid, new_right_node_idx, state::right_t);
 
-						printf("node id:%d, left node id:%d, right node id:%d\n", node_id, new_left_node_idx, new_right_node_idx);
+						printf("node id:%d, new left node id:%d, new right node id:%d\n", node_id, new_left_node_idx, new_right_node_idx);
 
 						/* re-hash nodes */
 						new_state.hash_node(gid, new_left_node_idx);
@@ -487,8 +512,6 @@ public:
 
 					printf("		merge node:%d, displacement:%d, node id:%d, next node id:%d\n", node, displacement, node_id, next_node_id);
 
-					printf("-\n");
-
 					if (s.node_type(parent_id, node_id) == state_t::left_t &&
 					s.node_type(parent_id, next_node_id) == state_t::right_t &&
 					/*s.hash(parent_id, */s.left_idx(parent_id, node_id)/*)*/ == /*s.hash(parent_id, */s.left_idx(parent_id, next_node_id))/*)*/ {
@@ -502,13 +525,6 @@ public:
 					} else {
 
 						printf("		merge-1, ");
-
-						/*printf("left hash:%ld, right hash:%ld\n",
-							s.hash(parent_id, s.left_idx(parent_id, node_id)),
-							s.hash(parent_id, s.left_idx(parent_id, next_node_id)));*/
-						printf("left idx:%d, right idx:%d\n",
-							s.left_idx(parent_id, node_id),
-							s.left_idx(parent_id, next_node_id));
 
 						/* new node */
 						auto new_node_idx = get_trash();
@@ -540,6 +556,9 @@ public:
 		}
 
 		if (first_split_overflow) {
+
+			printf("first split overflow\n");
+
 			auto begin = new_state.node_begin[gid];
 			auto end = new_state.node_begin[gid + 1];
 

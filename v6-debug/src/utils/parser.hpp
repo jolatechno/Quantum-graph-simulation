@@ -10,7 +10,7 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create_all"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
-        ("num-graph-print", "maximum number of graphs to print", cxxopts::value<unsigned int>()->default_value("20"))
+        ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
 
         ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
 
@@ -72,7 +72,7 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
 
     tolerance = result["tol"].as<PROBA_TYPE>();
     verbose = result["verbose"].as<float>();
-    max_num_graph_print = result["num-graph-print"].as<unsigned int>();
+    max_num_graph_print = result["num-graph-print"].as<int>();
 
     // ------------------------------------------
     // initialize state

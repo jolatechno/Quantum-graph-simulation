@@ -18,6 +18,7 @@
 #define STEP_DEBUG_LEVEL 1
 #define PRINT_DEBUG_LEVEL_1 0.5
 #define PRINT_DEBUG_LEVEL_2 0.75
+#define PRINT_DEBUG_LEVEL_3 1.5
 
 #ifdef USE_MPRF
 	// import
@@ -53,7 +54,7 @@ float resize_policy = 1.3;
 
 // debugging options
 float verbose = 0;
-unsigned int max_num_graph_print = 20;
+int max_num_graph_print = 20;
 
 // rule interface definition
 class rule {
@@ -328,12 +329,7 @@ public:
 	
 	// composite setters for raw_left_idx
 	void inline set_is_trash(unsigned int gid, unsigned short int node) { set_raw_left(gid, node, 0); }
-	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) {
-		if (has_most_left_zero(gid, node)) {
-			raw_left_idx(gid, node) = -value - 1;
-		} else
-			raw_left_idx(gid, node) = value + 1;
-	}
+	void inline set_left_idx(unsigned int gid, unsigned short int node, unsigned short int value) { set_raw_left(gid, node, value + 1); }
 	void inline set_element(unsigned int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); }
 	void inline set_has_most_left_zero(unsigned int gid, unsigned short int node, bool has_most_left_zero_) {
 		short int &temp = raw_left_idx(gid, node);
@@ -620,7 +616,7 @@ void print(state_t &s) {
 	std::vector<unsigned int> gids(s.num_graphs);
 	std::iota(gids.begin(), gids.end(), 0);
 
-	unsigned int num_graphs = std::min(s.num_graphs, (size_t)max_num_graph_print);
+	unsigned int num_graphs = max_num_graph_print > 0 ? std::min(s.num_graphs, (size_t)max_num_graph_print) : s.num_graphs;
 
 	__gnu_parallel::partial_sort(gids.begin(), gids.begin() + num_graphs, gids.end(),
 	[&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -635,6 +631,51 @@ void print(state_t &s) {
 
 	for (int i = 0; i < num_graphs; ++i) {
 		unsigned int gid = gids[i];
+
+		if (verbose >= PRINT_DEBUG_LEVEL_3) {
+			printf("\ngid:%d, n:", gid);
+			for (unsigned int j = s.node_begin[gid]; j < s.node_begin[gid + 1]; ++j)
+				printf("%d,", s.node_id_c[j]);
+
+			printf("  ");
+
+			for (unsigned int j = s.sub_node_begin[gid]; j < s.sub_node_begin[gid + 1]; ++j) {
+				std::string type;
+
+				auto node_type = s.node_type(gid, j - s.sub_node_begin[gid]);
+
+				if (s.is_trash(gid, j - s.sub_node_begin[gid])) {
+					type = "x";
+				} else
+					switch (node_type) {
+						case state_t::left_t:
+							type = "l";
+							break;
+
+						case state_t::right_t:
+							type = "r";
+							break;
+
+						case state_t::element_t:
+							type = "e";
+							break;
+
+						case state_t::pair_t:
+							type = "p";
+							break;
+
+						default:
+							type = "!";
+							break;
+					}
+
+				printf("%d:(l:%d, r:%d, t:%s), ", j - s.sub_node_begin[gid], s.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+					s.right_idx__or_type_[j],
+					type.c_str());
+			}
+
+			std::cout << "\n";
+		}
 
 		std::cout << s.real[gid] << (s.imag[gid] >= 0 ? "+" : "") << s.imag[gid] << "i   ";
 
