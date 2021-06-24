@@ -62,16 +62,16 @@ public:
 		if (first_split_overflow)
 			first_split_overflow = s.has_most_left_zero(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0)));
 
-		/*if (first_split_overflow) {
+		if (first_split_overflow) {
 			/* update child id */
-			/*child_id >>= 1;
+			child_id >>= 1;
 
 			/* update hashes */
-			/*boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
+			boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
 			boost::hash_combine(right_hash_, 0);
 
 			/* update probas */
-			/*PROBA_TYPE temp = real;
+			PROBA_TYPE temp = real;
 			real = temp*do_real + imag*do_imag;
 			imag = temp*do_imag - imag*do_real;
 		}
@@ -87,20 +87,6 @@ public:
 
 			if (child_id_ == 0)
 				last_merge = false;
-		}
-
-		if (first_split_overflow) {
-			/* update child id */
-			child_id >>= 1;
-
-			/* update hashes */
-			boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
-			boost::hash_combine(right_hash_, 0);
-
-			/* update probas */
-			PROBA_TYPE temp = real;
-			real = temp*do_real + imag*do_imag;
-			imag = temp*do_imag - imag*do_real;
 		}
 
 		/* do last merge */
@@ -282,6 +268,9 @@ public:
 
 			if (last_trash_idx >= new_state.num_sub_node(gid))
 				throw;
+
+			/* update size of used node */
+			++old_sub_node_num;
 			
 			/* return newly allocated sub-nodes */
 			return last_trash_idx;

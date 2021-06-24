@@ -5,7 +5,8 @@ print_usage() {
 	-h: this help menu
 	-n: number of iterations (default = 2)
 	-s: initial state size (default = 12)
-	-g: maximum number of graph (default = -1 <=> inf)"
+	-g: maximum number of graph (default = -1 <=> inf)
+"
 }
 
 niter="2"
