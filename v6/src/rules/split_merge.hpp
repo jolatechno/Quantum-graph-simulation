@@ -37,7 +37,7 @@ public:
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
 		/* check for calssical cases */
-		if (do_not == 0 || do_not == 1)
+		if (do_not == 0 || do_not == 1 || do_not = -1)
 			return 1;
 
 		return raw_num_childs(s, gid);
@@ -250,6 +250,10 @@ public:
 
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
+
+		/* check for one calssical case */
+		if (do_not == 1 || do_not = -1)
+			real = do_not*std::abs(real);
 
 		return {hash_, real, imag, node_size, std::max(num_sub_node, s.num_sub_node(parent_id))};
 	}
