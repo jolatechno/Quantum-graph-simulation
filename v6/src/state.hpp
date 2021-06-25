@@ -348,6 +348,12 @@ public:
 	/* step function */
 	void step(state_t &next_state, rule_t &rule) { step(next_state, rule, -1, false); }
 	void step(state_t &next_state, rule_t &rule, unsigned int max_num_graphs, bool normalize) {
+		/* check for calssical cases */
+		if (std::abs(rule.do_not) == 1) {
+			std::swap(*this, next_state);
+			return;
+		}
+
 		symbolic_iteration.num_graphs = 0;
 		PROBA_TYPE total_proba = !normalize;
 

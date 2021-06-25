@@ -37,7 +37,7 @@ public:
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
 		/* check for calssical cases */
-		if (do_not == 0 || do_not == 1 || do_not = -1)
+		if (do_not == 0)
 			return 1;
 
 		return raw_num_childs(s, gid);
@@ -251,10 +251,6 @@ public:
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
 
-		/* check for one calssical case */
-		if (do_not == 1 || do_not = -1)
-			real = do_not*std::abs(real);
-
 		return {hash_, real, imag, node_size, std::max(num_sub_node, s.num_sub_node(parent_id))};
 	}
 
@@ -268,18 +264,6 @@ public:
 		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);
 		std::copy(s.right_idx__or_type_.begin() + sub_node_begin, s.right_idx__or_type_.begin() + sub_node_end, new_state.right_idx__or_type_.begin() + new_sub_node_begin);
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
-
-		/* check for the first classical case */
-		if (do_not == 1) {
-			auto node_begin = s.node_begin[parent_id];
-			auto node_end = s.node_begin[parent_id + 1];
-			auto new_node_begin = new_state.node_begin[gid];
-
-			std::copy(s.node_id_c.begin() + node_begin, s.node_id_c.begin() + node_end, new_state.node_id_c.begin() + new_node_begin);
-			std::copy(s.left_.begin() + node_begin, s.left_.begin() + node_end, new_state.left_.begin() + new_node_begin);
-			std::copy(s.right_.begin() + node_begin, s.right_.begin() + node_end, new_state.right_.begin() + new_node_begin);
-			return;
-		}
 
 		/* check for the second classical case */
 		if (do_not == 0)
