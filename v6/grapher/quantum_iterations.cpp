@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("running quantum iterations for grapher");
-	auto [size, rule, rule2, n_iter, n_reversed_iteration, max_num_graphs, rule_name, ___] = parser(options, argc, argv);
+	auto [size, rule, rule2, n_iter, n_reversed_iteration, max_num_graphs, rule_name, normalize] = parser(options, argc, argv);
 
 	state s(size);
 	s.randomize();
@@ -21,9 +21,9 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (i & 1) {
-			s.step(new_state, *(rule_t*)rule, max_num_graphs);
+			s.step(new_state, *(rule_t*)rule, max_num_graphs, normalize);
 		} else
-			s.step(new_state, *(rule_t*)rule2, max_num_graphs);
+			s.step(new_state, *(rule_t*)rule2, max_num_graphs, normalize);
 		
 		std::swap(s, new_state);
 		move_all(s);
