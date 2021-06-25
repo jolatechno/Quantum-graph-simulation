@@ -3,6 +3,16 @@
 #include "../state.hpp"
 
 class split_merge_rule : public rule {
+private:
+	unsigned short int raw_num_childs(state_t const &s, unsigned int gid) const {
+		unsigned int num_op = 0;
+		unsigned int num_nodes_ = s.num_nodes(gid);
+		for (unsigned int node = 0; node < num_nodes_; ++node)
+			num_op += s.operation(gid, node) != none_t;
+
+		return std::pow(2, num_op);
+	}
+
 public:
 	enum {
 		none_t,
@@ -26,19 +36,19 @@ public:
 	}
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
+		/* check for calssical cases */
 		if (do_not == 0 || do_not == 1)
 			return 1;
 
-		unsigned int num_op = 0;
-		unsigned int num_nodes_ = s.num_nodes(gid);
-		for (unsigned int node = 0; node < num_nodes_; ++node)
-			num_op += s.operation(gid, node) != none_t;
-
-		return std::pow(2, num_op);
+		return raw_num_childs(s, gid);
 	}
 
 	std::tuple<size_t, PROBA_TYPE, PROBA_TYPE, unsigned short int, unsigned short int> 
 	child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
+		/* check for one calssical case */
+		if (do_not == 0)
+			child_id = raw_num_childs(s, parent_id) - 1;
+
 		PROBA_TYPE real = s.real[parent_id];
 		PROBA_TYPE imag = s.imag[parent_id];
 
@@ -46,8 +56,8 @@ public:
 		unsigned short int num_sub_node = s.num_sub_node(parent_id);
 
 		/* start dicreasing num_sub_node */
-		/*for (unsigned int node = 0; node < num_sub_node; ++node)
-			num_sub_node -= s.is_trash(parent_id, node);*/
+		for (unsigned int node = 0; node < num_sub_node; ++node)
+			num_sub_node -= s.is_trash(parent_id, node);
 
 		size_t hash_ = 0;
 		size_t left_hash_ = 0;
@@ -254,6 +264,22 @@ public:
 		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);
 		std::copy(s.right_idx__or_type_.begin() + sub_node_begin, s.right_idx__or_type_.begin() + sub_node_end, new_state.right_idx__or_type_.begin() + new_sub_node_begin);
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
+
+		/* check for the first classical case */
+		if (do_not == 1) {
+			auto node_begin = s.node_begin[parent_id];
+			auto node_end = s.node_begin[parent_id + 1];
+			auto new_node_begin = new_state.node_begin[gid];
+
+			std::copy(s.node_id_c.begin() + node_begin, s.node_id_c.begin() + node_end, new_state.node_id_c.begin() + new_node_begin);
+			std::copy(s.left_.begin() + node_begin, s.left_.begin() + node_end, new_state.left_.begin() + new_node_begin);
+			std::copy(s.right_.begin() + node_begin, s.right_.begin() + node_end, new_state.right_.begin() + new_node_begin);
+			return;
+		}
+
+		/* check for the second classical case */
+		if (do_not == 0)
+			child_id = raw_num_childs(s, parent_id) - 1;
 
 		/* get trash */
 		short int old_sub_node_num = s.num_sub_node(parent_id);

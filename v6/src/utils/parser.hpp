@@ -107,17 +107,21 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     // ------------------------------------------
     // read second rule
 
-    rule_ = result["rule2"].as<std::string>();
-    if (rule_ == "split_merge") {
-        rule2 = new split_merge_rule(teta2_pi, phi2_pi);
-        rule_ += "_";
-    } else if (rule_ == "erase_create") {
-        rule2 = new erase_create_rule(teta2_pi, phi2_pi);
+    if (result.count("rule2")) {
+         rule_ = result["rule2"].as<std::string>();
+
+        if (rule_ == "split_merge") {
+            rule2 = new split_merge_rule(teta2_pi, phi2_pi);
+        } else if (rule_ == "erase_create") {
+            rule2 = new erase_create_rule(teta2_pi, phi2_pi);
+        } else
+            throw;
+
         rule_ += "_";
     } else
         rule2 = rule;
 
-    rule_ = result["rule"].as<std::string>();
+    rule_ += result["rule"].as<std::string>();
 
     return {size, rule, rule2, n_iter, n_reversed_iteration, max_n_graphs, rule_, result.count("normalize")};
 }

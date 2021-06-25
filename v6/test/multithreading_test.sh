@@ -35,7 +35,7 @@ do
 	echo \"\" >> time.txt
 	echo OMP_NUM_THREADS=\${N_THREADS} >> time.txt
 
-	OMP_NUM_THREADS=\${N_THREADS} /usr/bin/time -v ${command} 2>> time.txt
+	time OMP_NUM_THREADS=\${N_THREADS} ${command} 2>> time.txt
 	N_THREADS=\$(( \$N_THREADS / 2))
 done"
 

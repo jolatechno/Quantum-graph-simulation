@@ -30,10 +30,10 @@ while getopts 's:S:n:N:r:R:h' flag; do
     n) min_n_iter="${OPTARG}" ;;
     N) max_n_iter="${OPTARG}" ;;
 
-	s) min_size="${OPTARG}" ;;
+		s) min_size="${OPTARG}" ;;
     S) max_size="${OPTARG}" ;;
 
-	r) min_seed="${OPTARG}" ;;
+		r) min_seed="${OPTARG}" ;;
     R) max_seed="${OPTARG}" ;;
 
     *) print_usage
