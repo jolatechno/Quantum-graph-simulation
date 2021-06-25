@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("check for quantum injectivity");
-	auto [size, rule, _, n_iter, n_reversed_iteration, max_num_graphs, __, normalize] = parser(options, argc, argv);
+	auto [size, rule, n_iter, n_reversed_iteration, max_num_graphs, normalize] = test_parser(options, argc, argv);
 
 	state s(size);
 	s.randomize();

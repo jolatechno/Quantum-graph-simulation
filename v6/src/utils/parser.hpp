@@ -3,12 +3,11 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::string, bool> parser(
+std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
-        ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
         ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
 
@@ -27,11 +26,6 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
 
         ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-
-        ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>())
-
-        ("teta2", "teta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
-        ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
         ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
 
@@ -82,6 +76,97 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
 
+    // ------------------------------------------
+    // read rule
+
+    void* rule;
+    std::string rule_ = result["rule"].as<std::string>();
+    if (rule_ == "split_merge") {
+        rule = new split_merge_rule(teta_pi, phi_pi);
+    } else if (rule_ == "erase_create") {
+        rule = new erase_create_rule(teta_pi, phi_pi);
+    } else
+        throw;
+
+    return {size, rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
+}
+
+std::tuple<unsigned int,
+    void*, unsigned int, bool,
+    void*, unsigned int, bool,
+    unsigned int, int, std::string, bool> iteration_parser(
+    cxxopts::Options &options, int argc, char* argv[]) {
+
+    options.add_options() ("h,help", "Print help")
+        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
+        ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
+
+        ("N,normalize", "normalize after each iteration")
+
+        ("n,n-iter", "number of iteration (default = 3)", cxxopts::value<unsigned int>()->default_value("3"))
+
+        ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
+        ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        ("P,precision", "number of bits of precision (default = 128bit)", cxxopts::value<unsigned int>()->default_value("128"))
+
+        ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+
+        ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>())
+
+        ("teta2", "teta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+
+        ("niter-1", "number of application of the first rule per iteration (default = 1)", cxxopts::value<unsigned int>()->default_value("1"))
+        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
+
+        ("no-move-1", "remove the move after the first rule (and set niter-1 to 1)")
+        ("no-move-2", "remove the move after the second rule (and set niter-2 to 1)")
+
+        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>());
+
+    // parse
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help() << std::endl;
+      exit(0);
+    }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0));
+
+    // ------------------------------------------
+    // set precision
+
+    SET_PRECISION(result["precision"].as<unsigned int>())
+
+    // ------------------------------------------
+    // parameters
+
+    unsigned int n_iter = result["n-iter"].as<unsigned int>();
+    unsigned int max_n_graphs = result["n-graphs"].as<int>();
+
+    // ------------------------------------------
+    // global variables
+
+    tolerance = result["tol"].as<PROBA_TYPE>();
+
+    // ------------------------------------------
+    // initialize state
+
+    unsigned int size = result["size"].as<unsigned int>();
+
+    PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
+    PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
+
     PROBA_TYPE teta2_pi = teta_pi;
     PROBA_TYPE phi2_pi = phi_pi;
 
@@ -94,7 +179,8 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     // read rule
 
     void* rule;
-    void* rule2;
+    bool move_first = !result.count("no-move-1");
+    unsigned int n_iter_1 = move_first ? result["niter-1"].as<unsigned int>() : 1;
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
@@ -104,24 +190,42 @@ std::tuple<unsigned int, void*, void*, unsigned int,  unsigned int, int, std::st
     } else
         throw;
 
+    if (move_first)
+        rule_ += "_move";
+
+    if (n_iter_1 > 1)
+        rule_ += "_" + std::to_string(n_iter_1);
+
     // ------------------------------------------
     // read second rule
 
-    if (result.count("rule2")) {
-         rule_ = result["rule2"].as<std::string>();
+    void* rule2;
+    bool move_second = false;
+    unsigned int n_iter_2 = 0;
 
-        if (rule_ == "split_merge") {
+    if (result.count("rule2")) {
+        move_second = !result.count("no-move-2");
+        n_iter_2 = move_second ? result["niter-2"].as<unsigned int>() : 1;
+
+        std::string rule2_ = result["rule2"].as<std::string>();
+        if (rule2_ == "split_merge") {
             rule2 = new split_merge_rule(teta2_pi, phi2_pi);
-        } else if (rule_ == "erase_create") {
+        } else if (rule2_ == "erase_create") {
             rule2 = new erase_create_rule(teta2_pi, phi2_pi);
         } else
             throw;
 
-        rule_ += "_";
-    } else
-        rule2 = rule;
+        rule_ += "_" + rule2_;
 
-    rule_ += result["rule"].as<std::string>();
+        if (move_second)
+            rule_ += "_move";
 
-    return {size, rule, rule2, n_iter, n_reversed_iteration, max_n_graphs, rule_, result.count("normalize")};
+        if (n_iter_2 > 1)
+            rule_ += "_" + std::to_string(n_iter_2);
+    }
+
+    return {size,
+        rule, n_iter_1, move_first,
+        rule2, n_iter_2, move_second,
+        n_iter, max_n_graphs, rule_, result.count("normalize")};
 }
