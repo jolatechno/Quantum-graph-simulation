@@ -622,7 +622,7 @@ void serialize_state_to_json(state_t const &s, bool first) {
 		std::cout << ",";
 
 	// final vectors
-	std::vector<unsigned short int> nums{0};
+	std::vector<unsigned int> nums{0};
 	std::vector<float> probas{0.};
 
 	unsigned short int max_size = 0;
@@ -649,7 +649,7 @@ void serialize_state_to_json(state_t const &s, bool first) {
 			PROBA_TYPE proba = real*real + imag*imag;
 
 			#pragma omp atomic
-			nums[size] += 1;
+			++nums[size];
 
 			#pragma omp atomic
 			probas[size] += proba;
