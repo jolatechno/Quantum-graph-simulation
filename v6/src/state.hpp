@@ -618,60 +618,79 @@ for graphing
 
 
 void serialize_state_to_json(state_t const &s, bool first) {
+	// print separator
 	if (!first)
-		std::cout << ",";
+		std::cout << ", ";
 
-	// final vectors
-	std::vector<unsigned int> nums{0};
-	std::vector<float> probas{0.};
+	PROBA_TYPE avg_size = 0;
+	PROBA_TYPE avg_size_squared = 0;
 
-	unsigned short int max_size = 0;
+	PROBA_TYPE avg_density = 0;
+	PROBA_TYPE avg_density_squared = 0;
 
-	#pragma omp parallel
-	{
-		#pragma omp for reduction(max : max_size)
-		for (unsigned int gid = 0; gid < s.num_graphs; ++gid)
-			max_size = std::max(max_size, s.num_nodes(gid));
+	PROBA_TYPE total_proba = 0;
+	
+	#pragma omp parallel for \
+		reduction(+ : avg_size) reduction(+ : avg_size_squared) \
+		reduction(+ : avg_density) reduction(+ : avg_density_squared) \
+		reduction(+ : total_proba)
+	for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
+		unsigned int num_nodes_ = s.num_nodes(gid);
 
-		#pragma omp single
-		{
-			nums.resize(max_size + 1, 0);
-			probas.resize(max_size + 1, 0);
-		}
+		PROBA_TYPE size = (PROBA_TYPE)num_nodes_;
+		PROBA_TYPE density = 0;
 
-		#pragma omp for
-		for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
-			size_t size = s.num_nodes(gid);
+		PROBA_TYPE real = s.real[gid];
+		PROBA_TYPE imag = s.imag[gid];
+		PROBA_TYPE proba = real*real + imag*imag;
 
-			PROBA_TYPE real = s.real[gid];
-			PROBA_TYPE imag = s.imag[gid];
+		for (unsigned i = 0; i < size; ++i)
+			density += s.left(gid, i) + s.right(gid, i);
+		density /= size;
 
-			PROBA_TYPE proba = real*real + imag*imag;
+		avg_size += proba*size;
+		avg_size_squared += proba*size*size;
 
-			#pragma omp atomic
-			++nums[size];
+		avg_density += proba*density;
+		avg_density_squared += proba*density*density;
 
-			#pragma omp atomic
-			probas[size] += proba;
-		}
+		total_proba += proba;
 	}
+
+	// correct
+	avg_size /= total_proba;
+	avg_size_squared /= total_proba;
+	avg_density /= total_proba;
+	avg_density_squared /= total_proba;
+
+	// compute size standard deviation
+	PROBA_TYPE std_dev_size = avg_size_squared - avg_size*avg_size;
+	std_dev_size = std_dev_size <= 0 ? 0 : precision::sqrt(std_dev_size);
+
+	// compute density standard deviation
+	PROBA_TYPE std_dev_density = avg_density_squared - avg_density*avg_density;
+	std_dev_density = std_dev_density <= 0 ? 0 : precision::sqrt(std_dev_density);
 
 	// print ratio of graphs
 	float ratio = first ? 1 : (float)s.num_graphs / (float)s.symbolic_iteration.num_graphs;
 	std::cout << "\n\t\t{\n\t\t\t\"ratio\": " << ratio;
 
-	// print number of graphs
-	std::cout << ",\n\t\t\t\"nums\" : [" << nums[0];
-	for (auto it = nums.begin() + 1; it < nums.end(); ++it)
-		std::cout << ", " << *it;
+	// print total proba
+	std::cout << ",\n\t\t\t\"total_proba\": " << total_proba;
 
-	// print total probability
-	std::cout << "],\n\t\t\t\"probas\" : [" << probas[0];
-	for (auto it = probas.begin() + 1; it < probas.end(); ++it)
-		std::cout << ", " << *it;
+	// print num graphs
+	std::cout << ",\n\t\t\t\"num_graphs\": " << s.num_graphs;
+
+	// print sizes
+	std::cout << ",\n\t\t\t\"avg_size\": " << avg_size;
+	std::cout << ",\n\t\t\t\"std_dev_size\": " << std_dev_size;
+
+	// print densities
+	std::cout << ",\n\t\t\t\"avg_density\": " << avg_density / 2;
+	std::cout << ",\n\t\t\t\"std_dev_density\": " << std_dev_density / 2;
 
 	// print separator
-	printf("]\n\t\t}");
+	printf("\n\t\t}");
 }
 
 void start_json(state_t const &s, char const* rule) {

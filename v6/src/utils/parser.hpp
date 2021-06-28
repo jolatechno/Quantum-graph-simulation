@@ -15,10 +15,10 @@ std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_par
 
         ("N,normalize", "normalize after each iteration")
 
-        ("v,verbose", "debuging level (float, default = 0)", cxxopts::value<float>()->default_value("0"))
+        ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
 
-        ("n,n-iter", "number of iteration (default = 3)", cxxopts::value<unsigned int>()->default_value("3"))
-        ("R,n-reversed-iter", "number of reversed iteration (default = 0)", cxxopts::value<unsigned int>()->default_value("0"))
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+        ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
@@ -103,11 +103,11 @@ std::tuple<unsigned int,
 
         ("N,normalize", "normalize after each iteration")
 
-        ("n,n-iter", "number of iteration (default = 3)", cxxopts::value<unsigned int>()->default_value("3"))
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
         ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-        ("P,precision", "number of bits of precision (default = 128bit)", cxxopts::value<unsigned int>()->default_value("128"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
         ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
@@ -117,7 +117,7 @@ std::tuple<unsigned int,
         ("teta2", "teta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
-        ("niter-1", "number of application of the first rule per iteration (default = 1)", cxxopts::value<unsigned int>()->default_value("1"))
+        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
         ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
 
         ("no-move-1", "remove the move after the first rule (and set niter-1 to 1)")
