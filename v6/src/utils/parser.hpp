@@ -3,7 +3,7 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_parser(
+std::tuple<state_t, rule_t*, unsigned int,  unsigned int, int, bool> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -29,7 +29,8 @@ std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_par
 
         ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
 
-        ("seed", "random engine seed", cxxopts::value<unsigned>());
+        ("seed", "random engine seed", cxxopts::value<unsigned>())
+        ("z,zero", "start with and empty state");
 
     // parse
     auto result = options.parse(argc, argv);
@@ -72,6 +73,10 @@ std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_par
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
+    state_t state(size);
+
+    if (!result.count("zero"))
+        state.randomize();
 
     PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
@@ -79,7 +84,7 @@ std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_par
     // ------------------------------------------
     // read rule
 
-    void* rule;
+    rule_t* rule;
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
         rule = new split_merge_rule(teta_pi, phi_pi);
@@ -88,12 +93,12 @@ std::tuple<unsigned int, void*, unsigned int,  unsigned int, int, bool> test_par
     } else
         throw;
 
-    return {size, rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
+    return {state, rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
 }
 
-std::tuple<unsigned int,
-    void*, unsigned int, bool,
-    void*, unsigned int, bool,
+std::tuple<state_t,
+    rule_t*, unsigned int, bool,
+    rule_t*, unsigned int, bool,
     unsigned int, int, std::string, bool> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
@@ -125,7 +130,8 @@ std::tuple<unsigned int,
 
         ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
 
-        ("seed", "random engine seed", cxxopts::value<unsigned>());
+        ("seed", "random engine seed", cxxopts::value<unsigned>())
+        ("z,zero", "start with and empty state");
 
     // parse
     auto result = options.parse(argc, argv);
@@ -163,6 +169,10 @@ std::tuple<unsigned int,
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
+    state_t state(size);
+
+    if (!result.count("zero"))
+        state.randomize();
 
     PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
@@ -178,7 +188,7 @@ std::tuple<unsigned int,
     // ------------------------------------------
     // read rule
 
-    void* rule;
+    rule_t* rule;
     bool move_first = !result.count("no-move-1");
     unsigned int n_iter_1 = move_first ? result["niter-1"].as<unsigned int>() : 1;
 
@@ -199,7 +209,7 @@ std::tuple<unsigned int,
     // ------------------------------------------
     // read second rule
 
-    void* rule2;
+    rule_t* rule2;
     bool move_second = false;
     unsigned int n_iter_2 = 0;
 
@@ -224,7 +234,7 @@ std::tuple<unsigned int,
             rule_ += "_" + std::to_string(n_iter_2);
     }
 
-    return {size,
+    return {state,
         rule, n_iter_1, move_first,
         rule2, n_iter_2, move_second,
         n_iter, max_n_graphs, rule_, result.count("normalize")};

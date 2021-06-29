@@ -8,11 +8,11 @@
 #include <iostream>
 
 /* !!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!!
-		debuging
-		!!!!!!!!!!!!!!!
-		!!!!!!!!!!!!!!! */
-#include "utils/debuging.hpp"
+!!!!!!!!!!!!!!!
+debuging
+!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!! */
+//#include "utils/debuging.hpp"
 
 // debug levels
 #define STEP_DEBUG_LEVEL 1
@@ -51,6 +51,7 @@ typedef char op_type_t;
 // global variable definition
 PROBA_TYPE tolerance = 0;
 float resize_policy = 1.3;
+unsigned int min_state_size = 100000;
 
 // debugging options
 float verbose = 0;
@@ -66,9 +67,9 @@ public:
 
 	/* constructor for a unitary matrix */
 	rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		do_real = precision::cos(teta)*precision::cos(phi);
-		do_imag = precision::cos(teta)*precision::sin(phi);
-		do_not = precision::sin(teta);
+		do_real = precision::sin(teta)*precision::cos(phi);
+		do_imag = precision::sin(teta)*precision::sin(phi);
+		do_not = precision::cos(teta);
 	}
 
 	/* step (1) */
@@ -130,7 +131,12 @@ public:
 	} node_type_t;
 
 	/* empty constructor */
-	state() {}
+	state() {
+		/* minimum size */
+		resize_num_graphs(min_state_size);
+		resize_num_nodes(min_state_size);
+		resize_num_sub_nodes(min_state_size);
+	}
 
 	/* constructor for a single graph of a given size */
 	state(unsigned int size) : num_graphs(1) {
@@ -150,6 +156,11 @@ public:
 
 		for (unsigned int i = 0; i < size; ++i)
 			hash_node(0, i);
+
+		/* minimum size */
+		resize_num_graphs(min_state_size);
+		resize_num_nodes(min_state_size);
+		resize_num_sub_nodes(min_state_size);
 	}
 
 	/* constructor for a temp state */
