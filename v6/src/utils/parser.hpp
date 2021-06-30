@@ -90,9 +90,10 @@ std::tuple<state_t, rule_t*, unsigned int,  unsigned int, int, bool> test_parser
         rule = new split_merge_rule(teta_pi, phi_pi);
     } else if (rule_ == "erase_create") {
         rule = new erase_create_rule(teta_pi, phi_pi);
+    } else if (rule_ == "coin") {
+        rule = new coin_rule(teta_pi, phi_pi);
     } else
         throw;
-
     return {state, rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
 }
 
@@ -197,6 +198,8 @@ std::tuple<state_t,
         rule = new split_merge_rule(teta_pi, phi_pi);
     } else if (rule_ == "erase_create") {
         rule = new erase_create_rule(teta_pi, phi_pi);
+    } else if (rule_ == "coin") {
+        rule = new coin_rule(teta_pi, phi_pi);
     } else
         throw;
 
@@ -222,6 +225,8 @@ std::tuple<state_t,
             rule2 = new split_merge_rule(teta2_pi, phi2_pi);
         } else if (rule2_ == "erase_create") {
             rule2 = new erase_create_rule(teta2_pi, phi2_pi);
+        } else if (rule2_ == "coin") {
+            rule2 = new coin_rule(teta2_pi, phi2_pi);
         } else
             throw;
 

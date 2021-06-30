@@ -2,7 +2,7 @@
 
 #include "../state.hpp"
 
-class erase_create_rule : public rule {
+class coin_rule : public rule {
 private:
 	unsigned short int raw_num_childs(state_t const &s, unsigned int gid) const {
 		unsigned int num_op = 0;
@@ -16,23 +16,15 @@ private:
 public:
 	enum {
 		none_t,
-		create_t,
-		erase_t,
+		flip_t,
 	};
 
 	/* constructor */
-	erase_create_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
+	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
 
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
 		short int sum = s.left(gid, node) + s.right(gid, node);
-
-		if (sum == 2)
-			return erase_t;
-
-		if (sum == 0)
-			return create_t;
-
-		return none_t;
+		return sum == 1 ? flip_t : none_t;
 	}
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
@@ -66,18 +58,18 @@ public:
 			/* update hash */
 			boost::hash_combine(hash_, s.hash(parent_id, node_id));
 			
-			if (operation != none_t) {
+			if (operation == flip_t) {
 				bool do_ = child_id & 1;
 				child_id >>= 1;
 
 				/* update hashes */
-				if (do_ == (operation == create_t)) {
-					boost::hash_combine(left_hash_, node);
+				if (do_ == s.left(parent_id, node)) {
 					boost::hash_combine(right_hash_, node);
-				}
+				} else
+					boost::hash_combine(left_hash_, node);
 
 				/* update probas */
-				PROBA_TYPE sign = (PROBA_TYPE)((operation - create_t)*2 - 1);
+				PROBA_TYPE sign = (PROBA_TYPE)(s.left(parent_id, node)*2 - 1);
 				if (do_) {
 					PROBA_TYPE temp = real;
 					real = temp*do_real + sign*imag*do_imag;
@@ -130,11 +122,11 @@ public:
 			if (operation != none_t) {
 				bool do_ = child_id & 1;
 
-				if (do_ == (operation == create_t)) {
-					new_state.set_left(next_gid, node, true);
+				if (do_ == s.left(parent_id, node)) {
+					new_state.set_left(next_gid, node, false);
 					new_state.set_right(next_gid, node, true);
 				} else {
-					new_state.set_left(next_gid, node, false);
+					new_state.set_left(next_gid, node, true);
 					new_state.set_right(next_gid, node, false);
 				}
 

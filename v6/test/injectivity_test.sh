@@ -49,31 +49,34 @@ done
 
 found=false
 
-for rule in erase_create split_merge; do
+for rule in erase_create split_merge coin; do
 	for n_iter in `seq ${min_n_iter} ${max_n_iter}`; do
 		for size in `seq ${min_size} ${max_size}`; do
 
 			if [ "$verbose" == true ]; then
-				echo "testing injectivity fro graphs of size ${size} for ${n_iter} iterations of ${rule}..."
+				echo "testing injectivity for graphs of size ${size} for ${n_iter} iterations of ${rule}..."
 			fi
 			
 			for seed in `seq ${min_seed} ${max_seed}`; do
-				res=$(./state_test.out -T 1e-18 -i -r "${rule}" --seed "${seed}" -n "${n_iter}"  -s "${size}")
+				command="./state_test.out -t 0.25 -p 0 -T 1e-18 -i -r ${rule} --seed ${seed} -n ${n_iter}  -s ${size}"
+				res=$(eval $command)
 
 				#check if there is more then one graph at the end
 				n_line=$(echo "${res}"  | wc -l)
 				if [ "${n_line}" != 3 ]; then
-					echo "-r "${rule}" --seed ${seed} -n ${n_iter} -s ${size} (more than one graph !)"
+					echo "${command} (more than one graph !)"
 					found="true"
+				else
+
+					#check if the graph at the end is the same as the graph at the start
+					first_line=$(echo "${res}" | sed -n '1p')
+					third_line=$(echo "${res}" | sed -n '3p')
+					if [ "${first_line}" != "${third_line}" ]; then
+						echo "${command} (graphs not equal !)"
+						found="true"
+					fi
 				fi
 
-				#check if the graph at the end is the same as the graph at the start
-				first_line=$(echo "${res}" | sed -n '1p')
-				third_line=$(echo "${res}" | sed -n '3p')
-				if [ "${first_line}" != "${third_line}" ]; then
-					echo "-r "${rule}" --seed ${seed} -n ${n_iter} -s ${size} (graphs not equal !)"
-					found="true"
-				fi
 			done
 
 			if [ "${found}" = true ]; then
