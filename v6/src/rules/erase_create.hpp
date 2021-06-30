@@ -43,23 +43,23 @@ public:
 		return raw_num_childs(s, gid);
 	}
 
-	std::tuple<size_t, PROBA_TYPE, PROBA_TYPE, unsigned short int, unsigned short int> 
-	child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
+	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
+		state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
 		/* check for one calssical case */
 		if (do_not == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
-		PROBA_TYPE real = s.real[parent_id];
-		PROBA_TYPE imag = s.imag[parent_id];
+		real = s.real[parent_id];
+		imag = s.imag[parent_id];
 
-		unsigned short int num_sub_node = s.num_sub_node(parent_id);
+		num_sub_node = s.num_sub_node(parent_id);
 
-		size_t hash_ = 0;
+		hash_ = 0;
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
-		unsigned short int num_nodes_ = s.num_nodes(parent_id);
-		for (unsigned short int node = 0; node < num_nodes_; ++node) {
+		num_nodes = s.num_nodes(parent_id);
+		for (unsigned short int node = 0; node < num_nodes; ++node) {
 			unsigned short int node_id = s.node_id(parent_id, node);
 			auto operation = s.operation(parent_id, node);
 
@@ -110,8 +110,6 @@ public:
 
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
-
-		return {hash_, real, imag, num_nodes_, num_sub_node};
 	}
 
 	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const override {

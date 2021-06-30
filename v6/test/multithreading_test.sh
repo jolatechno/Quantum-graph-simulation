@@ -25,7 +25,7 @@ while getopts 'n:s:g:h' flag; do
   esac
 done
 
-command="./state_test.out -r split_merge --rule2 erase_create -n ${niter} -s ${size} -g ${max_n_graphs} -T 1e-18 --seed 26"
+command="./state_test.out -r split_merge -n ${niter} -s ${size} -g ${max_n_graphs} -T 1e-18 --seed 26"
 echo "" >> time.txt
 echo ${command} >> time.txt
 
@@ -35,7 +35,7 @@ do
 	echo \"\" >> time.txt
 	echo OMP_NUM_THREADS=\${N_THREADS} >> time.txt
 
-	time OMP_NUM_THREADS=\${N_THREADS} ${command} 2>> time.txt
+	time (OMP_NUM_THREADS=\${N_THREADS} ${command}) 2>> time.txt
 	N_THREADS=\$(( \$N_THREADS / 2))
 done"
 

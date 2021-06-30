@@ -79,10 +79,10 @@ public:
 	virtual unsigned short int num_childs(state_t const &s, unsigned int gid) const { return 0; }
 
 	/* step (4) */
-	virtual std::tuple<size_t /* hash */,
-		PROBA_TYPE /* real*/, PROBA_TYPE /* imag */,
-		unsigned short int /* num_nodes */, unsigned short int /* num sub-nodes */> 
-		child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const { return {0, 0., 0., 0, 0}; }
+	virtual void child_properties(size_t& hash_,
+		PROBA_TYPE& real, PROBA_TYPE& imag,
+		unsigned int& num_nodes, unsigned int& num_sub_node,
+		state_t const &s, unsigned int parent_id, unsigned int child_id) const { }
 
 	/* step (8) */
 	virtual void populate_new_graph(state_t const &s, state_t &next_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const {}
@@ -300,8 +300,8 @@ public:
 
 	/* getters */
 	// sizes
-	unsigned short int inline num_nodes(unsigned int gid) const { return node_begin[gid + 1] - node_begin[gid]; }
-	unsigned short int inline num_sub_node(unsigned int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; }
+	unsigned int inline num_nodes(unsigned int gid) const { return node_begin[gid + 1] - node_begin[gid]; }
+	unsigned int inline num_sub_node(unsigned int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; }
 
 	// getter for nodes
 	unsigned short int inline node_id(unsigned int gid, unsigned short int node) const { return node_id_c[node_begin[gid] + node]; }
@@ -357,8 +357,8 @@ public:
 	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
 	
 	/* step function */
-	void step(state_t &next_state, rule_t &rule) { step(next_state, rule, -1, false); }
-	void step(state_t &next_state, rule_t &rule, unsigned int max_num_graphs, bool normalize) {
+	void step(state_t &next_state, rule_t const &rule) { step(next_state, rule, -1, false); }
+	void step(state_t &next_state, rule_t const &rule, unsigned int max_num_graphs, bool normalize) {
 		/* check for calssical cases */
 		if (std::abs(rule.do_not) == 1) {
 			std::swap(*this, next_state);
@@ -462,11 +462,17 @@ public:
 			std::cout << "step 4\n";
 
 		#pragma omp parallel for
-		for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid) {
+		for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid)
+			rule.child_properties(next_state.symbolic_iteration.next_hash[gid],
+				next_state.symbolic_iteration.next_real[gid], next_state.symbolic_iteration.next_imag[gid],
+				next_state.node_begin[gid + 1], next_state.sub_node_begin[gid + 1],
+				*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
+
+			/*{
 			auto [hash_, real_, imag_, num_node_, num_sub_node_] = rule.child_properties(*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
 			
 			/* assign propreties for each child */
-			next_state.symbolic_iteration.next_hash[gid] = hash_;
+			/*next_state.symbolic_iteration.next_hash[gid] = hash_;
 			next_state.symbolic_iteration.next_real[gid] = real_;
 			next_state.symbolic_iteration.next_imag[gid] = imag_;
 			next_state.node_begin[gid + 1] = num_node_;

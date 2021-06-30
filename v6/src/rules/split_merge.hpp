@@ -43,23 +43,23 @@ public:
 		return raw_num_childs(s, gid);
 	}
 
-	std::tuple<size_t, PROBA_TYPE, PROBA_TYPE, unsigned short int, unsigned short int> 
-	child_properties(state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
+	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
+		state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
 		/* check for one calssical case */
 		if (do_not == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
-		PROBA_TYPE real = s.real[parent_id];
-		PROBA_TYPE imag = s.imag[parent_id];
+		real = s.real[parent_id];
+		imag = s.imag[parent_id];
 
-		unsigned short int node_size = s.num_nodes(parent_id);
-		unsigned short int num_sub_node = s.num_sub_node(parent_id);
+		num_nodes = s.num_nodes(parent_id);
+		num_sub_node = s.num_sub_node(parent_id);
 
 		/* start dicreasing num_sub_node */
 		for (unsigned int node = 0; node < num_sub_node; ++node)
 			num_sub_node -= s.is_trash(parent_id, node);
 
-		size_t hash_ = 0;
+		hash_ = 0;
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
@@ -87,11 +87,11 @@ public:
 		}
 
 		/* check for last merge */
-		bool last_merge = s.operation(parent_id, node_size - 1) == merge_t;
+		bool last_merge = s.operation(parent_id, num_nodes - 1) == merge_t;
 
 		if (last_merge) {
 			unsigned int child_id_ = child_id;
-			for (unsigned short int node = 0; node < node_size - 1; ++node)
+			for (unsigned short int node = 0; node < num_nodes - 1; ++node)
 				if (s.operation(parent_id, node) != none_t)
 					child_id_ >>= 1;
 
@@ -105,7 +105,7 @@ public:
 			boost::hash_combine(left_hash_, 0);
 			boost::hash_combine(right_hash_, 0);
 
-			unsigned short int node_id = s.node_id(parent_id, node_size - 1);
+			unsigned short int node_id = s.node_id(parent_id, num_nodes - 1);
 			unsigned short int next_node_id = s.node_id(parent_id, 0);
 
 			if (s.node_type(parent_id, node_id) == state_t::left_t &&
@@ -129,7 +129,7 @@ public:
 
 		short int displacement = 0;
 
-		unsigned short int num_nodes_ = node_size - last_merge;
+		unsigned short int num_nodes_ = num_nodes - last_merge;
 		for (unsigned short int node = first_split_overflow + last_merge; node < num_nodes_; ++node) {
 
 			unsigned short int node_id = s.node_id(parent_id, node);
@@ -239,19 +239,19 @@ public:
 			}
 		}
 
-		/* update node_size */
-		node_size += displacement + first_split_overflow - last_merge;
+		/* update num_nodes */
+		num_nodes += displacement + first_split_overflow - last_merge;
 
 		if (first_split_overflow) {
 			/* update hashes */
 			boost::hash_combine(hash_, s.hash(parent_id, s.left_idx(parent_id, s.node_id(parent_id, 0))));
-			boost::hash_combine(left_hash_, node_size - 1);
+			boost::hash_combine(left_hash_, num_nodes - 1);
 		}
 
 		boost::hash_combine(hash_, left_hash_);
 		boost::hash_combine(hash_, right_hash_);
 
-		return {hash_, real, imag, node_size, std::max(num_sub_node, s.num_sub_node(parent_id))};
+		num_sub_node = std::max(num_sub_node, s.num_sub_node(parent_id));
 	}
 
 	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int gid, unsigned int parent_id, unsigned int child_id) const override {
