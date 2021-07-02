@@ -63,6 +63,8 @@ public:
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
+		PROBA_TYPE temp;
+
 		/* check if there is a "first split overflow" to keep the lexicographic order */
 		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
 
@@ -81,9 +83,9 @@ public:
 			boost::hash_combine(right_hash_, 0);
 
 			/* update probas */
-			PROBA_TYPE temp = real;
+			temp = real;
 			real = temp*do_real + imag*do_imag;
-			imag = temp*do_imag - imag*do_real;
+			imag = imag*do_real - temp*do_imag;
 		}
 
 		/* check for last merge */
@@ -122,9 +124,9 @@ public:
 			}
 
 			/* update probas */
-			PROBA_TYPE temp = real;
+			temp = real;
 			real = temp*do_real - imag*do_imag;
-			imag = temp*do_imag + imag*do_real;
+			imag = imag*do_real + temp*do_imag;
 		}
 
 		short int displacement = 0;
@@ -169,13 +171,13 @@ public:
 						}
 
 						/* update probas */
-						PROBA_TYPE temp = real;
+						temp = real;
 						real = temp*do_real + imag*do_imag;
-						imag = temp*do_imag - imag*do_real;
+						imag = imag*do_real - temp*do_imag;
 					} else {
 						/* update probas */
-						real *= -do_not;
-						imag *= -do_not;
+						real *= do_not;
+						imag *= do_not;
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
@@ -209,9 +211,9 @@ public:
 						}
 
 						/* update probas */
-						PROBA_TYPE temp = real;
+						temp = real;
 						real = temp*do_real - imag*do_imag;
-						imag = temp*do_imag + imag*do_real;
+						imag = imag*do_real + temp*do_imag;
 
 						/* skip next node */
 						++node;
@@ -220,8 +222,8 @@ public:
 						--displacement;
 					} else {
 						/* update probas */
-						real *= do_not;
-						imag *= do_not;
+						real *= -do_not;
+						imag *= -do_not;
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));

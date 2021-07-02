@@ -11,6 +11,10 @@ print_usage() {
 	-r: minimum random seed (default = 0)
 	-R: maxium random seed (default = 100)
 
+	-m: test split merge rule (default : test all three rules)
+	-e: test erase create rule
+	-c: test coin rule
+
 	-v: enable verbose
 "
 }
@@ -26,7 +30,11 @@ max_size=5
 
 verbose=false
 
-while getopts 's:S:n:N:r:R:hv' flag; do
+rule="erase_create coin split_merge"
+rule_=""
+overwriten_rule=false
+
+while getopts 's:S:n:N:r:R:hvmec' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -41,15 +49,28 @@ while getopts 's:S:n:N:r:R:hv' flag; do
     R) max_seed="${OPTARG}" ;;
 
 		v) verbose=true ;;
+	
+		m) rule_+=" split_merge";
+		overwriten_rule=true;;
+
+		e) rule_+=" erase_create";
+		overwriten_rule=true;;
+
+		c) rule_+=" coin";
+		overwriten_rule=true;;
 
     *) print_usage
        exit 1 ;;
   esac
 done
 
+if [ "$overwriten_rule" == true ]; then
+	rule="${rule_}"
+fi
+
 found=false
 
-for rule in erase_create split_merge coin; do
+for rule in $rule; do
 	for n_iter in `seq ${min_n_iter} ${max_n_iter}`; do
 		for size in `seq ${min_size} ${max_size}`; do
 
@@ -58,28 +79,37 @@ for rule in erase_create split_merge coin; do
 			fi
 			
 			for seed in `seq ${min_seed} ${max_seed}`; do
-				command="./state_test.out -t 0.25 -p 0 -T 1e-18 -i -r ${rule} --seed ${seed} -n ${n_iter}  -s ${size}"
+				command="./state_test.out -t 0.25 -p 0.25 -T 1e-18 -i -r ${rule} --seed ${seed} -n ${n_iter} -s ${size}"
 				res=$(eval $command)
 
-				#check if there is more then one graph at the end
 				n_line=$(echo "${res}"  | wc -l)
+
+				#check if there is more then one graph at the end
 				if [ "${n_line}" != 3 ]; then
 					echo "${command} (more than one graph !)"
-					found="true"
+					found=true
 				else
-
-					#check if the graph at the end is the same as the graph at the start
 					first_line=$(echo "${res}" | sed -n '1p')
 					third_line=$(echo "${res}" | sed -n '3p')
-					if [ "${first_line}" != "${third_line}" ]; then
+
+					#check if the graph at the end is the same as the graph at the start
+					if [ "${first_line[1]}" != "${third_line[1]}" ]; then
 						echo "${command} (graphs not equal !)"
-						found="true"
+						found=true
+					else
+
+						#check if the graph at the end is of probability 1
+						if [ "${first_line[0]}" != "${third_line[0]}" ]; then
+							echo "${command} (probability not equal to 1 !)"
+							found=true
+						fi
 					fi
 				fi
 
 			done
 
 			if [ "${found}" = true ]; then
+				echo "found=$found"
 				exit 0
 			fi
 

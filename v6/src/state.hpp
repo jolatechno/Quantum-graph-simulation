@@ -468,17 +468,6 @@ public:
 				next_state.node_begin[gid + 1], next_state.sub_node_begin[gid + 1],
 				*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
 
-			/*{
-			auto [hash_, real_, imag_, num_node_, num_sub_node_] = rule.child_properties(*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
-			
-			/* assign propreties for each child */
-			/*next_state.symbolic_iteration.next_hash[gid] = hash_;
-			next_state.symbolic_iteration.next_real[gid] = real_;
-			next_state.symbolic_iteration.next_imag[gid] = imag_;
-			next_state.node_begin[gid + 1] = num_node_;
-			next_state.sub_node_begin[gid + 1] = num_sub_node_;
-		}
-
 		/* !!!!!!!!!!!!!!!!
 		step (5) 
 		 !!!!!!!!!!!!!!!! */
@@ -835,7 +824,10 @@ void print(state_t &s) {
 			std::cout << "\n";
 		}
 
-		std::cout << s.real[gid] << (s.imag[gid] >= 0 ? "+" : "") << s.imag[gid] << "i   ";
+		PROBA_TYPE real = std::abs(s.real[gid]) < tolerance ? 0 : s.real[gid];
+		PROBA_TYPE imag = std::abs(s.imag[gid]) < tolerance ? 0 : s.imag[gid];
+
+		std::cout << real << (imag >= 0 ? "+" : "") << imag << "i   ";
 
 		if (verbose >= PRINT_DEBUG_LEVEL_1)
 			std::cout << s.symbolic_iteration.next_hash[gid] << "   ";

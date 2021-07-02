@@ -58,6 +58,8 @@ public:
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
+		PROBA_TYPE temp, sign;
+
 		num_nodes = s.num_nodes(parent_id);
 		for (unsigned short int node = 0; node < num_nodes; ++node) {
 			unsigned short int node_id = s.node_id(parent_id, node);
@@ -77,9 +79,9 @@ public:
 				}
 
 				/* update probas */
-				PROBA_TYPE sign = (PROBA_TYPE)((operation - create_t)*2 - 1);
+				sign = (PROBA_TYPE)((operation - create_t)*2 - 1);
 				if (do_) {
-					PROBA_TYPE temp = real;
+					temp = real;
 					real = temp*do_real + sign*imag*do_imag;
 					imag = imag*do_real - sign*temp*do_imag;
 				} else {
