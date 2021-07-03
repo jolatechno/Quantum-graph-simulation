@@ -6,20 +6,24 @@ print_usage() {
 	-n: number of iterations (default = 2)
 	-s: initial state size (default = 12)
 	-g: maximum number of graph (default = -1 <=> inf)
+
+	-t: starting num thread (as a power of 2)
 "
 }
 
 niter="2"
 size="12"
 max_n_graphs="-1"
+n_thread=$(nproc --all)
 
-while getopts 'n:s:g:h' flag; do
+while getopts 'n:s:g:ht:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
     n) niter="${OPTARG}" ;;
     s) size="${OPTARG}" ;;
 		g) max_n_graphs="${OPTARG}" ;;
+		t) n_thread="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
   esac
@@ -29,14 +33,10 @@ command="./state_test.out -r split_merge -n ${niter} -s ${size} -g ${max_n_graph
 echo "" >> time.txt
 echo ${command} >> time.txt
 
-script="N_THREADS=$(nproc --all)
-while [ \$N_THREADS -ge 1 ]
+while [ $n_thread -ge 1 ]
 do
-	echo \"\" >> time.txt
-	echo OMP_NUM_THREADS=\${N_THREADS} >> time.txt
+	echo "" >> time.txt; echo "OMP_NUM_THREADS=${n_thread}" >> time.txt
 
-	time (OMP_NUM_THREADS=\${N_THREADS} ${command}) 2>> time.txt
-	N_THREADS=\$(( \$N_THREADS / 2))
-done"
-
-nohup bash -c "${script}" &> /dev/null &
+	time (OMP_NUM_THREADS=${n_thread} ${command}) 2>> time.txt >> /dev/null
+	n_thread=$(( $n_thread / 2))
+done
