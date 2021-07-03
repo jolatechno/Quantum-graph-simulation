@@ -568,7 +568,24 @@ public:
 		next_state.resize_num_graphs(next_state.num_graphs);
 
 		/* prepare for partial sum */
-		for (unsigned int gid = 0; gid <  next_state.num_graphs; ++gid) {
+		unsigned int gid_seq = 0;
+		for (; gid_seq < next_state.num_graphs; ++gid_seq) {
+			unsigned int id = next_state.symbolic_iteration.next_gid[gid_seq];
+
+			next_state.node_begin[gid_seq + 1] = next_state.node_begin[id + 1];
+			next_state.sub_node_begin[gid_seq + 1] = next_state.sub_node_begin[id + 1];
+
+			/* assign magnitude */
+			next_state.real[gid_seq] = next_state.symbolic_iteration.next_real[id];
+			next_state.imag[gid_seq] = next_state.symbolic_iteration.next_imag[id];
+
+
+			if (id >= next_state.num_graphs)
+				break;
+		}
+
+		#pragma omp parallel for
+		for (unsigned int gid = gid_seq + 1; gid < next_state.num_graphs; ++gid) {
 			unsigned int id = next_state.symbolic_iteration.next_gid[gid];
 
 			next_state.node_begin[gid + 1] = next_state.node_begin[id + 1];
