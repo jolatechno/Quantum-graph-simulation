@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../state.hpp"
+#include "../utils/complex.hpp"
 
 class split_merge_rule : public rule {
 private:
@@ -21,7 +22,7 @@ public:
 	};
 
 	/* constructor */
-	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
+	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {}
 
 	/* rule implementation */
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
@@ -37,7 +38,7 @@ public:
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
 		/* check for calssical cases */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			return 1;
 
 		return raw_num_childs(s, gid);
@@ -46,7 +47,7 @@ public:
 	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
 		state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
 		/* check for one calssical case */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
 		real = s.real[parent_id];
@@ -62,8 +63,6 @@ public:
 		hash_ = 0;
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
-
-		PROBA_TYPE temp;
 
 		/* check if there is a "first split overflow" to keep the lexicographic order */
 		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
@@ -83,9 +82,7 @@ public:
 			boost::hash_combine(right_hash_, 0);
 
 			/* update probas */
-			temp = real;
-			real = temp*do_real + imag*do_imag;
-			imag = imag*do_real - temp*do_imag;
+			time_equal(real, imag, do_real, do_imag);
 		}
 
 		/* check for last merge */
@@ -124,9 +121,7 @@ public:
 			}
 
 			/* update probas */
-			temp = real;
-			real = temp*do_real - imag*do_imag;
-			imag = imag*do_real + temp*do_imag;
+			time_equal(real, imag, do_real, -do_imag);
 		}
 
 		short int displacement = 0;
@@ -171,13 +166,10 @@ public:
 						}
 
 						/* update probas */
-						temp = real;
-						real = temp*do_real + imag*do_imag;
-						imag = imag*do_real - temp*do_imag;
+						time_equal(real, imag, do_real, do_imag);
 					} else {
 						/* update probas */
-						real *= do_not;
-						imag *= do_not;
+						time_equal(real, imag, do_not_real, do_not_imag);
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
@@ -211,9 +203,7 @@ public:
 						}
 
 						/* update probas */
-						temp = real;
-						real = temp*do_real - imag*do_imag;
-						imag = imag*do_real + temp*do_imag;
+						time_equal(real, imag, do_real, -do_imag);
 
 						/* skip next node */
 						++node;
@@ -222,8 +212,7 @@ public:
 						--displacement;
 					} else {
 						/* update probas */
-						real *= -do_not;
-						imag *= -do_not;
+						time_equal(real, imag, -do_not_real, do_not_imag);
 
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
@@ -268,7 +257,7 @@ public:
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
 
 		/* check for the second classical case */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
 		/* get trash */

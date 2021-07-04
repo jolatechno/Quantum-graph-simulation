@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../state.hpp"
+#include "../utils/complex.hpp"
 
 class coin_rule : public rule {
 private:
@@ -20,7 +21,7 @@ public:
 	};
 
 	/* constructor */
-	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi) : rule(teta, phi) {}
+	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {}
 
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
 		short int sum = s.left(gid, node) + s.right(gid, node);
@@ -29,7 +30,7 @@ public:
 
 	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
 		/* check for calssical cases */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			return 1;
 
 		return raw_num_childs(s, gid);
@@ -38,7 +39,7 @@ public:
 	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
 		state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
 		/* check for one calssical case */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
 		real = s.real[parent_id];
@@ -50,7 +51,7 @@ public:
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
-		PROBA_TYPE temp, sign;
+		PROBA_TYPE sign;
 
 		num_nodes = s.num_nodes(parent_id);
 		for (unsigned short int node = 0; node < num_nodes; ++node) {
@@ -73,13 +74,10 @@ public:
 				/* update probas */
 				sign = (PROBA_TYPE)(s.left(parent_id, node)*2 - 1);
 				if (do_) {
-					temp = real;
-					real = temp*do_real + sign*imag*do_imag;
-					imag = imag*do_real - sign*temp*do_imag;
-				} else {
-					real *= sign*do_not;
-					imag *= sign*do_not;
-				}
+					time_equal(real, imag, do_real, sign*do_imag);
+				} else
+					time_equal(real, imag, sign*do_not_real, do_not_imag);
+			
 			} else {
 				/* update hashes */
 				if (s.left(parent_id, node))
@@ -112,7 +110,7 @@ public:
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
 
 		/* check for the second classical case */
-		if (do_not == 0)
+		if (do_not_real == 0 && do_not_imag == 0)
 			child_id = raw_num_childs(s, parent_id) - 1;
 
 		unsigned short int num_nodes_ = node_end - node_begin;

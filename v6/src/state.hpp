@@ -67,13 +67,15 @@ public:
 	/* parameters of a unitary matrix */
 	PROBA_TYPE do_real = 1;
 	PROBA_TYPE do_imag = 0;
-	PROBA_TYPE do_not = 0;
+	PROBA_TYPE do_not_real = 0;
+	PROBA_TYPE do_not_imag = 0;
 
 	/* constructor for a unitary matrix */
-	rule(PROBA_TYPE teta, PROBA_TYPE phi) {
-		do_real = precision::sin(teta)*precision::cos(phi);
-		do_imag = precision::sin(teta)*precision::sin(phi);
-		do_not = precision::cos(teta);
+	rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) {
+		do_real = precision::sin(teta)* precision::cos(phi);
+		do_imag = precision::sin(teta)* precision::sin(phi);
+		do_not_real = precision::cos(teta)* precision::cos(xi);
+		do_not_imag = precision::cos(teta)* precision::sin(xi);
 	}
 
 	/* step (1) */
@@ -364,7 +366,7 @@ public:
 	void step(state_t &next_state, rule_t const &rule) { step(next_state, rule, -1, false); }
 	void step(state_t &next_state, rule_t const &rule, unsigned int max_num_graphs, bool normalize) {
 		/* check for calssical cases */
-		if (std::abs(rule.do_not) == 1) {
+		if (rule.do_real == 0 && rule.do_imag == 0) {
 			std::swap(*this, next_state);
 			return;
 		}

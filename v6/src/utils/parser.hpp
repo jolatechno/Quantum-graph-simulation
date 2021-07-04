@@ -3,7 +3,7 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<state_t, rule_t*, unsigned int,  unsigned int, int, bool> test_parser(
+std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -26,6 +26,7 @@ std::tuple<state_t, rule_t*, unsigned int,  unsigned int, int, bool> test_parser
 
         ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        ("x,xi", "xi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
         ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
 
@@ -80,21 +81,26 @@ std::tuple<state_t, rule_t*, unsigned int,  unsigned int, int, bool> test_parser
 
     PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
+    PROBA_TYPE const xi_pi = M_PI*result["xi"].as<PROBA_TYPE>();
 
     // ------------------------------------------
     // read rule
 
-    rule_t* rule;
+    rule_t *rule, *reversed_rule;
+
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
-        rule = new split_merge_rule(teta_pi, phi_pi);
+        rule = new split_merge_rule(teta_pi, phi_pi, xi_pi);
+        reversed_rule = new split_merge_rule(teta_pi, phi_pi, -xi_pi);
     } else if (rule_ == "erase_create") {
-        rule = new erase_create_rule(teta_pi, phi_pi);
+        rule = new erase_create_rule(teta_pi, phi_pi, xi_pi);
+        reversed_rule = new erase_create_rule(teta_pi, phi_pi, -xi_pi);
     } else if (rule_ == "coin") {
-        rule = new coin_rule(teta_pi, phi_pi);
+        rule = new coin_rule(teta_pi, phi_pi, xi_pi);
+        reversed_rule = new coin_rule(teta_pi, phi_pi, -xi_pi);
     } else
         throw;
-    return {state, rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
+    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
 }
 
 std::tuple<state_t,
@@ -195,11 +201,11 @@ std::tuple<state_t,
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
-        rule = new split_merge_rule(teta_pi, phi_pi);
+        rule = new split_merge_rule(teta_pi, phi_pi, 0);
     } else if (rule_ == "erase_create") {
-        rule = new erase_create_rule(teta_pi, phi_pi);
+        rule = new erase_create_rule(teta_pi, phi_pi, 0);
     } else if (rule_ == "coin") {
-        rule = new coin_rule(teta_pi, phi_pi);
+        rule = new coin_rule(teta_pi, phi_pi, 0);
     } else
         throw;
 
@@ -222,11 +228,11 @@ std::tuple<state_t,
 
         std::string rule2_ = result["rule2"].as<std::string>();
         if (rule2_ == "split_merge") {
-            rule2 = new split_merge_rule(teta2_pi, phi2_pi);
+            rule2 = new split_merge_rule(teta2_pi, phi2_pi, 0);
         } else if (rule2_ == "erase_create") {
-            rule2 = new erase_create_rule(teta2_pi, phi2_pi);
+            rule2 = new erase_create_rule(teta2_pi, phi2_pi, 0);
         } else if (rule2_ == "coin") {
-            rule2 = new coin_rule(teta2_pi, phi2_pi);
+            rule2 = new coin_rule(teta2_pi, phi2_pi, 0);
         } else
             throw;
 

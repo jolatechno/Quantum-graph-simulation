@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("check for quantum injectivity");
-	auto [s, rule, n_iter, n_reversed_iteration, max_num_graphs, normalize] = test_parser(options, argc, argv);
+	auto [s, rule, reversed_rule, n_iter, n_reversed_iteration, max_num_graphs, normalize] = test_parser(options, argc, argv);
 
 	print(s); std::cout << "\n";
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...revresed moved\nstep...\n";
 			
-		s.step(new_state, *rule, max_num_graphs, normalize);
+		s.step(new_state, *reversed_rule, max_num_graphs, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
