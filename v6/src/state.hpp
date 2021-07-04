@@ -43,6 +43,10 @@ debuging
 	namespace precision = std;
 #endif
 
+#ifndef _OPENMP
+	#define omp_set_nested(i)
+#endif
+
 // type definition
 typedef class state state_t;
 typedef class rule rule_t;
@@ -365,8 +369,14 @@ public:
 			return;
 		}
 
+		/* allow nested parallism for __gnu_parallel */
+		omp_set_nested(1);
+
 		symbolic_iteration.num_graphs = 0;
 		PROBA_TYPE total_proba = !normalize;
+
+		/* for step 7 */
+		unsigned int gid_seq = 0;
 
 		/* for memory management */
 		next_state.symbolic_iteration = std::move(symbolic_iteration);
@@ -431,67 +441,70 @@ public:
 					imag[gid] /= total_proba;
 				}
 			}
-		}
 
-		/* !!!!!!!!!!!!!!!!
-		step (3) 
-		 !!!!!!!!!!!!!!!! */
-		
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 3\n";
-
-		/* resize variables with the right_ numer of elements */
-		next_state.resize_num_graphs_symbolic(next_state.symbolic_iteration.num_graphs);
-		
-		unsigned int id = 0;
-		for (unsigned int gid = 0; gid < num_graphs; ++gid) {
-			unsigned int const num_child = num_childs[gid];
+			/* !!!!!!!!!!!!!!!!
+			step (3) 
+			 !!!!!!!!!!!!!!!! */
 			
-			/* assign parent ids and child ids for each child */
-			for (unsigned int child_id_ = 0; child_id_ < num_child; ++child_id_, ++id) {
-				next_state.symbolic_iteration.parent_gid[id] = gid;
-				next_state.symbolic_iteration.child_id[id] = child_id_;
+			#pragma omp single
+			{
+				if (verbose >= STEP_DEBUG_LEVEL)
+					std::cout << "step 3\n";
+
+				/* resize variables with the right_ numer of elements */
+				next_state.resize_num_graphs_symbolic(next_state.symbolic_iteration.num_graphs);
+				
+				unsigned int id = 0;
+				for (unsigned int gid = 0; gid < num_graphs; ++gid) {
+					unsigned int const num_child = num_childs[gid];
+					
+					/* assign parent ids and child ids for each child */
+					for (unsigned int child_id_ = 0; child_id_ < num_child; ++child_id_, ++id) {
+						next_state.symbolic_iteration.parent_gid[id] = gid;
+						next_state.symbolic_iteration.child_id[id] = child_id_;
+					}
+				}
+
+				/* !!!!!!!!!!!!!!!!
+				step (4) 
+				 !!!!!!!!!!!!!!!! */
+
+				if (verbose >= STEP_DEBUG_LEVEL)
+					std::cout << "step 4\n";
 			}
-		}
 
-		/* !!!!!!!!!!!!!!!!
-		step (4) 
-		 !!!!!!!!!!!!!!!! */
+			#pragma omp for
+			for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid)
+				rule.child_properties(next_state.symbolic_iteration.next_hash[gid],
+					next_state.symbolic_iteration.next_real[gid], next_state.symbolic_iteration.next_imag[gid],
+					next_state.node_begin[gid + 1], next_state.sub_node_begin[gid + 1],
+					*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
 
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 4\n";
+			/* !!!!!!!!!!!!!!!!
+			step (5) 
+			 !!!!!!!!!!!!!!!! */
 
-		#pragma omp parallel for
-		for (unsigned int gid = 0; gid < next_state.symbolic_iteration.num_graphs; ++gid)
-			rule.child_properties(next_state.symbolic_iteration.next_hash[gid],
-				next_state.symbolic_iteration.next_real[gid], next_state.symbolic_iteration.next_imag[gid],
-				next_state.node_begin[gid + 1], next_state.sub_node_begin[gid + 1],
-				*this, next_state.symbolic_iteration.parent_gid[gid], next_state.symbolic_iteration.child_id[gid]);
-
-		/* !!!!!!!!!!!!!!!!
-		step (5) 
-		 !!!!!!!!!!!!!!!! */
-
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 5\n";
+			#pragma omp single
+			{
+				if (verbose >= STEP_DEBUG_LEVEL)
+				std::cout << "step 5\n";
 		
-		/* sort graphs hash to compute interference */
-		__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
-			size_t hash1 = next_state.symbolic_iteration.next_hash[gid1];
-			size_t hash2 = next_state.symbolic_iteration.next_hash[gid2];
+				/* sort graphs hash to compute interference */
+				__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
+					size_t hash1 = next_state.symbolic_iteration.next_hash[gid1];
+					size_t hash2 = next_state.symbolic_iteration.next_hash[gid2];
 
-			if (hash1 != hash2)
-				return hash1 > hash2;
+					if (hash1 != hash2)
+						return hash1 > hash2;
 
-			/* graph with less child are less costly to compute */
-			return num_childs[next_state.symbolic_iteration.parent_gid[gid1]] < num_childs[next_state.symbolic_iteration.parent_gid[gid2]];
-		});
+					/* graph with less child are less costly to compute */
+					return num_childs[next_state.symbolic_iteration.parent_gid[gid1]] < num_childs[next_state.symbolic_iteration.parent_gid[gid2]];
+				});
 
-		/* compute is_first_index */
-		next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[0]] = true;
+				/* compute is_first_index */
+				next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[0]] = true;
+			}
 
-		#pragma omp 
-		{
 			#pragma omp for
 			for (unsigned int gid = 1; gid < next_state.symbolic_iteration.num_graphs; ++gid)
 				next_state.symbolic_iteration.is_first_index[next_state.symbolic_iteration.next_gid[gid]] = next_state.symbolic_iteration.next_hash[next_state.symbolic_iteration.next_gid[gid]] != next_state.symbolic_iteration.next_hash[next_state.symbolic_iteration.next_gid[gid - 1]];
@@ -513,112 +526,117 @@ public:
 						next_state.symbolic_iteration.next_imag[id] += next_state.symbolic_iteration.next_imag[id_];
 					}
 			}
-		}
 
-		/* get all graphs with a non zero probability */
-		auto partitioned_it = __gnu_parallel::partition(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid) {
-			/* check if graph is unique */
-			if (!next_state.symbolic_iteration.is_first_index[gid])
-				return false;
+			#pragma omp single
+			{
+				/* get all graphs with a non zero probability */
+				auto partitioned_it = __gnu_parallel::partition(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.symbolic_iteration.num_graphs, [&](unsigned int const &gid) {
+					/* check if graph is unique */
+					if (!next_state.symbolic_iteration.is_first_index[gid])
+						return false;
 
-			/* check for zero probability */
-			PROBA_TYPE r = next_state.symbolic_iteration.next_real[gid];
-			PROBA_TYPE i = next_state.symbolic_iteration.next_imag[gid];
+					/* check for zero probability */
+					PROBA_TYPE r = next_state.symbolic_iteration.next_real[gid];
+					PROBA_TYPE i = next_state.symbolic_iteration.next_imag[gid];
 
-			return r*r + i*i > tolerance; 
-		});
+					return r*r + i*i > tolerance; 
+				});
 
-		next_state.num_graphs = std::distance(next_state.symbolic_iteration.next_gid.begin(), partitioned_it);
-				
-		/* !!!!!!!!!!!!!!!!
-		step (5.1) 
-		 !!!!!!!!!!!!!!!! */
+				next_state.num_graphs = std::distance(next_state.symbolic_iteration.next_gid.begin(), partitioned_it);
+						
+				/* !!!!!!!!!!!!!!!!
+				step (5.1) 
+				 !!!!!!!!!!!!!!!! */
 
-		if (max_num_graphs > 0 && next_state.num_graphs > max_num_graphs) {
+				if (max_num_graphs > 0 && next_state.num_graphs > max_num_graphs) {
 
-			if (verbose >= STEP_DEBUG_LEVEL)
-				std::cout << "step 5.1\n";
+					if (verbose >= STEP_DEBUG_LEVEL)
+						std::cout << "step 5.1\n";
 
-			/* sort graphs according to probability */
-			__gnu_parallel::nth_element(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + max_num_graphs, next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs,
-			[&](unsigned int const &gid1, unsigned int const &gid2) {
-				PROBA_TYPE r1 = next_state.symbolic_iteration.next_real[gid1];
-				PROBA_TYPE i1 = next_state.symbolic_iteration.next_imag[gid1];
+					/* sort graphs according to probability */
+					__gnu_parallel::nth_element(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + max_num_graphs, next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs,
+					[&](unsigned int const &gid1, unsigned int const &gid2) {
+						PROBA_TYPE r1 = next_state.symbolic_iteration.next_real[gid1];
+						PROBA_TYPE i1 = next_state.symbolic_iteration.next_imag[gid1];
 
-				PROBA_TYPE r2 = next_state.symbolic_iteration.next_real[gid2];
-				PROBA_TYPE i2 = next_state.symbolic_iteration.next_imag[gid2];
+						PROBA_TYPE r2 = next_state.symbolic_iteration.next_real[gid2];
+						PROBA_TYPE i2 = next_state.symbolic_iteration.next_imag[gid2];
 
-				return r1*r1 + i1*i1 > r2*r2 + i2*i2;
-			});
+						return r1*r1 + i1*i1 > r2*r2 + i2*i2;
+					});
 
-			next_state.num_graphs = max_num_graphs;
-		}
+					next_state.num_graphs = max_num_graphs;
+				}
 
-		/* !!!!!!!!!!!!!!!!
-		step (6) 
-		 !!!!!!!!!!!!!!!! */
+				/* !!!!!!!!!!!!!!!!
+				step (6) 
+				 !!!!!!!!!!!!!!!! */
 
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 6\n";
+				if (verbose >= STEP_DEBUG_LEVEL)
+					std::cout << "step 6\n";
 
-		/* sort to make memory access more continuous */
-		__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs);
+				/* sort to make memory access more continuous */
+				__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs);
 
-		/* resize new step variables */
-		next_state.resize_num_graphs(next_state.num_graphs);
+				/* resize new step variables */
+				next_state.resize_num_graphs(next_state.num_graphs);
 
-		/* prepare for partial sum */
-		unsigned int gid_seq = 0;
-		for (; gid_seq < next_state.num_graphs; ++gid_seq) {
-			unsigned int id = next_state.symbolic_iteration.next_gid[gid_seq];
+				/* prepare for partial sum */
+				for (; gid_seq < next_state.num_graphs; ++gid_seq) {
+					unsigned int id = next_state.symbolic_iteration.next_gid[gid_seq];
 
-			next_state.node_begin[gid_seq + 1] = next_state.node_begin[id + 1];
-			next_state.sub_node_begin[gid_seq + 1] = next_state.sub_node_begin[id + 1];
+					next_state.node_begin[gid_seq + 1] = next_state.node_begin[id + 1];
+					next_state.sub_node_begin[gid_seq + 1] = next_state.sub_node_begin[id + 1];
 
-			/* assign magnitude */
-			next_state.real[gid_seq] = next_state.symbolic_iteration.next_real[id];
-			next_state.imag[gid_seq] = next_state.symbolic_iteration.next_imag[id];
+					/* assign magnitude */
+					next_state.real[gid_seq] = next_state.symbolic_iteration.next_real[id];
+					next_state.imag[gid_seq] = next_state.symbolic_iteration.next_imag[id];
 
 
-			if (id >= next_state.num_graphs)
-				break;
-		}
+					if (id >= next_state.num_graphs)
+						break;
+				}
+			}
 
-		#pragma omp parallel for
-		for (unsigned int gid = gid_seq + 1; gid < next_state.num_graphs; ++gid) {
-			unsigned int id = next_state.symbolic_iteration.next_gid[gid];
+			#pragma omp for
+			for (unsigned int gid = gid_seq + 1; gid < next_state.num_graphs; ++gid) {
+				unsigned int id = next_state.symbolic_iteration.next_gid[gid];
 
-			next_state.node_begin[gid + 1] = next_state.node_begin[id + 1];
-			next_state.sub_node_begin[gid + 1] = next_state.sub_node_begin[id + 1];
+				next_state.node_begin[gid + 1] = next_state.node_begin[id + 1];
+				next_state.sub_node_begin[gid + 1] = next_state.sub_node_begin[id + 1];
 
-			/* assign magnitude */
-			next_state.real[gid] = next_state.symbolic_iteration.next_real[id];
-			next_state.imag[gid] = next_state.symbolic_iteration.next_imag[id];
-		}
+				/* assign magnitude */
+				next_state.real[gid] = next_state.symbolic_iteration.next_real[id];
+				next_state.imag[gid] = next_state.symbolic_iteration.next_imag[id];
+			}
 
-		/* compute the partial sums to get new node_begin and sub_node_begin */
-		next_state.node_begin[0] = 0;
-		__gnu_parallel::partial_sum(next_state.node_begin.begin() + 1, next_state.node_begin.begin() + next_state.num_graphs + 1, next_state.node_begin.begin() + 1);
+			#pragma omp single
+			{
+				/* compute the partial sums to get new node_begin and sub_node_begin */
+				next_state.node_begin[0] = 0;
+				__gnu_parallel::partial_sum(next_state.node_begin.begin() + 1, next_state.node_begin.begin() + next_state.num_graphs + 1, next_state.node_begin.begin() + 1);
 
-		next_state.sub_node_begin[0] = 0;
-		__gnu_parallel::partial_sum(next_state.sub_node_begin.begin() + 1, next_state.sub_node_begin.begin() + next_state.num_graphs + 1, next_state.sub_node_begin.begin() + 1);
+				next_state.sub_node_begin[0] = 0;
+				__gnu_parallel::partial_sum(next_state.sub_node_begin.begin() + 1, next_state.sub_node_begin.begin() + next_state.num_graphs + 1, next_state.sub_node_begin.begin() + 1);
 
-		/* resize new step variables */
-		next_state.resize_num_nodes(next_state.node_begin[next_state.num_graphs]);
-		next_state.resize_num_sub_nodes(next_state.sub_node_begin[next_state.num_graphs]);
+				/* resize new step variables */
+				next_state.resize_num_nodes(next_state.node_begin[next_state.num_graphs]);
+				next_state.resize_num_sub_nodes(next_state.sub_node_begin[next_state.num_graphs]);
 
-		/* !!!!!!!!!!!!!!!!
-		step (7) 
-		 !!!!!!!!!!!!!!!! */
+				/* !!!!!!!!!!!!!!!!
+				step (7) 
+				 !!!!!!!!!!!!!!!! */
 
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 7\n";
+				if (verbose >= STEP_DEBUG_LEVEL)
+					std::cout << "step 7\n";
+			}
 
-		#pragma omp parallel for
-		for (unsigned int gid = 0; gid < next_state.num_graphs; ++gid) {
-			auto id = next_state.symbolic_iteration.next_gid[gid];
-			/* populate graphs */
-			rule.populate_new_graph(*this, next_state, gid, next_state.symbolic_iteration.parent_gid[id], next_state.symbolic_iteration.child_id[id]);
+			#pragma omp for
+			for (unsigned int gid = 0; gid < next_state.num_graphs; ++gid) {
+				auto id = next_state.symbolic_iteration.next_gid[gid];
+				/* populate graphs */
+				rule.populate_new_graph(*this, next_state, gid, next_state.symbolic_iteration.parent_gid[id], next_state.symbolic_iteration.child_id[id]);
+			}
 		}
 	}
 
