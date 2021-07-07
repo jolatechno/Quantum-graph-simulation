@@ -4,6 +4,7 @@
 #include "../utils/complex.hpp"
 
 class coin_rule : public rule {
+
 private:
 	unsigned short int raw_num_childs(state_t const &s, unsigned int gid) const {
 		unsigned int num_op = 0;
@@ -21,7 +22,9 @@ public:
 	};
 
 	/* constructor */
-	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {}
+	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {
+		name = "coin";
+	}
 
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
 		short int sum = s.left(gid, node) + s.right(gid, node);

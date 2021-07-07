@@ -70,13 +70,20 @@ public:
 	PROBA_TYPE do_not_real = 0;
 	PROBA_TYPE do_not_imag = 0;
 
+	/* parameters for print */
+	PROBA_TYPE teta, phi, xi;
+	std::string name = "";
+	bool move = true;
+	unsigned int n_iter = 0;
+
 	/* constructor for a unitary matrix */
-	rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) {
+	rule(PROBA_TYPE teta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : teta(teta_), phi(phi_), xi(xi_) {
 		do_real = precision::sin(teta)* precision::cos(phi);
 		do_imag = precision::sin(teta)* precision::sin(phi);
 		do_not_real = precision::cos(teta)* precision::cos(xi);
 		do_not_imag = precision::cos(teta)* precision::sin(xi);
 	}
+	rule() {}
 
 	/* step (1) */
 	virtual op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const { return '\0'; }
@@ -659,11 +666,42 @@ for graphing
 -----------------------------------------------------------------
 */
 
+void start_json(rule_t const &rule_1, rule_t const &rule_2, unsigned int n_iter, bool only_last_iter) {
+	// print number of iterations
+	std::cout << "{\n\t\"n_iter\" : " << n_iter << ",";
 
-void serialize_state_to_json(state_t const &s, bool first) {
-	// print separator
-	if (!first)
-		std::cout << ", ";
+	// print rules
+	std::cout << "\n\t\"rules\" : [";
+
+	auto print_rule = [](rule_t const &rule, bool next) {
+		std::cout << "\n\t\t{\n\t\t\t\"name\" : \"" << rule.name << "\",";
+		std::cout << "\n\t\t\t\"n_iter\" : " << rule.n_iter << ",";
+		std::cout << "\n\t\t\t\"move\" : " << (rule.move ? "true" : "false") << ",";
+		std::cout << "\n\t\t\t\"teta\" : " << rule.teta << ",";
+		std::cout << "\n\t\t\t\"phi\" : " << rule.phi << ",";
+		std::cout << "\n\t\t\t\"xi\" : " << rule.xi;
+		std::cout << "\n\t\t}";
+
+		if (next)
+			std::cout << ", ";
+	};
+
+	if (rule_1.n_iter > 0)
+		print_rule(rule_1, rule_2.n_iter > 0);
+
+	if (rule_2.n_iter > 0)
+		print_rule(rule_2, false);
+	
+	std::cout << "\n\t],";
+	if (!only_last_iter) {
+		std::cout << "\n\t\"iterations\" : [\n\t\t";
+	} else
+		std::cout << "\n\t\"last_iteration\" : ";
+}
+
+
+void serialize_state_to_json(state_t const &s, bool only_last_iter, bool last) {
+	std::string separator = only_last_iter ? "" : "\t";
 
 	PROBA_TYPE avg_size = 0;
 	PROBA_TYPE avg_size_squared = 0;
@@ -715,41 +753,42 @@ void serialize_state_to_json(state_t const &s, bool first) {
 	std_dev_density = std_dev_density <= 0 ? 0 : precision::sqrt(std_dev_density);
 
 	// print ratio of graphs
-	float ratio = first ? 1 : (float)s.num_graphs / (float)s.symbolic_iteration.num_graphs;
-	std::cout << "\n\t\t{\n\t\t\t\"ratio\": " << ratio;
+	float ratio = s.symbolic_iteration.num_graphs == 0 ? 1 : (float)s.num_graphs / (float)s.symbolic_iteration.num_graphs;
+	std::cout << "{\n\t\t" << separator << "\"ratio\": " << ratio;
 
 	// print total proba
-	std::cout << ",\n\t\t\t\"total_proba\": " << total_proba;
+	std::cout << ",\n" << separator << "\t\t\"total_proba\": " << total_proba;
 
 	// print num graphs
-	std::cout << ",\n\t\t\t\"num_graphs\": " << s.num_graphs;
+	std::cout << ",\n" << separator << "\t\t\"num_graphs\": " << s.num_graphs;
 
 	// print sizes
-	std::cout << ",\n\t\t\t\"avg_size\": " << avg_size;
-	std::cout << ",\n\t\t\t\"std_dev_size\": " << std_dev_size;
+	std::cout << ",\n" << separator << "\t\t\"avg_size\": " << avg_size;
+	std::cout << ",\n" << separator << "\t\t\"std_dev_size\": " << std_dev_size;
 
 	// print densities
-	std::cout << ",\n\t\t\t\"avg_density\": " << avg_density / 2;
-	std::cout << ",\n\t\t\t\"std_dev_density\": " << std_dev_density / 2;
+	std::cout << ",\n" << separator << "\t\t\"avg_density\": " << avg_density / 2;
+	std::cout << ",\n" << separator << "\t\t\"std_dev_density\": " << std_dev_density / 2;
 
 	// print separator
-	printf("\n\t\t}");
+	std::cout << "\n\t" << separator << "}";
+
+	// print separator
+	if (!last)
+		std::cout << ", ";
 }
 
-void start_json(state_t const &s, char const* rule) {
-	// print rule
-	std::cout << "{\n\t\"rule\" : \"" << rule << "\",";
-
-	std::cout << "\n\t\"iterations\" : [";
-	serialize_state_to_json(s, true);
+void serialize_state_to_json(state_t const &s, bool only_last_iter) {
+	serialize_state_to_json(s, only_last_iter, false);
 }
 
-void serialize_state_to_json(state_t const &s) {
-	serialize_state_to_json(s, false);
-}
+void end_json(state_t const &s, bool only_last_iter) {
+	serialize_state_to_json(s, only_last_iter, true);
 
-void end_json() {
-	std::cout << "\n\t]\n}\n";
+	if (!only_last_iter)
+		std::cout << "\n\t]";
+
+	std::cout << "\n}\n";
 }
 
 

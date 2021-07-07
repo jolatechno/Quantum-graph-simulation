@@ -22,7 +22,9 @@ public:
 	};
 
 	/* constructor */
-	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {}
+	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {
+		name = "split_merge";
+	}
 
 	/* rule implementation */
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {

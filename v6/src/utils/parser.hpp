@@ -104,9 +104,8 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
 }
 
 std::tuple<state_t,
-    rule_t*, unsigned int, bool,
-    rule_t*, unsigned int, bool,
-    unsigned int, int, std::string, bool> iteration_parser(
+    rule_t*, rule_t*, 
+    unsigned int, int, bool, bool> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -114,6 +113,7 @@ std::tuple<state_t,
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
         ("N,normalize", "normalize after each iteration")
+        ("only-serialize-last-iter", "only serialize last iter")
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
@@ -195,9 +195,7 @@ std::tuple<state_t,
     // ------------------------------------------
     // read rule
 
-    rule_t* rule;
-    bool move_first = !result.count("no-move-1");
-    unsigned int n_iter_1 = move_first ? result["niter-1"].as<unsigned int>() : 1;
+    rule_t* rule = new rule_t();
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
@@ -209,44 +207,31 @@ std::tuple<state_t,
     } else
         throw;
 
-    if (move_first)
-        rule_ += "_move";
-
-    if (n_iter_1 > 1)
-        rule_ += "_" + std::to_string(n_iter_1);
+    rule->move = !result.count("no-move-1");
+    rule->n_iter = rule->move ? result["niter-1"].as<unsigned int>() : 1;
 
     // ------------------------------------------
     // read second rule
 
-    rule_t* rule2;
-    bool move_second = false;
-    unsigned int n_iter_2 = 0;
+    rule_t* rule2 = new rule_t();
 
     if (result.count("rule2")) {
-        move_second = !result.count("no-move-2");
-        n_iter_2 = move_second ? result["niter-2"].as<unsigned int>() : 1;
 
-        std::string rule2_ = result["rule2"].as<std::string>();
-        if (rule2_ == "split_merge") {
+        rule_ = result["rule2"].as<std::string>();
+        if (rule_ == "split_merge") {
             rule2 = new split_merge_rule(teta2_pi, phi2_pi, 0);
-        } else if (rule2_ == "erase_create") {
+        } else if (rule_ == "erase_create") {
             rule2 = new erase_create_rule(teta2_pi, phi2_pi, 0);
-        } else if (rule2_ == "coin") {
+        } else if (rule_ == "coin") {
             rule2 = new coin_rule(teta2_pi, phi2_pi, 0);
         } else
             throw;
 
-        rule_ += "_" + rule2_;
-
-        if (move_second)
-            rule_ += "_move";
-
-        if (n_iter_2 > 1)
-            rule_ += "_" + std::to_string(n_iter_2);
+        rule2->move = !result.count("no-move-2");
+        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned int>() : 1;
     }
 
     return {state,
-        rule, n_iter_1, move_first,
-        rule2, n_iter_2, move_second,
-        n_iter, max_n_graphs, rule_, result.count("normalize")};
+        rule, rule2, 
+        n_iter, max_n_graphs, result.count("normalize"), result.count("only-serialize-last-iter")};
 }

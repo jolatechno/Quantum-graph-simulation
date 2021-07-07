@@ -8,17 +8,38 @@ import sys
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 
-for filename in filenames:
-	with open(filename) as f:
-	  data = json.load(f)
+def find_name(data):
+	# needs to be changed  needs to be incorporated to incorporate teta and phi!!!
 
-	# find name
+	rule = ""
+
+	n_rule = len(data["rules"])
+	for i in range(n_rule):
+		rule += data["rules"][i]["name"]
+
+		if data["rules"][i]["move"]:
+			rule += "_move"
+
+		n_iter = data["rules"][i]["n_iter"]
+		if n_iter > 1:
+			rule += _ + str(1)
+
+		if i < n_rule - 1:
+			rule += "_"
+
 	for i in range(1000000):
-		name = f"{ i }_{ data['rule'] }.png"
+		name = f"{ i }_{ rule }.png"
 		if not os.path.exists("plots/stats/" + name):
-			break
+			return name
 
-	n_iterations = len(data["iterations"])
+def graph_multiple(data, name):
+	# TODO
+	
+	pass
+
+def graph_single(data, name):
+	
+	n_iterations = data["n_iter"] + 1
 	iterations_list = np.arange(0, n_iterations)
 
 	total_probas = np.array([it["total_proba"] for it in data["iterations"]])
@@ -35,7 +56,7 @@ for filename in filenames:
 	fig = plt.figure()
 	ax = plt.axes()
 	ax.set_xlabel('iterations')
-	ax.set_title(f'total probabilty and number of graph ({ data["rule"] })', pad=20)
+	ax.set_title(f'total probabilty and number of graph', pad=20)
 
 	color = 'tab:blue'
 	color2 = 'tab:red'
@@ -61,7 +82,7 @@ for filename in filenames:
 	ax = plt.axes()
 	ax.set_xlabel('iterations')
 	ax.set_ylabel('sizes')
-	ax.set_title(f'graph average size and density ({ data["rule"] })', pad=20)
+	ax.set_title(f'graph average size and density', pad=20)
 	ax.set_ylim(0, max(avg_size + std_dev_size)*1.1)
 
 	ax.errorbar(iterations_list, avg_size, std_dev_size,
@@ -77,5 +98,23 @@ for filename in filenames:
 	ax2.errorbar(iterations_list, avg_density, std_dev_density,
 							capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
 
-
 	fig.savefig("plots/sizes/" + name)
+
+
+"""
+!!!!!!!
+main function
+!!!!!!!
+"""
+
+if __name__ == "__main__":
+	for filename in filenames:
+		with open(filename) as f:
+		  data = json.load(f)
+
+		if "simulations" in data:
+			name = find_name(data)
+			graph_multiple(data, name)
+		else:
+			name = find_name(data)
+			graph_single(data, name)
