@@ -31,8 +31,11 @@ n_avg = (args.end_seed - args.start_seed) * args.n_serializing
 phis = list(np.linspace(args.p0, args.p1, args.n_phi))
 tetas = list(np.linspace(args.t0, args.t1, args.n_teta))
 
+rules = None
 
-final_json = { "rules" : None, "phi" : phis, "teta": tetas, "results" : [] }
+print("{")
+print("\t\"rules\" : [")
+
 for phi in phis:
 	for teta in tetas:
 
@@ -45,12 +48,23 @@ for phi in phis:
 			data = json.loads(stream.read())
 
 			# add rules to json
-			if final_json["rules"] is None:
-				final_json["rules"] = data["rules"]
+			if rules is None:
+				rules = data["rules"]
 
-				for i in range(len(final_json["rules"])):
-					del final_json["rules"][i]["teta"]
-					del final_json["rules"][i]["phi"]
+				for i in range(len(rules)):
+					del rules[i]["teta"]
+					del rules[i]["phi"]
+
+				for i, rule in enumerate(rules):
+					print("\t\t{")
+					for j, key in enumerate(rule):
+						print(f"\t\t\t\"{ key }\" : { rule[key] }{ ',' if i != len(rule) - 1 else '' }")
+					print(f"\t\t{ '},' if i != len(rules) - 1 else '}' }")
+
+				print("\t],")
+				print(f"\t\"phi\" : { phis },")
+				print(f"\t\"teta\" : { tetas },")
+				print("\t\"results\" : [")
 
 			# average over iterations
 			for it in data["iterations"]:
@@ -64,9 +78,16 @@ for phi in phis:
 		for key in avg:
 			avg[key] /= n_avg
 
-		# add averages to final json
-		final_json["results"].append({ "teta" : teta, "phi" : phi, "data" : avg})
+		# print to json
+		print("\t\t{")
+		print(f"\t\t\t\"teta\" { teta },")
+		print(f"\t\t\t\"phi\" { phi },")
+		print("\t\t\t\"data\" : {")
+		for i, key in enumerate(avg):
+			print(f"\t\t\t\t\"{ key }\" : { avg[key] }{ ',' if i != len(avg) - 1 else '' }")
+		print("\t\t\t}")
+		print(f"\t\t{ '},' if teta != tetas[-1] or phi != phis[-1] else '}' }")
 
 # Serializing json   
-final_json = json.dumps(final_json, indent = 4)  
-print(final_json) 
+print("\t]")
+print("}")
