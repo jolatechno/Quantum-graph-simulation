@@ -105,7 +105,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
 
 std::tuple<state_t,
     rule_t*, rule_t*, 
-    unsigned int, int, bool, bool> iteration_parser(
+    unsigned int, int, unsigned int, bool> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -113,7 +113,7 @@ std::tuple<state_t,
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
         ("N,normalize", "normalize after each iteration")
-        ("only-serialize-last-iter", "only serialize last iter")
+        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
@@ -233,5 +233,5 @@ std::tuple<state_t,
 
     return {state,
         rule, rule2, 
-        n_iter, max_n_graphs, result.count("normalize"), result.count("only-serialize-last-iter")};
+        n_iter, max_n_graphs, result["start-serializing"].as<unsigned int>(), result.count("normalize")};
 }

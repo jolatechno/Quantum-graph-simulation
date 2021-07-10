@@ -7,12 +7,7 @@
 #include <random>
 #include <iostream>
 
-/* !!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!
-debuging
-!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!! */
-//#include "utils/debuging.hpp"
+#include "utils/allocator.hpp"
 
 // debug levels
 #define STEP_DEBUG_LEVEL 1
@@ -192,22 +187,22 @@ public:
 	size_t num_graphs = 0;
 
 	// graph magnitude
-	std::vector<PROBA_TYPE> real; /* of size (a) */
-	std::vector<PROBA_TYPE> imag; /* of size (a) */
+	std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> real; /* of size (a) */
+	std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> imag; /* of size (a) */
 
 	// begin for each size
-	std::vector<unsigned int> node_begin; /* of size (a + 1), refers to vector of of size (b) */
-	std::vector <unsigned int> sub_node_begin; /* of size (a + 1), refers to vectors of of size (c) */
+	std::vector<unsigned int, allocator<unsigned int>> node_begin; /* of size (a + 1), refers to vector of of size (b) */
+	std::vector <unsigned int, allocator<unsigned int>> sub_node_begin; /* of size (a + 1), refers to vectors of of size (c) */
 
 	// graph properties
-	std::vector</*bool*/ char> left_; /* of size (b) */
-	std::vector</*bool*/ char> right_; /* of size (b) */
-	std::vector<short int> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
+	std::vector</*bool*/ char, allocator<char>> left_; /* of size (b) */
+	std::vector</*bool*/ char, allocator<char>> right_; /* of size (b) */
+	std::vector<unsigned short int, allocator<unsigned short int>> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
 
 	// node properties
-	std::vector<short int> left_idx__or_element__and_has_most_left_zero__or_is_trash_; /* of size (c) */
-	std::vector<short int> right_idx__or_type_; /* of size (c) */
-	std::vector<size_t> node_hash; /* of size (c) */
+	std::vector<short int, allocator<short int>> left_idx__or_element__and_has_most_left_zero__or_is_trash_; /* of size (c) */
+	std::vector<short int, allocator<short int>> right_idx__or_type_; /* of size (c) */
+	std::vector<size_t, allocator<size_t>> node_hash; /* of size (c) */
 
 	/*
 	intermediary vectors used to generate the next state :
@@ -224,17 +219,17 @@ public:
 		size_t num_graphs = 0;
 
 		// new graphs
-		std::vector</*bool*/ char> is_first_index; /* of size (a) for the symbolic iteration */
-		std::vector<unsigned int> next_gid; /* of size (a) for the symbolic iteration */
-		std::vector<unsigned int> parent_gid; /* of size (a) for the symbolic iteration */
-		std::vector<unsigned short int> child_id; /* of size (a) for the symbolic iteration */
+		std::vector</*bool*/ char, allocator<char>> is_first_index; /* of size (a) for the symbolic iteration */
+		std::vector<unsigned int, allocator<unsigned int>> next_gid; /* of size (a) for the symbolic iteration */
+		std::vector<unsigned int, allocator<unsigned int>> parent_gid; /* of size (a) for the symbolic iteration */
+		std::vector<unsigned short int, allocator<unsigned short int>> child_id; /* of size (a) for the symbolic iteration */
 
 		// new graph hash
-		std::vector<size_t> next_hash; /* of size (a) for the symbolic iteration */
+		std::vector<size_t, allocator<size_t>> next_hash; /* of size (a) for the symbolic iteration */
 
 		// new graph magnitude
-		std::vector<PROBA_TYPE> next_real; /* of size (a) for the symbolic iteration */
-		std::vector<PROBA_TYPE> next_imag; /* of size (a) for the symbolic iteration */
+		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_real; /* of size (a) for the symbolic iteration */
+		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_imag; /* of size (a) for the symbolic iteration */
 
 		// resize operator
 		void resize_num_graphs(size_t size) {
@@ -419,7 +414,11 @@ public:
 			if (verbose >= STEP_DEBUG_LEVEL)
 				std::cout << "step 2\n";
 
-			#pragma omp for reduction(+:total_num_graphs) reduction(+:total_proba)
+			#ifndef USE_MPRF
+				#pragma omp for reduction(+:total_num_graphs) reduction(+:total_proba)
+			#else
+				#pragma omp single
+			#endif
 			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
 				/* get the numer of child for each graph */
 				num_childs[gid] = rule.num_childs(*this, gid);
@@ -601,7 +600,6 @@ public:
 					next_state.real[gid_seq] = next_state.symbolic_iteration.next_real[id];
 					next_state.imag[gid_seq] = next_state.symbolic_iteration.next_imag[id];
 
-
 					if (id >= next_state.num_graphs)
 						break;
 				}
@@ -666,7 +664,7 @@ for graphing
 -----------------------------------------------------------------
 */
 
-void start_json(rule_t const &rule_1, rule_t const &rule_2, unsigned int n_iter, bool only_last_iter) {
+void start_json(rule_t const &rule_1, rule_t const &rule_2, unsigned int n_iter) {
 	// print number of iterations
 	std::cout << "{\n\t\"n_iter\" : " << n_iter << ",";
 
@@ -692,17 +690,11 @@ void start_json(rule_t const &rule_1, rule_t const &rule_2, unsigned int n_iter,
 	if (rule_2.n_iter > 0)
 		print_rule(rule_2, false);
 	
-	std::cout << "\n\t],";
-	if (!only_last_iter) {
-		std::cout << "\n\t\"iterations\" : [\n\t\t";
-	} else
-		std::cout << "\n\t\"last_iteration\" : ";
+	std::cout << "\n\t],\n\t\"iterations\" : [\n\t\t";
 }
 
 
-void serialize_state_to_json(state_t const &s, bool only_last_iter, bool last) {
-	std::string separator = only_last_iter ? "" : "\t";
-
+void serialize_state_to_json(state_t const &s, bool last) {
 	PROBA_TYPE avg_size = 0;
 	PROBA_TYPE avg_size_squared = 0;
 
@@ -710,11 +702,13 @@ void serialize_state_to_json(state_t const &s, bool only_last_iter, bool last) {
 	PROBA_TYPE avg_density_squared = 0;
 
 	PROBA_TYPE total_proba = 0;
-	
-	#pragma omp parallel for \
-		reduction(+ : avg_size) reduction(+ : avg_size_squared) \
-		reduction(+ : avg_density) reduction(+ : avg_density_squared) \
-		reduction(+ : total_proba)
+
+	#ifndef USE_MPRF
+		#pragma omp parallel for \
+			reduction(+ : avg_size) reduction(+ : avg_size_squared) \
+			reduction(+ : avg_density) reduction(+ : avg_density_squared) \
+			reduction(+ : total_proba)
+	#endif
 	for (unsigned int gid = 0; gid < s.num_graphs; ++gid) {
 		unsigned int num_nodes_ = s.num_nodes(gid);
 
@@ -754,41 +748,37 @@ void serialize_state_to_json(state_t const &s, bool only_last_iter, bool last) {
 
 	// print ratio of graphs
 	float ratio = s.symbolic_iteration.num_graphs == 0 ? 1 : (float)s.num_graphs / (float)s.symbolic_iteration.num_graphs;
-	std::cout << "{\n\t\t" << separator << "\"ratio\": " << ratio;
+	std::cout << "{\n\t\t\t\"ratio\": " << ratio;
 
 	// print total proba
-	std::cout << ",\n" << separator << "\t\t\"total_proba\": " << total_proba;
+	std::cout << ",\n\t\t\t\"total_proba\": " << total_proba;
 
 	// print num graphs
-	std::cout << ",\n" << separator << "\t\t\"num_graphs\": " << s.num_graphs;
+	std::cout << ",\n\t\t\t\"num_graphs\": " << s.num_graphs;
 
 	// print sizes
-	std::cout << ",\n" << separator << "\t\t\"avg_size\": " << avg_size;
-	std::cout << ",\n" << separator << "\t\t\"std_dev_size\": " << std_dev_size;
+	std::cout << ",\n\t\t\t\"avg_size\": " << avg_size;
+	std::cout << ",\n\t\t\t\"std_dev_size\": " << std_dev_size;
 
 	// print densities
-	std::cout << ",\n" << separator << "\t\t\"avg_density\": " << avg_density / 2;
-	std::cout << ",\n" << separator << "\t\t\"std_dev_density\": " << std_dev_density / 2;
+	std::cout << ",\n\t\t\t\"avg_density\": " << avg_density / 2;
+	std::cout << ",\n\t\t\t\"std_dev_density\": " << std_dev_density / 2;
 
 	// print separator
-	std::cout << "\n\t" << separator << "}";
+	std::cout << "\n\t\t}";
 
 	// print separator
 	if (!last)
 		std::cout << ", ";
 }
 
-void serialize_state_to_json(state_t const &s, bool only_last_iter) {
-	serialize_state_to_json(s, only_last_iter, false);
+void serialize_state_to_json(state_t const &s) {
+	serialize_state_to_json(s, false);
 }
 
-void end_json(state_t const &s, bool only_last_iter) {
-	serialize_state_to_json(s, only_last_iter, true);
-
-	if (!only_last_iter)
-		std::cout << "\n\t]";
-
-	std::cout << "\n}\n";
+void end_json(state_t const &s) {
+	serialize_state_to_json(s, true);
+	std::cout << "\n\t]\n}\n";
 }
 
 
@@ -900,8 +890,8 @@ void print(state_t &s) {
 			std::cout << "\n";
 		}
 
-		PROBA_TYPE real = std::abs(s.real[gid]) < tolerance ? 0 : s.real[gid];
-		PROBA_TYPE imag = std::abs(s.imag[gid]) < tolerance ? 0 : s.imag[gid];
+		PROBA_TYPE real = precision::abs(s.real[gid]) < tolerance ? 0 : s.real[gid];
+		PROBA_TYPE imag = precision::abs(s.imag[gid]) < tolerance ? 0 : s.imag[gid];
 
 		std::cout << real << (imag >= 0 ? "+" : "") << imag << "i   ";
 

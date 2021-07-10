@@ -2,13 +2,14 @@
 
 import json
 from matplotlib import pyplot as plt 
+from matplotlib import cm
 import numpy as np
 import os
 import sys
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 
-def find_name(data):
+def find_name(dir, data):
 	# needs to be changed  needs to be incorporated to incorporate teta and phi!!!
 
 	rule = ""
@@ -29,16 +30,53 @@ def find_name(data):
 
 	for i in range(1000000):
 		name = f"{ i }_{ rule }.png"
-		if not os.path.exists("plots/stats/" + name):
+		if not os.path.exists(dir + name):
 			return name
 
 def graph_multiple(data, name):
-	# TODO
-	
-	pass
+	teta = np.array(data["teta"])
+	phi = np.array(data["phi"])
+
+	size = np.zeros((len(teta), len(phi)))
+	size_std_dev = np.zeros((len(teta), len(phi)))
+	density = np.zeros((len(teta), len(phi)))
+	density_std_dev = np.zeros((len(teta), len(phi)))
+
+	for result in data["results"]:
+		i = np.where(teta == result["teta"])
+		j = np.where(phi == result["phi"])
+
+		size[i, j] = result["data"]["avg_size"]
+		size_std_dev[i, j] = result["data"]["std_dev_size"]
+
+		density[i, j] = result["data"]["avg_density"]
+		density_std_dev[i, j] = result["data"]["std_dev_density"]
+
+	phi, teta = np.meshgrid(phi, teta)
+
+	# density
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	ax.set_title(f'size', pad=20)
+	ax.plot_surface(teta, phi, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+	#ax.plot_surface(teta, phi, size - size_std_dev, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	fig.savefig("plots/sizes/" + name)
+
+	# density
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	ax.set_title(f'density', pad=20)
+	ax.plot_surface(teta, phi, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+	#ax.plot_surface(teta, phi, density - density_std_dev, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	fig.savefig("plots/density/" + name)
 
 def graph_single(data, name):
-	
 	n_iterations = data["n_iter"] + 1
 	iterations_list = np.arange(0, n_iterations)
 
@@ -98,7 +136,7 @@ def graph_single(data, name):
 	ax2.errorbar(iterations_list, avg_density, std_dev_density,
 							capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
 
-	fig.savefig("plots/sizes/" + name)
+	fig.savefig("plots/properties/" + name)
 
 
 """
@@ -112,9 +150,9 @@ if __name__ == "__main__":
 		with open(filename) as f:
 		  data = json.load(f)
 
-		if "simulations" in data:
-			name = find_name(data)
+		if "results" in data:
+			name = find_name("plots/sizes/", data)
 			graph_multiple(data, name)
-		else:
-			name = find_name(data)
+		elif "iterations" in data:
+			name = find_name("plots/stats/", data)
 			graph_single(data, name)

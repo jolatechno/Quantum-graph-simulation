@@ -1,8 +1,6 @@
 #include "../src/rules.hpp"
 #include "../src/utils/parser.hpp"
 
-#include "../src/utils/debuging.hpp"
-
 // debug levels
 #define TEST_STEP_DEBUG_LEVEL 0.2
 #define GRAPH_SIZE_DEBUG_LEVEL 0.1
