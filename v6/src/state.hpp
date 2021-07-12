@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "utils/allocator.hpp"
+#include "utils/memory.hpp"
 
 // debug levels
 #define STEP_DEBUG_LEVEL 1
@@ -49,7 +50,8 @@ typedef char op_type_t;
 
 // global variable definition
 PROBA_TYPE tolerance = 0;
-float resize_policy = 1.3;
+float resize_policy = 1.5;
+float safety_margin = 1.1;
 unsigned int min_state_size = 100000;
 
 // debugging options
@@ -116,13 +118,16 @@ Iteration protocol is:
   - (5): using "next_hash" sum their probability ("next_real" and "next_imag") of equal graphs, while setting the probability of graph which are equal to 0.
   	when sorting graphs according to "next_hash" to sum their probability, we also sort accroding to "num_childs" so the graphs with the smallest number of child
   	are the one for which we end up computing the dynamic since they also tend to be simpler to compute (since they have less interactions).  
+	
+	- (6): compute the average memory usage of a graph.
+  	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_factor".
 
-  - (5.1): partition "next_gid" based on probability ("next_real" and "next_imag"), and keep only the max_num_graphs most probable graph
+  - (6.1): partition "next_gid" based on probability ("next_real" and "next_imag"), and keep only the "max_num_graphs" most probable graph
 
-  - (6): reserve all public vector for a new state by iterating over the N first "next_gid" andusing "next_state.symbolic_iteration.parent_gid" and "next_state.symbolic_iteration.child_id",
+  - (7): reserve all public vector for a new state by iterating over the N first "next_gid" andusing "next_state.symbolic_iteration.parent_gid" and "next_state.symbolic_iteration.child_id",
   	and assign "node_begin" and "sub_node_begin".
 
-  - (7): generate all new graphs of the new state by iterating over the N first "next_gid" andusing "next_state.symbolic_iteration.parent_gid" and "next_state.symbolic_iteration.child_id".
+  - (8): generate all new graphs of the new state by iterating over the N first "next_gid" andusing "next_state.symbolic_iteration.parent_gid" and "next_state.symbolic_iteration.child_id".
 
 (*) to compute the numer of child you just compute "pow(2, num_operations)""
 (**) it's possible to compute the hash of a child graph without actually computing it for most rules
@@ -148,10 +153,10 @@ public:
 
 	/* constructor for a single graph of a given size */
 	state(unsigned int size) : num_graphs(1) {
-		resize_num_graphs(1);
-		resize_num_graphs_symbolic(1);
-		resize_num_nodes(size);
-		resize_num_sub_nodes(size);
+		resize_num_graphs(min_state_size);
+		resize_num_graphs_symbolic(min_state_size);
+		resize_num_nodes(min_state_size);
+		resize_num_sub_nodes(min_state_size);
 
 		real[0] = 1; imag[0] = 0;
 		node_begin[1] = size;
@@ -209,10 +214,10 @@ public:
 	*/
 
 	// vector of operations
-	std::vector<op_type_t> operations; /* of size (b) */
+	std::vector<op_type_t, allocator<op_type_t>> operations; /* of size (b) */
 
 	// numer of sub-graph for each parent
-	std::vector<unsigned short int> num_childs; /* of size (a) */
+	std::vector<unsigned short int, allocator<unsigned short int>> num_childs; /* of size (a) */
 
 	/* symbolic iteration */
 	struct symbolic_t {
@@ -365,13 +370,18 @@ public:
 	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
 	
 	/* step function */
-	void step(state_t &next_state, rule_t const &rule) { step(next_state, rule, -1, false); }
-	void step(state_t &next_state, rule_t const &rule, unsigned int max_num_graphs, bool normalize) {
+	void step(state_t &next_state, rule_t const &rule) { step(next_state, rule, false); }
+	void step(state_t &next_state, rule_t const &rule, bool normalize) {
 		/* check for calssical cases */
 		if (rule.do_real == 0 && rule.do_imag == 0) {
 			std::swap(*this, next_state);
 			return;
 		}
+
+		const unsigned int mem_size_symbolic = 2*sizeof(unsigned int) + sizeof(unsigned short int) + 2*sizeof(PROBA_TYPE) + sizeof(size_t) + sizeof(char);
+		const unsigned int mem_size_graph = 2*sizeof(unsigned int) + 2*sizeof(PROBA_TYPE) + sizeof(unsigned short int);
+		const unsigned int mem_size_node = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
+		const unsigned int mem_size_sub_node = 2*sizeof(short int) + sizeof(size_t);
 
 		/* allow nested parallism for __gnu_parallel */
 		omp_set_nested(1);
@@ -553,13 +563,25 @@ public:
 				next_state.num_graphs = std::distance(next_state.symbolic_iteration.next_gid.begin(), partitioned_it);
 						
 				/* !!!!!!!!!!!!!!!!
-				step (5.1) 
+				step (6) 
 				 !!!!!!!!!!!!!!!! */
 
-				if (max_num_graphs > 0 && next_state.num_graphs > max_num_graphs) {
+				if (verbose >= STEP_DEBUG_LEVEL)
+						std::cout << "step 6\n";
 
-					if (verbose >= STEP_DEBUG_LEVEL)
-						std::cout << "step 5.1\n";
+				unsigned long int avg_graph_size = mem_size_graph + // mem usage per graph
+					(node_begin[num_graphs] * mem_size_node + // mem usage per node
+					sub_node_begin[num_graphs] * mem_size_sub_node + // mem usage per sub_node
+					next_state.symbolic_iteration.num_graphs * mem_size_symbolic) / // mem usage due to symbolic iteration
+					num_graphs * resize_policy; // average over all graph, and add resize policy's inefficiency
+
+				unsigned long int max_num_graphs = (float)get_free_mem_size() / ((float)avg_graph_size) / safety_margin;
+
+				if (next_state.num_graphs > max_num_graphs) {
+
+					/* !!!!!!!!!!!!!!!!
+					step (6.1) 
+					 !!!!!!!!!!!!!!!! */
 
 					/* sort graphs according to probability */
 					__gnu_parallel::nth_element(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + max_num_graphs, next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs,
@@ -577,11 +599,11 @@ public:
 				}
 
 				/* !!!!!!!!!!!!!!!!
-				step (6) 
+				step (7) 
 				 !!!!!!!!!!!!!!!! */
 
 				if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 6\n";
+					std::cout << "step 7\n";
 
 				/* sort to make memory access more continuous */
 				__gnu_parallel::sort(next_state.symbolic_iteration.next_gid.begin(), next_state.symbolic_iteration.next_gid.begin() + next_state.num_graphs);
@@ -631,11 +653,11 @@ public:
 				next_state.resize_num_sub_nodes(next_state.sub_node_begin[next_state.num_graphs]);
 
 				/* !!!!!!!!!!!!!!!!
-				step (7) 
+				step (8) 
 				 !!!!!!!!!!!!!!!! */
 
 				if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 7\n";
+					std::cout << "step 8\n";
 			}
 
 			#pragma omp for

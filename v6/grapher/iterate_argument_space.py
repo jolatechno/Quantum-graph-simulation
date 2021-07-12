@@ -20,7 +20,7 @@ def print_to_json(indent, data):
 			stringified = "true" if stringified else "false"
 
 		print(f"\t{ indent_string }\"{ key }\" : { stringified }{ separator }")
-	print(f"\t\t}}{ ',' if i != len(rules) - 1 else '' }")
+	print(f"{ indent_string }}}{ ',' if i != len(rules) - 1 else '' }")
 
 parser = argparse.ArgumentParser(description='run quantum iteration for all possible arguments')
 parser.add_argument('-n', '--n-iter', type=int, default=10, help='number of iteration for each simulation')

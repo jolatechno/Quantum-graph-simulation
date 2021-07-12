@@ -39,8 +39,12 @@ def graph_multiple(data, name):
 
 	size = np.zeros((len(teta), len(phi)))
 	size_std_dev = np.zeros((len(teta), len(phi)))
+
 	density = np.zeros((len(teta), len(phi)))
 	density_std_dev = np.zeros((len(teta), len(phi)))
+
+	num_graphs = np.zeros((len(teta), len(phi)))
+	total_proba = np.zeros((len(teta), len(phi)))
 
 	for result in data["results"]:
 		i = np.where(teta == result["teta"])
@@ -52,6 +56,9 @@ def graph_multiple(data, name):
 		density[i, j] = result["data"]["avg_density"]
 		density_std_dev[i, j] = result["data"]["std_dev_density"]
 
+		num_graphs[i, j] = result["data"]["num_graphs"]
+		total_proba[i, j] = result["data"]["total_proba"]
+
 	phi, teta = np.meshgrid(phi, teta)
 
 	# density
@@ -61,7 +68,6 @@ def graph_multiple(data, name):
 	ax.set_ylabel('phi')
 	ax.set_title(f'size', pad=20)
 	ax.plot_surface(teta, phi, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-	#ax.plot_surface(teta, phi, size - size_std_dev, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
 	fig.savefig("plots/sizes/" + name)
 
@@ -72,9 +78,18 @@ def graph_multiple(data, name):
 	ax.set_ylabel('phi')
 	ax.set_title(f'density', pad=20)
 	ax.plot_surface(teta, phi, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-	#ax.plot_surface(teta, phi, density - density_std_dev, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
 	fig.savefig("plots/density/" + name)
+
+	# total proba and num_graphs
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	ax.set_title(f'total proba', pad=20)
+	ax.plot_surface(teta, phi, total_proba, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	fig.savefig("plots/probas/" + name)
 
 def graph_single(data, name):
 	n_iterations = data["n_iter"] + 1

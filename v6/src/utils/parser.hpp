@@ -3,7 +3,7 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> test_parser(
+std::tuple<state_t, rule_t*, rule_t*, unsigned int, int, bool> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -20,7 +20,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
         ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
 
-        ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
+        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
@@ -53,6 +53,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
     // set precision
 
     SET_PRECISION(result["precision"].as<unsigned int>())
+    safety_margin = result["safety-margin"].as<float>();
 
     // ------------------------------------------
     // parameters
@@ -61,7 +62,6 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
     unsigned int n_reversed_iteration = result["n-reversed-iter"].as<unsigned int>();
     if (result.count("injectivity"))
         n_reversed_iteration = n_iter;
-    unsigned int max_n_graphs = result["n-graphs"].as<int>();
 
     // ------------------------------------------
     // global variables
@@ -100,12 +100,12 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int,  unsigned int, int, bool> te
         reversed_rule = new coin_rule(teta_pi, phi_pi, -xi_pi);
     } else
         throw;
-    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, max_n_graphs, result.count("normalize")};
+    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result.count("normalize")};
 }
 
 std::tuple<state_t,
     rule_t*, rule_t*, 
-    unsigned int, int, unsigned int, bool> iteration_parser(
+    unsigned int, int, bool> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -117,7 +117,7 @@ std::tuple<state_t,
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
-        ("g,n-graphs", "maximum number of graphs", cxxopts::value<int>()->default_value("-1"))
+        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
@@ -160,12 +160,12 @@ std::tuple<state_t,
     // set precision
 
     SET_PRECISION(result["precision"].as<unsigned int>())
+    safety_margin = result["safety-margin"].as<float>();
 
     // ------------------------------------------
     // parameters
 
     unsigned int n_iter = result["n-iter"].as<unsigned int>();
-    unsigned int max_n_graphs = result["n-graphs"].as<int>();
 
     // ------------------------------------------
     // global variables
@@ -233,5 +233,5 @@ std::tuple<state_t,
 
     return {state,
         rule, rule2, 
-        n_iter, max_n_graphs, result["start-serializing"].as<unsigned int>(), result.count("normalize")};
+        n_iter, result["start-serializing"].as<unsigned int>(), result.count("normalize")};
 }
