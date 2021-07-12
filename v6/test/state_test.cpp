@@ -16,18 +16,16 @@ int main(int argc, char* argv[]) {
 
 	print(s); std::cout << "\n";
 
-	state new_state(1);
+	state buffer_state(1);
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "step...\n";
 		
-		s.step(new_state, *rule, normalize);
+		s.step(s, *rule, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
-		
-		std::swap(s, new_state);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...swaped\nmove...\n";
@@ -52,12 +50,10 @@ int main(int argc, char* argv[]) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...revresed moved\nstep...\n";
 			
-		s.step(new_state, *reversed_rule, normalize);
+		s.step(buffer_state, *reversed_rule, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
-			
-		std::swap(s, new_state);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...swapped\n";
