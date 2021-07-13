@@ -51,7 +51,7 @@ typedef char op_type_t;
 // global variable definition
 PROBA_TYPE tolerance = 0;
 float resize_policy = 1;
-float safety_margin = 1.2;
+float safety_margin = 0.2;
 unsigned int min_state_size = 100000;
 
 // debugging options
@@ -156,7 +156,7 @@ public:
 	/* constructor for a single graph of a given size */
 	state(unsigned int size) : num_graphs(1) {
 		resize_num_graphs(min_state_size);
-		resize_num_graphs_symbolic(min_state_size);
+		symbolic_iteration.resize_num_graphs(min_state_size);
 		resize_num_nodes(min_state_size);
 		resize_num_sub_nodes(min_state_size);
 
@@ -198,8 +198,8 @@ public:
 	std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> imag; /* of size (a) */
 
 	// begin for each size
-	std::vector<unsigned int, allocator<unsigned int>> node_begin; /* of size (a + 1), refers to vector of of size (b) */
-	std::vector <unsigned int, allocator<unsigned int>> sub_node_begin; /* of size (a + 1), refers to vectors of of size (c) */
+	std::vector<unsigned int, allocator<unsigned int>> node_begin; /* of size (a + 1), refers to vector of size (b) */
+	std::vector <unsigned int, allocator<unsigned int>> sub_node_begin; /* of size (a + 1), refers to vectors of size (c) */
 
 	// graph properties
 	std::vector</*bool*/ char, allocator<char>> left_; /* of size (b) */
@@ -238,6 +238,10 @@ public:
 		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_real; /* of size (a) for the symbolic iteration */
 		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_imag; /* of size (a) for the symbolic iteration */
 
+		// size for each size
+		std::vector<unsigned int, allocator<unsigned int>> node_size; /* of size (a + 1), refers to vector of size (b) */
+		std::vector <unsigned int, allocator<unsigned int>> sub_node_size; /* of size (a + 1), refers to vectors of size (c) */
+
 		// resize operator
 		void resize_num_graphs(size_t size) {
 			if (next_gid.size() < size) {
@@ -248,6 +252,8 @@ public:
 				next_hash.resize(resize_policy * size);
 				next_real.resize(resize_policy * size);
 				next_imag.resize(resize_policy * size);
+				node_size.resize(resize_policy * size);
+				sub_node_size.resize(resize_policy * size);
 			}
 
 			std::iota(next_gid.begin(), next_gid.begin() + size, 0);
@@ -255,17 +261,8 @@ public:
 	} symbolic_iteration;
 
 	// resize operators
-	void resize_num_graphs_symbolic(size_t size) {
-		if (node_begin.size() < size + 1) {
-			node_begin.resize(resize_policy * size + 1);
-			sub_node_begin.resize(resize_policy * size + 1);
-		}
-
-		symbolic_iteration.resize_num_graphs(size);
-	}
-
 	void resize_num_graphs(size_t size) {
-		if (real.size() < size) {
+		if (num_childs.size() < size) {
 			real.resize(resize_policy * size);
 			imag.resize(resize_policy * size);
 			node_begin.resize(resize_policy * size + 1);
@@ -378,20 +375,11 @@ public:
 		if (rule.do_real == 0 && rule.do_imag == 0)
 			return;
 
-		/* memory size of different objects */
-		const unsigned int mem_size_symbolic = 2*sizeof(unsigned int) + sizeof(unsigned short int) + 2*sizeof(PROBA_TYPE) + sizeof(size_t) + sizeof(char);
-		const unsigned int mem_size_graph = 2*sizeof(unsigned int) + 2*sizeof(PROBA_TYPE) + sizeof(unsigned short int);
-		const unsigned int mem_size_node = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
-		const unsigned int mem_size_sub_node = 2*sizeof(short int) + sizeof(size_t);
-
 		/* allow nested parallism for __gnu_parallel */
 		omp_set_nested(1);
 
 		symbolic_iteration.num_graphs = 0;
 		PROBA_TYPE total_proba = !normalize;
-
-		/* for step 7 */
-		unsigned int gid_seq = 0;
 
 		/* for memory management */
 		buffer_state.symbolic_iteration = std::move(symbolic_iteration);
@@ -471,7 +459,7 @@ public:
 					std::cout << "step 3\n";
 
 				/* resize variables with the right_ numer of elements */
-				buffer_state.resize_num_graphs_symbolic(buffer_state.symbolic_iteration.num_graphs);
+				buffer_state.symbolic_iteration.resize_num_graphs(buffer_state.symbolic_iteration.num_graphs);
 				
 				unsigned int id = 0;
 				for (unsigned int gid = 0; gid < num_graphs; ++gid) {
@@ -496,7 +484,7 @@ public:
 			for (unsigned int gid = 0; gid < buffer_state.symbolic_iteration.num_graphs; ++gid)
 				rule.child_properties(buffer_state.symbolic_iteration.next_hash[gid],
 					buffer_state.symbolic_iteration.next_real[gid], buffer_state.symbolic_iteration.next_imag[gid],
-					buffer_state.node_begin[gid + 1], buffer_state.sub_node_begin[gid + 1],
+					buffer_state.symbolic_iteration.node_size[gid], buffer_state.symbolic_iteration.sub_node_size[gid],
 					*this, buffer_state.symbolic_iteration.parent_gid[gid], buffer_state.symbolic_iteration.child_id[gid]);
 
 			/* !!!!!!!!!!!!!!!!
@@ -570,20 +558,11 @@ public:
 				if (verbose >= STEP_DEBUG_LEVEL)
 						std::cout << "step 6\n";
 
-				unsigned long int avg_graph_size = (mem_size_graph + // mem usage per graph
-					(node_begin[num_graphs] * mem_size_node + // mem usage per node
-					sub_node_begin[num_graphs] * mem_size_sub_node + // mem usage per sub_node
-					buffer_state.symbolic_iteration.num_graphs * mem_size_symbolic / 2) / // mem usage due to symbolic iteration
-					num_graphs) * resize_policy; // average over all graph, and add resize policy's inefficiency
-
-				unsigned long int max_num_graphs = (float)get_free_mem_size() / ((float)avg_graph_size) / 2 / safety_margin;
-
-				setlocale(LC_NUMERIC, "");
-				struct lconv *ptrLocale = localeconv();
-				ptrLocale->thousands_sep = "'";
-
-				printf("\n\nnum graphs %'ld, num nodes %'d, num sub-nodes %'d, num symbolic %'ld\n", num_graphs, node_begin[num_graphs], sub_node_begin[num_graphs], buffer_state.symbolic_iteration.num_graphs);
-				printf("max memory %.1fGB, %ld B/graph for %'ld max graphs\n\n", (float)get_free_mem_size() / 1e9, avg_graph_size, max_num_graphs);
+				auto [mem_usage, free_mem] = get_mem_usage_and_free_mem();
+				unsigned long int max_num_graphs = 1.3 * (float)real.size() / resize_policy + // this number of graphs
+					0.7 * (float)buffer_state.real.size() / resize_policy; // buffer state number of graphs
+				max_num_graphs += (free_mem - safety_margin) * (float)max_num_graphs / mem_usage; // max number of additional graphs
+				max_num_graphs /= 2; // divided by two because their are two states
 
 				if (buffer_state.num_graphs > max_num_graphs) {
 
@@ -618,29 +597,15 @@ public:
 
 				/* resize new step variables */
 				buffer_state.resize_num_graphs(buffer_state.num_graphs);
-
-				/* prepare for partial sum */
-				for (; gid_seq < buffer_state.num_graphs; ++gid_seq) {
-					unsigned int id = buffer_state.symbolic_iteration.next_gid[gid_seq];
-
-					buffer_state.node_begin[gid_seq + 1] = buffer_state.node_begin[id + 1];
-					buffer_state.sub_node_begin[gid_seq + 1] = buffer_state.sub_node_begin[id + 1];
-
-					/* assign magnitude */
-					buffer_state.real[gid_seq] = buffer_state.symbolic_iteration.next_real[id];
-					buffer_state.imag[gid_seq] = buffer_state.symbolic_iteration.next_imag[id];
-
-					if (id >= buffer_state.num_graphs)
-						break;
-				}
 			}
 
+			/* prepare for partial sum */
 			#pragma omp for
-			for (unsigned int gid = gid_seq + 1; gid < buffer_state.num_graphs; ++gid) {
+			for (unsigned int gid = 0; gid < buffer_state.num_graphs; ++gid) {
 				unsigned int id = buffer_state.symbolic_iteration.next_gid[gid];
 
-				buffer_state.node_begin[gid + 1] = buffer_state.node_begin[id + 1];
-				buffer_state.sub_node_begin[gid + 1] = buffer_state.sub_node_begin[id + 1];
+				buffer_state.node_begin[gid + 1] = buffer_state.symbolic_iteration.node_size[id];
+				buffer_state.sub_node_begin[gid + 1] = buffer_state.symbolic_iteration.sub_node_size[id];
 
 				/* assign magnitude */
 				buffer_state.real[gid] = buffer_state.symbolic_iteration.next_real[id];

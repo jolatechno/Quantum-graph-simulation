@@ -37,8 +37,6 @@ int main(int argc, char* argv[]) {
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
 			std::cout << s.symbolic_iteration.num_graphs << " -> " << s.num_graphs << " graphs\n";
-
-		std::cout << "free memory = " << ((float)get_free_mem_size())/1e9 << "Gb\n";
 	}
 
 	for (int i = 0; i < n_reversed_iteration; ++i) {

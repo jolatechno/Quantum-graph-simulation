@@ -20,7 +20,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int, int, bool> test_parser(
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
         ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
 
-        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("2"))
+        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
@@ -117,7 +117,7 @@ std::tuple<state_t,
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
 
-        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("2"))
+        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
