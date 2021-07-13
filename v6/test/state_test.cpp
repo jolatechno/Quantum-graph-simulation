@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "step...\n";
 		
-		s.step(s, *rule, normalize);
+		s.step(buffer_state, *rule, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";

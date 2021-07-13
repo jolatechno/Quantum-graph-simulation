@@ -378,6 +378,7 @@ public:
 		if (rule.do_real == 0 && rule.do_imag == 0)
 			return;
 
+		/* memory size of different objects */
 		const unsigned int mem_size_symbolic = 2*sizeof(unsigned int) + sizeof(unsigned short int) + 2*sizeof(PROBA_TYPE) + sizeof(size_t) + sizeof(char);
 		const unsigned int mem_size_graph = 2*sizeof(unsigned int) + 2*sizeof(PROBA_TYPE) + sizeof(unsigned short int);
 		const unsigned int mem_size_node = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
@@ -569,13 +570,20 @@ public:
 				if (verbose >= STEP_DEBUG_LEVEL)
 						std::cout << "step 6\n";
 
-				unsigned long int avg_graph_size = mem_size_graph + // mem usage per graph
+				unsigned long int avg_graph_size = (mem_size_graph + // mem usage per graph
 					(node_begin[num_graphs] * mem_size_node + // mem usage per node
 					sub_node_begin[num_graphs] * mem_size_sub_node + // mem usage per sub_node
 					buffer_state.symbolic_iteration.num_graphs * mem_size_symbolic / 2) / // mem usage due to symbolic iteration
-					num_graphs * resize_policy; // average over all graph, and add resize policy's inefficiency
+					num_graphs) * resize_policy; // average over all graph, and add resize policy's inefficiency
 
 				unsigned long int max_num_graphs = (float)get_free_mem_size() / ((float)avg_graph_size) / 2 / safety_margin;
+
+				setlocale(LC_NUMERIC, "");
+				struct lconv *ptrLocale = localeconv();
+				ptrLocale->thousands_sep = "'";
+
+				printf("\n\nnum graphs %'ld, num nodes %'d, num sub-nodes %'d, num symbolic %'ld\n", num_graphs, node_begin[num_graphs], sub_node_begin[num_graphs], buffer_state.symbolic_iteration.num_graphs);
+				printf("max memory %.1fGB, %ld B/graph for %'ld max graphs\n\n", (float)get_free_mem_size() / 1e9, avg_graph_size, max_num_graphs);
 
 				if (buffer_state.num_graphs > max_num_graphs) {
 
