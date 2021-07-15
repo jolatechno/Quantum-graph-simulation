@@ -10,6 +10,7 @@
 #include "utils/allocator.hpp"
 #include "utils/memory.hpp"
 #include "utils/vector.hpp"
+#include "utils/complex.hpp"
 
 // debug levels
 #define STEP_DEBUG_LEVEL 1
@@ -60,9 +61,21 @@ unsigned int min_state_size = 100000;
 float verbose = 0;
 int max_num_graph_print = 20;
 
-// rule interface definition
+/* 
+rule virtual class definition:
+	- A rule can be "probabilist" or "quantum".
+	- It has virtual memeber function that needs to be overloaded by each individual rule.
+	- It has non-virtual constructor (for both probabilist and quantum rules).
+	- It has a function "multiply_proba" to mutliply a magnitude by the rule's matrix (according to the operation type).
+*/
+
 class rule {
 public:
+	/* parameters of a stochiastic matrix */
+	PROBA_TYPE p = 1;
+	PROBA_TYPE q = 1;
+	bool probabilist = false;
+
 	/* parameters of a unitary matrix */
 	PROBA_TYPE do_real = 1;
 	PROBA_TYPE do_imag = 0;
@@ -82,7 +95,39 @@ public:
 		do_not_real = precision::cos(teta)* precision::cos(xi);
 		do_not_imag = precision::cos(teta)* precision::sin(xi);
 	}
+	rule(PROBA_TYPE p_, PROBA_TYPE q_) : p(p_), q(q_), probabilist(true) {
+		do_real = precision::sqrt(p);
+		do_imag = precision::sqrt(q);
+		do_not_real = precision::sqrt(1 - p);
+		do_not_imag = precision::sqrt(1 - q);
+	}
+	rule(PROBA_TYPE p_) : p(p_), q(p_), probabilist(true) {
+		do_real = precision::sqrt(p);
+		do_imag = precision::sqrt(q);
+		do_not_real = precision::sqrt(1 - p);
+		do_not_imag = precision::sqrt(1 - q);
+	}
 	rule() {}
+
+	/* getter */
+	void inline multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op /* either 0 or 1 */, bool do_) const {
+		if (!probabilist) {
+
+			/* quantum case */
+			PROBA_TYPE sign = (PROBA_TYPE)(op*2 - 1);
+			if (do_) {
+				time_equal(real, imag, do_real, sign*do_imag);
+			} else
+				time_equal(real, imag, sign*do_not_real, do_not_imag);
+		} else {
+
+			/* probabilist case */
+			if (do_) {
+				time_equal(real, imag, op ? do_real : do_imag, (PROBA_TYPE)0.);
+			} else
+				time_equal(real, imag, op ? do_not_real : do_not_imag, (PROBA_TYPE)0.);
+		}
+	}
 
 	/* step (1) */
 	virtual op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const { return '\0'; }
@@ -544,7 +589,8 @@ public:
 			#pragma omp single
 			{
 				/* get all graphs with a non zero probability */
-				auto partitioned_it = __gnu_parallel::partition(symbolic_iteration.next_gid.begin(), symbolic_iteration.next_gid.begin() + symbolic_iteration.num_graphs, [&](unsigned int const &gid) {
+				auto partitioned_it = __gnu_parallel::partition(symbolic_iteration.next_gid.begin(), symbolic_iteration.next_gid.begin() + symbolic_iteration.num_graphs,
+				[&](unsigned int const &gid) {
 					/* check if graph is unique */
 					if (!symbolic_iteration.is_first_index[gid])
 						return false;
@@ -556,7 +602,7 @@ public:
 					return r*r + i*i > tolerance; 
 				});
 
-				buffer_state.num_graphs = std::distance(symbolic_iteration.next_gid.begin(), partitioned_it);
+				long int next_num_graphs = std::distance(symbolic_iteration.next_gid.begin(), partitioned_it);
 						
 				/* !!!!!!!!!!!!!!!!
 				step (6) 
@@ -567,41 +613,45 @@ public:
 
 				if (num_graphs >= min_state_size) {
 					auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
-					
+
 					const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
 					const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 					const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
 					const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE);
 
-					long int mem_usage_per_graph = graph_mem_usage +
+					long int mem_usage_per_graph = (graph_mem_usage +
 						(node_mem_usage * node_begin[num_graphs] +
 						sub_node_mem_usage * sub_node_begin[num_graphs] +
-						symbolic_mem_usage * symbolic_iteration.num_graphs) / num_graphs * upsize_policy;
+						symbolic_mem_usage * symbolic_iteration.num_graphs) / num_graphs
+						) * upsize_policy;
 
 					long int mem_difference = free_mem - total_memory*safety_margin;
-					long int max_num_graphs = num_graphs + mem_difference / mem_usage_per_graph;
+					long int max_num_graphs = (num_graphs + buffer_state.num_graphs + mem_difference / mem_usage_per_graph) / 2;
 
-					if (buffer_state.num_graphs > max_num_graphs) {
+					/* !!!!!!!!!!!!!!!!
+					step (6.1) 
+					 !!!!!!!!!!!!!!!! */
 
-						/* !!!!!!!!!!!!!!!!
-						step (6.1) 
-						 !!!!!!!!!!!!!!!! */
+					if (next_num_graphs > max_num_graphs) {
+						float max_num_graphs_float = (float)max_num_graphs;
 
 						/* sort graphs according to probability */
-						__gnu_parallel::nth_element(symbolic_iteration.next_gid.begin(), symbolic_iteration.next_gid.begin() + max_num_graphs, symbolic_iteration.next_gid.begin() + buffer_state.num_graphs,
-						[&](unsigned int const &gid1, unsigned int const &gid2) {
-							PROBA_TYPE r1 = symbolic_iteration.next_real[gid1];
-							PROBA_TYPE i1 = symbolic_iteration.next_imag[gid1];
+						auto next_partitionned_int = __gnu_parallel::partition(symbolic_iteration.next_gid.begin(), partitioned_it,
+						[&](unsigned int const &gid) {
+							float r = (float)symbolic_iteration.next_real[gid];
+							float i = (float)symbolic_iteration.next_imag[gid];
+							float p = (r*r + i*i) * max_num_graphs_float;
 
-							PROBA_TYPE r2 = symbolic_iteration.next_real[gid2];
-							PROBA_TYPE i2 = symbolic_iteration.next_imag[gid2];
-
-							return r1*r1 + i1*i1 > r2*r2 + i2*i2;
+							return p > 1;
 						});
 
-						buffer_state.num_graphs = max_num_graphs;
+						__gnu_parallel::random_shuffle(next_partitionned_int, partitioned_it);
+
+						next_num_graphs = max_num_graphs;
 					}
 				}
+
+				buffer_state.num_graphs = next_num_graphs;
 
 				/* !!!!!!!!!!!!!!!!
 				step (7) 

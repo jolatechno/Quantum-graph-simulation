@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../state.hpp"
-#include "../utils/complex.hpp"
 
 class erase_create_rule : public rule {
 private:
@@ -61,8 +60,6 @@ public:
 		size_t left_hash_ = 0;
 		size_t right_hash_ = 0;
 
-		PROBA_TYPE sign;
-
 		num_nodes = s.num_nodes(parent_id);
 		for (unsigned short int node = 0; node < num_nodes; ++node) {
 			unsigned short int node_id = s.node_id(parent_id, node);
@@ -82,11 +79,7 @@ public:
 				}
 
 				/* update probas */
-				sign = (PROBA_TYPE)((operation - create_t)*2 - 1);
-				if (do_) {
-					time_equal(real, imag, do_real, sign*do_imag);
-				} else
-					time_equal(real, imag, sign*do_not_real, do_not_imag);
+				multiply_proba(real, imag, operation - create_t, do_);
 
 			} else {
 				/* update hashes */

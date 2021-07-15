@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../state.hpp"
-#include "../utils/complex.hpp"
 
 class coin_rule : public rule {
 
@@ -75,11 +74,7 @@ public:
 					boost::hash_combine(left_hash_, node);
 
 				/* update probas */
-				sign = (PROBA_TYPE)(s.left(parent_id, node)*2 - 1);
-				if (do_) {
-					time_equal(real, imag, do_real, sign*do_imag);
-				} else
-					time_equal(real, imag, sign*do_not_real, do_not_imag);
+				multiply_proba(real, imag, s.left(parent_id, node), do_);
 			
 			} else {
 				/* update hashes */

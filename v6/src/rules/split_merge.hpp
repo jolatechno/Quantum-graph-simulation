@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../state.hpp"
-#include "../utils/complex.hpp"
 
 class split_merge_rule : public rule {
 private:
@@ -84,7 +83,7 @@ public:
 			boost::hash_combine(right_hash_, 0);
 
 			/* update probas */
-			time_equal(real, imag, do_real, do_imag);
+			multiply_proba(real, imag, 0, true);
 		}
 
 		/* check for last merge */
@@ -123,7 +122,7 @@ public:
 			}
 
 			/* update probas */
-			time_equal(real, imag, do_real, -do_imag);
+			multiply_proba(real, imag, 1, true);
 		}
 
 		short int displacement = 0;
@@ -137,6 +136,9 @@ public:
 			if (operation != none_t) {
 				bool do_ = child_id & 1;
 				child_id >>= 1;
+
+				/* update probas */
+				multiply_proba(real, imag, operation - split_t, do_);
 
 				if (operation == split_t) {
 					if (do_) {
@@ -166,13 +168,7 @@ public:
 
 							boost::hash_combine(hash_, s.hash_node_by_value(parent_id, node_id + 1, state::right_t));
 						}
-
-						/* update probas */
-						time_equal(real, imag, do_real, do_imag);
 					} else {
-						/* update probas */
-						time_equal(real, imag, do_not_real, do_not_imag);
-
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
 						boost::hash_combine(left_hash_, node + displacement);
@@ -204,18 +200,12 @@ public:
 								next_node_id));
 						}
 
-						/* update probas */
-						time_equal(real, imag, do_real, -do_imag);
-
 						/* skip next node */
 						++node;
 
 						/* update displacement */
 						--displacement;
 					} else {
-						/* update probas */
-						time_equal(real, imag, -do_not_real, do_not_imag);
-
 						/* update hashes */
 						boost::hash_combine(hash_, s.hash(parent_id, node_id));
 						boost::hash_combine(left_hash_, node + displacement);
