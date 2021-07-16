@@ -11,6 +11,9 @@ public:
 	};
 
 	/* constructor */
+	erase_create_rule(PROBA_TYPE p, PROBA_TYPE q) : rule(p, q) {
+		name = "erase_create";
+	}
 	erase_create_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {
 		name = "erase_create";
 	}

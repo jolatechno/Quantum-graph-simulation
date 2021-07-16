@@ -235,3 +235,134 @@ std::tuple<state_t,
         rule, rule2, 
         n_iter, result["start-serializing"].as<unsigned int>(), result.count("normalize")};
 }
+
+std::tuple<state_t,
+    state_t::rule_t*, state_t::rule_t*, 
+    unsigned int, int> probabilist_parser(
+    cxxopts::Options &options, int argc, char* argv[]) {
+
+    options.add_options() ("h,help", "Print help")
+        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
+        ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
+
+        ("N,n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("3"))
+        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
+
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+
+        ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
+
+        ("q", "q for the rule (useless for \"coin\" rule)", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
+        ("p", "p for the rule", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
+
+        ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>())
+
+        ("q2", "q for the second rule  (useless for \"coin\" rule)", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
+        ("p2", "p for the second rule", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
+
+        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
+        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
+
+        ("no-move-1", "remove the move after the first rule (and set niter-1 to 1)")
+        ("no-move-2", "remove the move after the second rule (and set niter-2 to 1)")
+
+        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>())
+        ("z,zero", "start with and empty state");
+
+    // parse
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help() << std::endl;
+      exit(0);
+    }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0));
+
+    // ------------------------------------------
+    // set precision
+
+    SET_PRECISION(result["precision"].as<unsigned int>())
+
+    // ------------------------------------------
+    // parameters
+
+    unsigned int n_iter = result["n-iter"].as<unsigned int>();
+
+    // ------------------------------------------
+    // global variables
+
+    tolerance = result["tol"].as<PROBA_TYPE>();
+
+    // ------------------------------------------
+    // initialize state
+
+    unsigned int size = result["size"].as<unsigned int>();
+    state_t state(size, result["n-graph"].as<unsigned int>());
+
+    if (!result.count("zero"))
+        state.randomize();
+
+    PROBA_TYPE const p = result["p"].as<PROBA_TYPE>();
+    PROBA_TYPE const q = result["q"].as<PROBA_TYPE>();
+
+    PROBA_TYPE p2 = p;
+    PROBA_TYPE q2 = q;
+
+    if (result.count("different-params")) {
+        p2 = result["p2"].as<PROBA_TYPE>();
+        q2 = result["q2"].as<PROBA_TYPE>();
+    }
+
+    // ------------------------------------------
+    // read rule
+
+    state_t::rule_t* rule = new state_t::rule_t();
+
+    std::string rule_ = result["rule"].as<std::string>();
+    if (rule_ == "split_merge") {
+        rule = new split_merge_rule(p, q);
+    } else if (rule_ == "erase_create") {
+        rule = new erase_create_rule(p, q);
+    } else if (rule_ == "coin") {
+        rule = new coin_rule(p);
+    } else
+        throw;
+
+    rule->move = !result.count("no-move-1");
+    rule->n_iter = rule->move ? result["niter-1"].as<unsigned int>() : 1;
+
+    // ------------------------------------------
+    // read second rule
+
+    state_t::rule_t* rule2 = new state_t::rule_t();
+
+    if (result.count("rule2")) {
+
+        rule_ = result["rule2"].as<std::string>();
+        if (rule_ == "split_merge") {
+            rule2 = new split_merge_rule(p, q);
+        } else if (rule_ == "erase_create") {
+            rule2 = new erase_create_rule(p, q);
+        } else if (rule_ == "coin") {
+            rule2 = new coin_rule(p);
+        } else
+            throw;
+
+        rule2->move = !result.count("no-move-2");
+        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned int>() : 1;
+    }
+
+    return {state,
+        rule, rule2, 
+        n_iter, result["start-serializing"].as<unsigned int>()};
+}

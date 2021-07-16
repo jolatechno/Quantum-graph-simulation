@@ -54,7 +54,7 @@ PROBA_TYPE tolerance = 0;
 float upsize_policy = 1.1;
 float downsize_policy = 0.9;
 float safety_margin = 0.2;
-unsigned int min_state_size = 100000;
+size_t min_state_size = 100000;
 
 // debugging options
 float verbose = 0;
@@ -99,18 +99,19 @@ Iteration protocol is:
 
 class state {
 public:
-	/* 
-	rule virtual class definition:
-		- A rule can be "probabilist" or "quantum".
-		- For each rule, the "none" operation has to be represented by 0
-		- It has virtual memeber function that needs to be overloaded by each individual rule.
+/* 
+rule virtual class definition:
+	- A rule can be "probabilist" or "quantum".
+	- For each rule, the "none" operation has to be represented by 0
+	- It has virtual memeber function that needs to be overloaded by each individual rule.
 
-	Non-virtual member functions are:
-		- Constructor (for both probabilist and quantum rules).
-		- "multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op, bool do_)" to mutliply a magnitude by the rule's matrix (according to the operation type).
-		- "num_childs()" which is used at step 2 of the iteration.
-		- "do_operation(unsigned short int &child_id)" that check if some operation should be done or not according to the "child_id", and the type of rule.
-	*/
+Non-virtual member functions are:
+	- Constructor (for both probabilist and quantum rules).
+	- "multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op, bool do_)" to mutliply a magnitude by the rule's matrix (according to the operation type).
+	- "num_childs()" which is used at step 2 of the iteration.
+	- "do_operation(unsigned short int &child_id)" that check if some operation should be done or not according to the "child_id", and the type of rule.
+	- "write_operation(op_type_t op)" which apply the probabilist decision if the rule is probabilist, else returns op.
+*/
 	typedef class rule {
 	public:
 		/* parameters of a stochiastic matrix */
@@ -242,28 +243,33 @@ public:
 	}
 
 	/* constructor for a single graph of a given size */
-	state(unsigned int size) : num_graphs(1) {
-		resize_num_graphs(min_state_size);
-		symbolic_iteration.resize_num_graphs(min_state_size);
-		resize_num_nodes(min_state_size);
-		resize_num_sub_nodes(min_state_size);
+	state(unsigned int size) : state(size, 1) {}
 
-		real[0] = 1; imag[0] = 0;
-		node_begin[1] = size;
-		sub_node_begin[1] = size;
+	/* constructor for multiple graph of a given size */
+	state(unsigned int size, unsigned int n) : num_graphs(n) {
+		resize_num_graphs(n);
+		symbolic_iteration.resize_num_graphs(n);
+		resize_num_nodes(size*n);
+		resize_num_sub_nodes(size*n);
 
-		std::iota(node_id_c.begin(), node_id_c.begin() + size, 0);
-		std::fill(right_idx__or_type_.begin(), right_idx__or_type_.begin() + size, element_t);
-		std::iota(left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin(), left_idx__or_element__and_has_most_left_zero__or_is_trash_.end(), 1);
-		left_idx__or_element__and_has_most_left_zero__or_is_trash_[0] = -1;
+		real[0] = 1 / precision::sqrt((PROBA_TYPE)n);
+		node_begin[0] = 0;
+		sub_node_begin[0] = 0;
 
-		for (unsigned int i = 0; i < size; ++i)
-			hash_node(0, i);
+		std::fill(right_idx__or_type_.begin(), right_idx__or_type_.begin() + size*n, element_t);
 
-		/* minimum size */
-		resize_num_graphs(min_state_size);
-		resize_num_nodes(min_state_size);
-		resize_num_sub_nodes(min_state_size);
+		for (unsigned int gid = 0; i < n; ++gid) {
+			real[gid] = real[0]; imag[gid] = 0;
+			node_begin[gid + 1] = size*(gid + 1);
+			sub_node_begin[gid + 1] = size*(gid + 1);
+
+			std::iota(node_id_c.begin() + node_begin[gid], node_id_c.begin() + node_begin[gid + 1], 0);
+			std::iota(left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + node_begin[gid], left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + node_begin[gid + 1], 1);
+			left_idx__or_element__and_has_most_left_zero__or_is_trash_[node_begin[gid]] = -1;
+
+			for (unsigned int node = 0; node < size; ++node)
+				hash_node(i, node);
+		}
 	}
 
 	/* constructor for a temp state */
@@ -332,6 +338,7 @@ public:
 
 		// resize operator
 		void resize_num_graphs(size_t size) {
+			size = std::max(min_state_size, size);
 			if (next_gid.size() < size ||
 			downsize_policy * next_gid.size() > size * upsize_policy) {
 
@@ -352,6 +359,7 @@ public:
 
 	// resize operators
 	void resize_num_graphs(size_t size) {
+		size = std::max(min_state_size, size);
 		if (num_childs.size() < size ||
 		downsize_policy * num_childs.size() > size * upsize_policy) {
 
@@ -364,6 +372,7 @@ public:
 	}
 
 	void resize_num_nodes(size_t size) {
+		size = std::max(min_state_size, size);
 		if (node_id_c.size() < size ||
 		downsize_policy * node_id_c.size() > size * upsize_policy) {
 
@@ -375,6 +384,7 @@ public:
 	}
 
 	void resize_num_sub_nodes(size_t size) {
+		size = std::max(min_state_size, size);
 		if (node_hash.size() < size ||
 		downsize_policy * node_hash.size() > size * upsize_policy) {
 
@@ -464,9 +474,24 @@ public:
 	void inline set_right_idx(unsigned int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
 	void inline set_type(unsigned int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
 	
+	/* randomize function */
+	void randomize() {
+		// random genearator
+		size_t size = left_.size();
+		for (int i = 0; i < size; ++i) {
+			left_[i] = std::rand() & 1;
+			right_[i] = std::rand() & 1;
+		}
+	}
+
 	/* step function */
-	void step(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false); }
-	void step(state_t &buffer_state, rule_t const &rule, bool normalize) {
+	void step(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false, false); }
+	void step(state_t &buffer_state, rule_t const &rule, bool normalize) { step(buffer_state, rule, false, false); }
+	void step_probabilist(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false, true); }
+	void step_probabilist(state_t &buffer_state, rule_t const &rule, bool normalize) { step(buffer_state, rule, false, true); }
+
+private:
+	void step(state_t &buffer_state, rule_t const &rule, bool normalize, bool probabilist) {
 		/* check for calssical cases */
 		if (rule.do_real == 0 && rule.do_imag == 0)
 			return;
@@ -617,14 +642,35 @@ public:
 			for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
 				auto id = symbolic_iteration.next_gid[gid];
 
-				if (symbolic_iteration.is_first_index[id])
+				if (symbolic_iteration.is_first_index[id]) {
+					/* delete phase */
+					if (probabilist) {
+						PROBA_TYPE r = symbolic_iteration.next_real[id];
+						PROBA_TYPE i = symbolic_iteration.next_imag[id];
+
+						symbolic_iteration.next_real[id] = r*r + i*i;
+						symbolic_iteration.next_imag[id] = 0;
+					}
+
 					/* sum magnitude of equal graphs */
 					for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
 						auto id_ = symbolic_iteration.next_gid[gid_];
 
-						symbolic_iteration.next_real[id] += symbolic_iteration.next_real[id_];
-						symbolic_iteration.next_imag[id] += symbolic_iteration.next_imag[id_];
+						if (probabilist) {
+							PROBA_TYPE r = symbolic_iteration.next_real[id_];
+							PROBA_TYPE i = symbolic_iteration.next_imag[id_];
+
+							symbolic_iteration.next_real[id] += r*r + i*i;
+						} else {
+							symbolic_iteration.next_real[id] += symbolic_iteration.next_real[id_];
+							symbolic_iteration.next_imag[id] += symbolic_iteration.next_imag[id_];
+						}
 					}
+
+					/* take square root */
+					if (probabilist) 
+						symbolic_iteration.next_real[id] = precision::sqrt(symbolic_iteration.next_real[id]);
+				}
 			}
 
 			#pragma omp single
@@ -756,15 +802,6 @@ public:
 		std::swap(symbolic_iteration, buffer_state.symbolic_iteration);
 		std::swap(*this, buffer_state);
 	}
-
-	void randomize() {
-		// random genearator
-		size_t size = left_.size();
-		for (int i = 0; i < size; ++i) {
-			left_[i] = std::rand() & 1;
-			right_[i] = std::rand() & 1;
-		}
-	}
 };
 
 
@@ -785,9 +822,16 @@ void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, un
 		std::cout << "\n\t\t{\n\t\t\t\"name\" : \"" << rule.name << "\",";
 		std::cout << "\n\t\t\t\"n_iter\" : " << rule.n_iter << ",";
 		std::cout << "\n\t\t\t\"move\" : " << (rule.move ? "true" : "false") << ",";
-		std::cout << "\n\t\t\t\"teta\" : " << rule.teta << ",";
-		std::cout << "\n\t\t\t\"phi\" : " << rule.phi << ",";
-		std::cout << "\n\t\t\t\"xi\" : " << rule.xi;
+
+		if (!rule.probabilist) {
+			std::cout << "\n\t\t\t\"teta\" : " << rule.teta << ",";
+			std::cout << "\n\t\t\t\"phi\" : " << rule.phi << ",";
+			std::cout << "\n\t\t\t\"xi\" : " << rule.xi;
+		} else {
+			std::cout << "\n\t\t\t\"p\" : " << rule.p << ",";
+			std::cout << "\n\t\t\t\"q\" : " << rule.q;
+		}
+		
 		std::cout << "\n\t\t}";
 
 		if (next)

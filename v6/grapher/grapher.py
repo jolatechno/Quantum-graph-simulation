@@ -9,7 +9,7 @@ import sys
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 
-def find_name(dir, data):
+def find_name(dir, name_start, data):
 	# needs to be changed  needs to be incorporated to incorporate teta and phi!!!
 
 	rule = ""
@@ -29,11 +29,11 @@ def find_name(dir, data):
 			rule += "_"
 
 	for i in range(1000000):
-		name = f"{ i }_{ rule }.png"
+		name = name_start + f"{ i }_{ rule }.png"
 		if not os.path.exists(dir + name):
 			return name
 
-def graph_multiple(data, name):
+def graph_quantum(data, name):
 	teta = np.array(data["teta"])
 	phi = np.array(data["phi"])
 
@@ -43,7 +43,6 @@ def graph_multiple(data, name):
 	density = np.zeros((len(teta), len(phi)))
 	density_std_dev = np.zeros((len(teta), len(phi)))
 
-	num_graphs = np.zeros((len(teta), len(phi)))
 	total_proba = np.zeros((len(teta), len(phi)))
 
 	for result in data["results"]:
@@ -56,12 +55,11 @@ def graph_multiple(data, name):
 		density[i, j] = result["data"]["avg_density"]
 		density_std_dev[i, j] = result["data"]["std_dev_density"]
 
-		num_graphs[i, j] = result["data"]["num_graphs"]
 		total_proba[i, j] = result["data"]["total_proba"]
 
 	phi, teta = np.meshgrid(phi, teta)
 
-	# density
+	# size
 	fig = plt.figure()
 	ax = plt.axes(projection='3d')
 	ax.set_xlabel('teta')
@@ -81,7 +79,7 @@ def graph_multiple(data, name):
 
 	fig.savefig("plots/density/" + name)
 
-	# total proba and num_graphs
+	# total proba
 	fig = plt.figure()
 	ax = plt.axes(projection='3d')
 	ax.set_xlabel('teta')
@@ -90,6 +88,48 @@ def graph_multiple(data, name):
 	ax.plot_surface(teta, phi, total_proba, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
 	fig.savefig("plots/probas/" + name)
+
+def graph_probabilist(data, name):
+	p = np.array(data["p"])
+	q = np.array(data["q"])
+
+	size = np.zeros((len(p), len(q)))
+	size_std_dev = np.zeros((len(p), len(q)))
+
+	density = np.zeros((len(p), len(q)))
+	density_std_dev = np.zeros((len(p), len(q)))
+
+	for result in data["results"]:
+		i = np.where(p == result["p"])[0][0]
+		j = np.where(q == result["q"])[0][0]
+
+		size[i, j] = result["data"]["avg_size"]
+		size_std_dev[i, j] = result["data"]["std_dev_size"]
+
+		density[i, j] = result["data"]["avg_density"]
+		density_std_dev[i, j] = result["data"]["std_dev_density"]
+
+	p, q = np.meshgrid(p, q)
+
+	# size
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('p')
+	ax.set_ylabel('q')
+	ax.set_title(f'size', pad=20)
+	ax.plot_surface(p, q, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	fig.savefig("plots/sizes/" + name)
+
+	# density
+	fig = plt.figure()
+	ax = plt.axes(projection='3d')
+	ax.set_xlabel('p')
+	ax.set_ylabel('q')
+	ax.set_title(f'density', pad=20)
+	ax.plot_surface(p, q, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	fig.savefig("plots/density/" + name)
 
 def graph_single(data, name):
 	n_iterations = data["n_iter"] + 1
@@ -166,8 +206,13 @@ if __name__ == "__main__":
 		  data = json.load(f)
 
 		if "results" in data:
-			name = find_name("plots/sizes/", data)
-			graph_multiple(data, name)
+			if "p" in data:
+				name = find_name("plots/sizes/", "probabilist_", data)
+				graph_probabilist(data, name)
+			else:
+				name = find_name("plots/sizes/", "quantum_", data)
+				graph_quantum(data, name)
+
 		elif "iterations" in data:
 			name = find_name("plots/stats/", data)
 			graph_single(data, name)

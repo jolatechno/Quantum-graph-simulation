@@ -11,6 +11,9 @@ public:
 	};
 
 	/* constructor */
+	split_merge_rule(PROBA_TYPE p, PROBA_TYPE q) : rule(p, q) {
+		name = "split_merge";
+	}
 	split_merge_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {
 		name = "split_merge";
 	}

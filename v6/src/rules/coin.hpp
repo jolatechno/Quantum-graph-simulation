@@ -10,6 +10,9 @@ public:
 	};
 
 	/* constructor */
+	coin_rule(PROBA_TYPE p) : rule(p) {
+		name = "coin";
+	}
 	coin_rule(PROBA_TYPE teta, PROBA_TYPE phi, PROBA_TYPE xi) : rule(teta, phi, xi) {
 		name = "coin";
 	}
