@@ -47,7 +47,6 @@
 
 // type definition
 typedef class state state_t;
-typedef class rule rule_t;
 typedef char op_type_t;
 
 // global variable definition
@@ -60,90 +59,6 @@ unsigned int min_state_size = 100000;
 // debugging options
 float verbose = 0;
 int max_num_graph_print = 20;
-
-/* 
-rule virtual class definition:
-	- A rule can be "probabilist" or "quantum".
-	- It has virtual memeber function that needs to be overloaded by each individual rule.
-	- It has non-virtual constructor (for both probabilist and quantum rules).
-	- It has a function "multiply_proba" to mutliply a magnitude by the rule's matrix (according to the operation type).
-*/
-
-class rule {
-public:
-	/* parameters of a stochiastic matrix */
-	PROBA_TYPE p = 1;
-	PROBA_TYPE q = 1;
-	bool probabilist = false;
-
-	/* parameters of a unitary matrix */
-	PROBA_TYPE do_real = 1;
-	PROBA_TYPE do_imag = 0;
-	PROBA_TYPE do_not_real = 0;
-	PROBA_TYPE do_not_imag = 0;
-
-	/* parameters for print */
-	PROBA_TYPE teta, phi, xi;
-	std::string name = "";
-	bool move = true;
-	unsigned int n_iter = 0;
-
-	/* constructor for a unitary matrix */
-	rule(PROBA_TYPE teta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : teta(teta_), phi(phi_), xi(xi_) {
-		do_real = precision::sin(teta)* precision::cos(phi);
-		do_imag = precision::sin(teta)* precision::sin(phi);
-		do_not_real = precision::cos(teta)* precision::cos(xi);
-		do_not_imag = precision::cos(teta)* precision::sin(xi);
-	}
-	rule(PROBA_TYPE p_, PROBA_TYPE q_) : p(p_), q(q_), probabilist(true) {
-		do_real = precision::sqrt(p);
-		do_imag = precision::sqrt(q);
-		do_not_real = precision::sqrt(1 - p);
-		do_not_imag = precision::sqrt(1 - q);
-	}
-	rule(PROBA_TYPE p_) : p(p_), q(p_), probabilist(true) {
-		do_real = precision::sqrt(p);
-		do_imag = precision::sqrt(q);
-		do_not_real = precision::sqrt(1 - p);
-		do_not_imag = precision::sqrt(1 - q);
-	}
-	rule() {}
-
-	/* getter */
-	void inline multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op /* either 0 or 1 */, bool do_) const {
-		if (!probabilist) {
-
-			/* quantum case */
-			PROBA_TYPE sign = (PROBA_TYPE)(op*2 - 1);
-			if (do_) {
-				time_equal(real, imag, do_real, sign*do_imag);
-			} else
-				time_equal(real, imag, sign*do_not_real, do_not_imag);
-		} else {
-
-			/* probabilist case */
-			if (do_) {
-				time_equal(real, imag, op ? do_real : do_imag, (PROBA_TYPE)0.);
-			} else
-				time_equal(real, imag, op ? do_not_real : do_not_imag, (PROBA_TYPE)0.);
-		}
-	}
-
-	/* step (1) */
-	virtual op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const { return '\0'; }
-
-	/* step (2) */
-	virtual unsigned short int num_childs(state_t const &s, unsigned int gid) const { return 0; }
-
-	/* step (4) */
-	virtual void child_properties(size_t& hash_,
-		PROBA_TYPE& real, PROBA_TYPE& imag,
-		unsigned int& num_nodes, unsigned int& num_sub_node,
-		state_t const &s, unsigned int parent_id, unsigned int child_id) const { }
-
-	/* step (8) */
-	virtual void populate_new_graph(state_t const &s, state_t &buffer_state, unsigned int next_gid, unsigned int parent_id, unsigned int child_id) const {}
-};
 
 /*
 !!!!!
@@ -184,6 +99,132 @@ Iteration protocol is:
 
 class state {
 public:
+	/* 
+	rule virtual class definition:
+		- A rule can be "probabilist" or "quantum".
+		- For each rule, the "none" operation has to be represented by 0
+		- It has virtual memeber function that needs to be overloaded by each individual rule.
+
+	Non-virtual member functions are:
+		- Constructor (for both probabilist and quantum rules).
+		- "multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op, bool do_)" to mutliply a magnitude by the rule's matrix (according to the operation type).
+		- "num_childs()" which is used at step 2 of the iteration.
+		- "do_operation(unsigned short int &child_id)" that check if some operation should be done or not according to the "child_id", and the type of rule.
+	*/
+	typedef class rule {
+	public:
+		/* parameters of a stochiastic matrix */
+		PROBA_TYPE p = 1;
+		PROBA_TYPE q = 1;
+		bool probabilist = false;
+
+		/* parameters of a unitary matrix */
+		PROBA_TYPE do_real = 1;
+		PROBA_TYPE do_imag = 0;
+		PROBA_TYPE do_not_real = 0;
+		PROBA_TYPE do_not_imag = 0;
+
+		/* parameters for print */
+		PROBA_TYPE teta, phi, xi;
+		std::string name = "";
+		bool move = true;
+		unsigned int n_iter = 0;
+
+		/* constructor for a unitary matrix */
+		rule(PROBA_TYPE teta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : teta(teta_), phi(phi_), xi(xi_) {
+			do_real = precision::sin(teta)* precision::cos(phi);
+			do_imag = precision::sin(teta)* precision::sin(phi);
+			do_not_real = precision::cos(teta)* precision::cos(xi);
+			do_not_imag = precision::cos(teta)* precision::sin(xi);
+		}
+		rule(PROBA_TYPE p_, PROBA_TYPE q_) : p(p_), q(q_), probabilist(true) {
+			do_real = precision::sqrt(p);
+			do_imag = precision::sqrt(q);
+			do_not_real = precision::sqrt(1 - p);
+			do_not_imag = precision::sqrt(1 - q);
+		}
+		rule(PROBA_TYPE p_) : p(p_), q(p_), probabilist(true) {
+			do_real = precision::sqrt(p);
+			do_imag = precision::sqrt(q);
+			do_not_real = precision::sqrt(1 - p);
+			do_not_imag = precision::sqrt(1 - q);
+		}
+		rule() {}
+
+		/* getter */
+		void inline multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op /* either 0 or 1 */, bool do_) const {
+			if (!probabilist) {
+
+				/* quantum case */
+				PROBA_TYPE sign = (PROBA_TYPE)(op*2 - 1);
+				if (do_) {
+					time_equal(real, imag, do_real, sign*do_imag);
+				} else
+					time_equal(real, imag, sign*do_not_real, do_not_imag);
+			}
+		}
+
+		op_type_t inline write_operation(op_type_t op) const {
+			if (!probabilist || op == 0)
+				return op;
+			
+			/* generate random number */
+			float r = static_cast<PROBA_TYPE> (rand()) / static_cast<PROBA_TYPE> (RAND_MAX);
+
+			if (r > (op == 1 ? p : q))
+				return op;
+
+			return 0; 
+		}
+
+		bool inline do_operation(unsigned short int &child_id) const {
+			/* check if the rule is classical */
+			if (probabilist || (do_not_real == 0 && do_not_imag == 0))
+				return true;
+
+			/* check if the rule is the identity */
+			if (do_real == 0 && do_imag == 0)
+				return false;
+
+			bool do_ = child_id & 1;
+			child_id >>= 1;
+
+			return do_;
+		}
+
+		/* step (1) */
+		virtual op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const { return '\0'; }
+
+		/* step (2) */
+		unsigned short int num_childs(state_t const &s, unsigned int gid) const {
+			/* check for "classical case" */
+			if (probabilist || (do_not_real == 0 && do_not_imag == 0) || (do_real == 0 && do_imag == 0))
+				return 1;
+
+			/* count operations */
+			unsigned int num_op = 0;
+			unsigned int num_nodes_ = s.num_nodes(gid);
+			for (unsigned int node = 0; node < num_nodes_; ++node)
+				num_op += s.operation(gid, node) != 0; // 0 is the "none" operation for all dynamics
+
+			/* 2^n_op childs */
+			return std::pow(2, num_op);
+		}
+
+		/* step (4) */
+		virtual void child_properties(size_t& hash_,
+			PROBA_TYPE& real, PROBA_TYPE& imag,
+			unsigned int& num_nodes, unsigned int& num_sub_node,
+			state_t const &s, unsigned int parent_id, unsigned short int child_id) const { }
+
+		/* step (8) */
+		virtual void populate_new_graph(state_t const &s, state_t &buffer_state, unsigned int next_gid, unsigned int parent_id, unsigned short int child_id) const {}
+	} rule_t;
+
+	/* !!!!!!!!!
+	definition of the state class
+	!!!!!!!!! */
+
 	// type definition of a node
 	typedef enum node_type {
 		left_t = -3,
@@ -633,19 +674,17 @@ public:
 					 !!!!!!!!!!!!!!!! */
 
 					if (next_num_graphs > max_num_graphs) {
-						float max_num_graphs_float = (float)max_num_graphs;
-
 						/* sort graphs according to probability */
-						auto next_partitionned_int = __gnu_parallel::partition(symbolic_iteration.next_gid.begin(), partitioned_it,
-						[&](unsigned int const &gid) {
-							float r = (float)symbolic_iteration.next_real[gid];
-							float i = (float)symbolic_iteration.next_imag[gid];
-							float p = (r*r + i*i) * max_num_graphs_float;
+						__gnu_parallel::nth_element(symbolic_iteration.next_gid.begin(), symbolic_iteration.next_gid.begin() + max_num_graphs, partitioned_it,
+						[&](unsigned int const &gid1, unsigned int const &gid2) {
+							PROBA_TYPE r1 = symbolic_iteration.next_real[gid1];
+							PROBA_TYPE i1 = symbolic_iteration.next_imag[gid1];
 
-							return p > 1;
+							PROBA_TYPE r2 = symbolic_iteration.next_real[gid2];
+							PROBA_TYPE i2 = symbolic_iteration.next_imag[gid2];
+
+							return r1*r1 + i1*i1 > r2*r2 + i2*i2;
 						});
-
-						__gnu_parallel::random_shuffle(next_partitionned_int, partitioned_it);
 
 						next_num_graphs = max_num_graphs;
 					}
@@ -735,14 +774,14 @@ for graphing
 -----------------------------------------------------------------
 */
 
-void start_json(rule_t const &rule_1, rule_t const &rule_2, unsigned int n_iter) {
+void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, unsigned int n_iter) {
 	// print number of iterations
 	std::cout << "{\n\t\"n_iter\" : " << n_iter << ",";
 
 	// print rules
 	std::cout << "\n\t\"rules\" : [";
 
-	auto print_rule = [](rule_t const &rule, bool next) {
+	auto print_rule = [](state_t::rule_t const &rule, bool next) {
 		std::cout << "\n\t\t{\n\t\t\t\"name\" : \"" << rule.name << "\",";
 		std::cout << "\n\t\t\t\"n_iter\" : " << rule.n_iter << ",";
 		std::cout << "\n\t\t\t\"move\" : " << (rule.move ? "true" : "false") << ",";

@@ -3,7 +3,7 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<state_t, rule_t*, rule_t*, unsigned int, int, bool> test_parser(
+std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -86,7 +86,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int, int, bool> test_parser(
     // ------------------------------------------
     // read rule
 
-    rule_t *rule, *reversed_rule;
+    state_t::rule_t *rule, *reversed_rule;
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
@@ -104,7 +104,7 @@ std::tuple<state_t, rule_t*, rule_t*, unsigned int, int, bool> test_parser(
 }
 
 std::tuple<state_t,
-    rule_t*, rule_t*, 
+    state_t::rule_t*, state_t::rule_t*, 
     unsigned int, int, bool> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
@@ -195,7 +195,7 @@ std::tuple<state_t,
     // ------------------------------------------
     // read rule
 
-    rule_t* rule = new rule_t();
+    state_t::rule_t* rule = new state_t::rule_t();
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
@@ -213,7 +213,7 @@ std::tuple<state_t,
     // ------------------------------------------
     // read second rule
 
-    rule_t* rule2 = new rule_t();
+    state_t::rule_t* rule2 = new state_t::rule_t();
 
     if (result.count("rule2")) {
 

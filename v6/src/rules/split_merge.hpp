@@ -2,17 +2,7 @@
 
 #include "../state.hpp"
 
-class split_merge_rule : public rule {
-private:
-	unsigned short int raw_num_childs(state_t const &s, unsigned int gid) const {
-		unsigned int num_op = 0;
-		unsigned int num_nodes_ = s.num_nodes(gid);
-		for (unsigned int node = 0; node < num_nodes_; ++node)
-			num_op += s.operation(gid, node) != none_t;
-
-		return std::pow(2, num_op);
-	}
-
+class split_merge_rule : public state::rule {
 public:
 	enum {
 		none_t,
@@ -28,28 +18,17 @@ public:
 	/* rule implementation */
 	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
 		if (s.left(gid, node) && s.right(gid, node))
-			return split_t;
+			return write_operation(split_t);
 
 		unsigned short int next_node = node == s.num_nodes(gid) - 1 ? 0 : node + 1;
 		if (s.left(gid, node) && s.right(gid, next_node) && !s.left(gid, next_node))
-			return merge_t;
+			return write_operation(merge_t);
 
 		return none_t;
 	}
 
-	unsigned short int num_childs(state_t const &s, unsigned int gid) const override {
-		/* check for calssical cases */
-		if (do_not_real == 0 && do_not_imag == 0)
-			return 1;
-
-		return raw_num_childs(s, gid);
-	}
-
 	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
-		state_t const &s, unsigned int parent_id, unsigned int child_id) const override {
-		/* check for one calssical case */
-		if (do_not_real == 0 && do_not_imag == 0)
-			child_id = raw_num_childs(s, parent_id) - 1;
+		state_t const &s, unsigned int parent_id, unsigned short int child_id) const override {
 
 		real = s.real[parent_id];
 		imag = s.imag[parent_id];
@@ -66,7 +45,8 @@ public:
 		size_t right_hash_ = 0;
 
 		/* check if there is a "first split overflow" to keep the lexicographic order */
-		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
+		unsigned short int child_id_ = child_id;
+		bool first_split_overflow = do_operation(child_id_) && s.operation(parent_id, 0) == split_t;
 
 		if (first_split_overflow)
 			first_split_overflow = s.node_type(parent_id, s.node_id(parent_id, 0)) == state_t::pair_t;
@@ -75,8 +55,8 @@ public:
 			first_split_overflow = s.has_most_left_zero(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0)));
 
 		if (first_split_overflow) {
-			/* update child id */
-			child_id >>= 1;
+			/* update child_id */
+			do_operation(child_id);
 
 			/* update hashes */
 			boost::hash_combine(hash_, s.hash(parent_id, s.right_idx(parent_id, s.node_id(parent_id, 0))));
@@ -90,13 +70,16 @@ public:
 		bool last_merge = s.operation(parent_id, num_nodes - 1) == merge_t;
 
 		if (last_merge) {
-			unsigned int child_id_ = child_id;
+			child_id_ = child_id;
 			for (unsigned short int node = 0; node < num_nodes - 1; ++node)
-				if (s.operation(parent_id, node) != none_t)
-					child_id_ >>= 1;
+				if (s.operation(parent_id, node) != none_t) {
+					do_operation(child_id_);
 
-			if (child_id_ == 0)
-				last_merge = false;
+					if (child_id_ == 0)
+						break;
+				}
+
+			last_merge = do_operation(child_id_);
 		}
 
 		/* do last merge */
@@ -134,8 +117,7 @@ public:
 			auto operation = s.operation(parent_id, node);
 			
 			if (operation != none_t) {
-				bool do_ = child_id & 1;
-				child_id >>= 1;
+				bool do_ = do_operation(child_id);
 
 				/* update probas */
 				multiply_proba(real, imag, operation - split_t, do_);
@@ -237,7 +219,7 @@ public:
 		num_sub_node = std::max(num_sub_node, s.num_sub_node(parent_id));
 	}
 
-	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int gid, unsigned int parent_id, unsigned int child_id) const override {
+	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int gid, unsigned int parent_id, unsigned short int child_id) const override {
 		/* copy nodes */
 		unsigned int sub_node_begin = s.sub_node_begin[parent_id];
 		unsigned int sub_node_end = s.sub_node_begin[parent_id + 1];
@@ -247,10 +229,6 @@ public:
 		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);
 		std::copy(s.right_idx__or_type_.begin() + sub_node_begin, s.right_idx__or_type_.begin() + sub_node_end, new_state.right_idx__or_type_.begin() + new_sub_node_begin);
 		std::copy(s.node_hash.begin() + sub_node_begin, s.node_hash.begin() + sub_node_end, new_state.node_hash.begin() + new_sub_node_begin);
-
-		/* check for the second classical case */
-		if (do_not_real == 0 && do_not_imag == 0)
-			child_id = raw_num_childs(s, parent_id) - 1;
 
 		/* get trash */
 		short int old_sub_node_num = s.num_sub_node(parent_id);
@@ -263,8 +241,10 @@ public:
 				if (new_state.is_trash(gid, last_trash_idx))
 					return last_trash_idx;
 
-			if (last_trash_idx >= new_state.num_sub_node(gid))
+			if (last_trash_idx >= new_state.num_sub_node(gid)) {
+				std::cout << "gonna throw up\n";
 				throw;
+			}
 
 			/* update size of used node */
 			++old_sub_node_num;
@@ -281,7 +261,8 @@ public:
 		short int displacement = 0;
 
 		/* check if there is a "first split overflow" to keep the lexicographic order */
-		bool first_split_overflow = (child_id & 1) && (s.operation(parent_id, 0) == split_t);
+		unsigned short int child_id_ = child_id;
+		bool first_split_overflow = do_operation(child_id_) && (s.operation(parent_id, 0) == split_t);
 
 		if (first_split_overflow)
 			first_split_overflow = s.node_type(parent_id, s.node_id(parent_id, 0)) == state_t::pair_t;
@@ -295,10 +276,8 @@ public:
 			bool do_ = operation != none_t;
 			unsigned short int node_id = s.node_id(parent_id, node);
 
-			if (do_) {
-				do_ = child_id & 1;
-				child_id >>= 1;
-			}
+			if (do_)
+				do_ = do_operation(child_id);
 
 			if (do_) {
 				if (operation == split_t) {

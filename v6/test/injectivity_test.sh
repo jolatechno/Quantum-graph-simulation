@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 print_usage() {
   printf "Usage: ./injectivity_test.sh ops...
@@ -104,7 +104,6 @@ for rule in $rule; do
 		done
 
 		if [ "${found}" = true ]; then
-			echo "found=$found"
 			exit 0
 		fi
 
