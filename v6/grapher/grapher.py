@@ -9,9 +9,7 @@ import sys
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 
-def find_name(dir, name_start, data):
-	# needs to be changed  needs to be incorporated to incorporate teta and phi!!!
-
+def rule_name(data):
 	rule = ""
 
 	n_rule = len(data["rules"])
@@ -27,6 +25,11 @@ def find_name(dir, name_start, data):
 
 		if i < n_rule - 1:
 			rule += "_"
+
+	return rule
+
+def find_name(dir, name_start, data):
+	rule = rule_name(data)
 
 	for i in range(1000000):
 		name = name_start + f"{ i }_{ rule }.png"
@@ -60,32 +63,52 @@ def graph_quantum(data, name):
 	phi, teta = np.meshgrid(phi, teta)
 
 	# size
-	fig = plt.figure()
-	ax = plt.axes(projection='3d')
+	fig = plt.figure(figsize=plt.figaspect(0.5))
+	fig.suptitle(f'size after { data["n_iter"] } iterations of { rule_name(data) }')
+
+	ax = fig.add_subplot(1, 2, 1, projection='3d')
 	ax.set_xlabel('teta')
 	ax.set_ylabel('phi')
-	ax.set_title(f'size', pad=20)
 	ax.plot_surface(teta, phi, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	ax = fig.add_subplot(1, 2, 2)
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	pcm = ax.pcolormesh(teta, phi, size, cmap=cm.coolwarm, shading='gouraud')
+
+	fig.colorbar(pcm, ax=ax)
 
 	fig.savefig("plots/sizes/" + name)
 
 	# density
-	fig = plt.figure()
-	ax = plt.axes(projection='3d')
+	fig = plt.figure(figsize=plt.figaspect(0.5))
+	fig.suptitle(f'density after { data["n_iter"] } iterations of { rule_name(data) }')
+	
+	ax = fig.add_subplot(1, 2, 1, projection='3d')
 	ax.set_xlabel('teta')
 	ax.set_ylabel('phi')
-	ax.set_title(f'density', pad=20)
 	ax.plot_surface(teta, phi, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	ax = fig.add_subplot(1, 2, 2)
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	pcm = ax.pcolormesh(teta, phi, density, cmap=cm.coolwarm, shading='gouraud')
 
 	fig.savefig("plots/density/" + name)
 
 	# total proba
-	fig = plt.figure()
-	ax = plt.axes(projection='3d')
+	fig = plt.figure(figsize=plt.figaspect(0.5))
+	fig.suptitle(f'total_proba after { data["n_iter"] } iterations of { rule_name(data) }')
+	
+	ax = fig.add_subplot(1, 2, 1, projection='3d')
 	ax.set_xlabel('teta')
 	ax.set_ylabel('phi')
-	ax.set_title(f'total proba', pad=20)
 	ax.plot_surface(teta, phi, total_proba, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	ax = fig.add_subplot(1, 2, 2)
+	ax.set_xlabel('teta')
+	ax.set_ylabel('phi')
+	pcm = ax.pcolormesh(teta, phi, total_proba, cmap=cm.coolwarm, shading='gouraud')
 
 	fig.savefig("plots/probas/" + name)
 
@@ -112,22 +135,38 @@ def graph_probabilist(data, name):
 	p, q = np.meshgrid(p, q)
 
 	# size
-	fig = plt.figure()
-	ax = plt.axes(projection='3d')
+	fig = plt.figure(figsize=plt.figaspect(0.5))
+	fig.suptitle(f'size after { data["n_iter"] } iterations of { rule_name(data) }')
+
+	ax = fig.add_subplot(1, 2, 1, projection='3d')
 	ax.set_xlabel('p')
 	ax.set_ylabel('q')
-	ax.set_title(f'size', pad=20)
 	ax.plot_surface(p, q, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	ax = fig.add_subplot(1, 2, 2)
+	ax.set_xlabel('p')
+	ax.set_ylabel('q')
+	pcm = ax.pcolormesh(p, q, size, cmap=cm.coolwarm, shading='gouraud')
+
+	fig.colorbar(pcm, ax=ax)
 
 	fig.savefig("plots/sizes/" + name)
 
 	# density
-	fig = plt.figure()
-	ax = plt.axes(projection='3d')
+	fig = plt.figure(figsize=plt.figaspect(0.5))
+	fig.suptitle(f'density after { data["n_iter"] } iterations of { rule_name(data) }')
+
+	ax = fig.add_subplot(1, 2, 1, projection='3d')
 	ax.set_xlabel('p')
 	ax.set_ylabel('q')
-	ax.set_title(f'density', pad=20)
 	ax.plot_surface(p, q, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+
+	ax = fig.add_subplot(1, 2, 2)
+	ax.set_xlabel('p')
+	ax.set_ylabel('q')
+	pcm = ax.pcolormesh(p, q, density, cmap=cm.coolwarm, shading='gouraud')
+
+	fig.colorbar(pcm, ax=ax)
 
 	fig.savefig("plots/density/" + name)
 

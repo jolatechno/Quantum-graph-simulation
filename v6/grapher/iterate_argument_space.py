@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+# to get back the results use :
+# scp -o ProxyJump=(user)@(adress_tunnel) (user)@(adress_computer):(directory)/Quantum-graph-simulation/v6/grapher/res.json ./
+
 import argparse
 import os
 import numpy as np
@@ -79,9 +82,10 @@ for i in range(len(rules)):
 
 	print_to_json(2, rules[i])
 
-print("\t],", flush=True)
+print("\n\t],")
 print(f"\t\"{ 'p' if args.probabilist else 'phi' }\" : { phis },")
 print(f"\t\"{ 'q' if args.probabilist else 'teta' }\" : { tetas },")
+print(f"\t\"n_iter\" : [{ args.n_iter - args.n_serializing }, {  args.n_iter }],")
 print("\t\"results\" : [", flush=True)
 
 # iterate throught argument space

@@ -258,7 +258,7 @@ Non-virtual member functions are:
 
 		std::fill(right_idx__or_type_.begin(), right_idx__or_type_.begin() + size*n, element_t);
 
-		for (unsigned int gid = 0; i < n; ++gid) {
+		for (unsigned int gid = 0; gid < n; ++gid) {
 			real[gid] = real[0]; imag[gid] = 0;
 			node_begin[gid + 1] = size*(gid + 1);
 			sub_node_begin[gid + 1] = size*(gid + 1);
@@ -268,7 +268,7 @@ Non-virtual member functions are:
 			left_idx__or_element__and_has_most_left_zero__or_is_trash_[node_begin[gid]] = -1;
 
 			for (unsigned int node = 0; node < size; ++node)
-				hash_node(i, node);
+				hash_node(gid, node);
 		}
 	}
 
@@ -638,40 +638,47 @@ private:
 			/* !!!!!!!!!!!!!!!!!!!!!!!!
 			potentiel d'optimisation
 			!!!!!!!!!!!!!!!!!!!!!!!! */
-			#pragma omp for
-			for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
-				auto id = symbolic_iteration.next_gid[gid];
+			if (probabilist) {
+				#pragma omp for
+				for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
+					auto id = symbolic_iteration.next_gid[gid];
 
-				if (symbolic_iteration.is_first_index[id]) {
-					/* delete phase */
-					if (probabilist) {
+					if (symbolic_iteration.is_first_index[id]) {
+						/* delete phase */
 						PROBA_TYPE r = symbolic_iteration.next_real[id];
 						PROBA_TYPE i = symbolic_iteration.next_imag[id];
 
 						symbolic_iteration.next_real[id] = r*r + i*i;
 						symbolic_iteration.next_imag[id] = 0;
-					}
 
-					/* sum magnitude of equal graphs */
-					for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
-						auto id_ = symbolic_iteration.next_gid[gid_];
+						/* sum magnitude of equal graphs */
+						for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
+							auto id_ = symbolic_iteration.next_gid[gid_];
 
-						if (probabilist) {
 							PROBA_TYPE r = symbolic_iteration.next_real[id_];
 							PROBA_TYPE i = symbolic_iteration.next_imag[id_];
 
 							symbolic_iteration.next_real[id] += r*r + i*i;
-						} else {
+						}
+
+						/* take square root */
+						symbolic_iteration.next_real[id] = precision::sqrt(symbolic_iteration.next_real[id]);
+					}
+				}
+			} else
+				#pragma omp for
+				for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
+					auto id = symbolic_iteration.next_gid[gid];
+
+					if (symbolic_iteration.is_first_index[id])
+						/* sum magnitude of equal graphs */
+						for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
+							auto id_ = symbolic_iteration.next_gid[gid_];
+
 							symbolic_iteration.next_real[id] += symbolic_iteration.next_real[id_];
 							symbolic_iteration.next_imag[id] += symbolic_iteration.next_imag[id_];
 						}
-					}
-
-					/* take square root */
-					if (probabilist) 
-						symbolic_iteration.next_real[id] = precision::sqrt(symbolic_iteration.next_real[id]);
 				}
-			}
 
 			#pragma omp single
 			{

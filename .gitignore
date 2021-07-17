@@ -37,3 +37,6 @@
 
 #swap
 *.swp
+
+#ignore script
+*.ignore.*
