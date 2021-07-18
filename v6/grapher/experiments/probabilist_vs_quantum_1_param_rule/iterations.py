@@ -40,7 +40,7 @@ def make_probabilist_cmd(args, p):
 	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0" + " ".join(args.p_args)
 
 def make_quantum_cmd(args, p, seed):
-	teta = np.arccos(np.sqrt(1 - p))
+	teta = np.arccos(np.sqrt(1 - p)) / np.pi
 	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed { seed }" + " ".join(args.q_args)
 
 # print rules
