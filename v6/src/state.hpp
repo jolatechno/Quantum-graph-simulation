@@ -172,7 +172,7 @@ Non-virtual member functions are:
 			/* generate random number */
 			float r = static_cast<PROBA_TYPE> (rand()) / static_cast<PROBA_TYPE> (RAND_MAX);
 
-			if (r > (op == 1 ? p : q))
+			if (r < (op == 1 ? p : q))
 				return op;
 
 			return 0; 
@@ -493,7 +493,7 @@ Non-virtual member functions are:
 private:
 	void step(state_t &buffer_state, rule_t const &rule, bool normalize, bool probabilist) {
 		/* check for calssical cases */
-		if (rule.do_real == 0 && rule.do_imag == 0)
+		if (!rule.probabilist && rule.do_real == 0 && rule.do_imag == 0)
 			return;
 
 		/* allow nested parallism for __gnu_parallel */

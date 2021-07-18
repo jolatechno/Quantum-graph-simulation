@@ -35,7 +35,7 @@ ps = list(np.linspace(args.p0, args.p1, args.n_p))
 qs = list(np.linspace(args.q0, args.q1, args.n_q))
 
 def make_cmd(args, p, q):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -q { p } -p { q } --seed 0" + " ".join(args.args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -q { q } -p { p } --seed 0" + " ".join(args.args)
 
 # print rules
 print("{")

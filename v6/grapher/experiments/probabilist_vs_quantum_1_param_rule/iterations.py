@@ -26,7 +26,8 @@ parser.add_argument('--n-p', type=int, default=10, help='number of p scaned')
 parser.add_argument('--p0', '--p-start', type=float, default=0, help='first p for proabilist simulation')
 parser.add_argument('--p1', '--p-end', type=float, default=1, help='last p for proabilist simulation')
 
-parser.add_argument('--args', nargs='+', default=[], help='cli arguments for probabilist_iterations (put a space before "-" if you begin with a flag)')
+parser.add_argument('--p-args', nargs='+', default=[], help='cli arguments for probabilist_iterations (put a space before "-" if you begin with a flag)')
+parser.add_argument('--q-args', nargs='+', default=[], help='cli arguments for quantum_iterations (put a space before "-" if you begin with a flag)')
 
 args = parser.parse_args()
 
@@ -36,11 +37,11 @@ n_avg = (args.end_seed - args.start_seed) * args.n_serializing
 ps = list(np.linspace(args.p0, args.p1, args.n_p))
 
 def make_probabilist_cmd(args, p):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0" + " ".join(args.args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0" + " ".join(args.p_args)
 
 def make_quantum_cmd(args, p, seed):
 	teta = np.arccos(np.sqrt(1 - p))
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed { seed }" + " ".join(args.args)
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed { seed }" + " ".join(args.q_args)
 
 # print rules
 print("{")

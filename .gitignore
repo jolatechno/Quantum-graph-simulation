@@ -35,8 +35,11 @@
 *.txt
 *.json
 
-#swap
+# swap
 *.swp
 
-#ignore script
+# ignore script
 *.ignore.*
+
+# pycache
+*/__pycache__/*
