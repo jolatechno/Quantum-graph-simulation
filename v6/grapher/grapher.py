@@ -7,170 +7,18 @@ import numpy as np
 import os
 import sys
 
+from experiments import utils
+
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 
-def rule_name(data):
-	rule = ""
+for filename in filenames:
+	with open(filename) as f:
+	  data = json.load(f)
 
-	n_rule = len(data["rules"])
-	for i in range(n_rule):
-		rule += data["rules"][i]["name"]
+	rule_name = utils.rule_name(data)
+	probabilist = "p" in data["rules"][0]
+	name = utils.find_name("plots/stats/", "probabilist_" if probabilist else "quantum_", rule_name)
 
-		if data["rules"][i]["move"]:
-			rule += "_move"
-
-		n_iter = data["rules"][i]["n_iter"]
-		if n_iter > 1:
-			rule += _ + str(1)
-
-		if i < n_rule - 1:
-			rule += "_"
-
-	return rule
-
-def find_name(dir, name_start, data):
-	rule = rule_name(data)
-
-	for i in range(1000000):
-		name = name_start + f"{ i }_{ rule }.png"
-		if not os.path.exists(dir + name):
-			return name
-
-def graph_quantum(data, name):
-	teta = np.array(data["teta"])
-	phi = np.array(data["phi"])
-
-	size = np.zeros((len(teta), len(phi)))
-	size_std_dev = np.zeros((len(teta), len(phi)))
-
-	density = np.zeros((len(teta), len(phi)))
-	density_std_dev = np.zeros((len(teta), len(phi)))
-
-	total_proba = np.zeros((len(teta), len(phi)))
-
-	for result in data["results"]:
-		i = np.where(teta == result["teta"])
-		j = np.where(phi == result["phi"])
-
-		size[i, j] = result["data"]["avg_size"]
-		size_std_dev[i, j] = result["data"]["std_dev_size"]
-
-		density[i, j] = result["data"]["avg_density"]
-		density_std_dev[i, j] = result["data"]["std_dev_density"]
-
-		total_proba[i, j] = result["data"]["total_proba"]
-
-	phi, teta = np.meshgrid(phi, teta)
-
-	# size
-	fig = plt.figure(figsize=plt.figaspect(0.5))
-	fig.suptitle(f'size after { data["n_iter"] } iterations of { rule_name(data) }')
-
-	ax = fig.add_subplot(1, 2, 1, projection='3d')
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	ax.plot_surface(teta, phi, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	ax = fig.add_subplot(1, 2, 2)
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	pcm = ax.pcolormesh(teta, phi, size, cmap=cm.coolwarm, shading='gouraud')
-
-	fig.colorbar(pcm, ax=ax)
-
-	fig.savefig("plots/sizes/" + name)
-
-	# density
-	fig = plt.figure(figsize=plt.figaspect(0.5))
-	fig.suptitle(f'density after { data["n_iter"] } iterations of { rule_name(data) }')
-	
-	ax = fig.add_subplot(1, 2, 1, projection='3d')
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	ax.plot_surface(teta, phi, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	ax = fig.add_subplot(1, 2, 2)
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	pcm = ax.pcolormesh(teta, phi, density, cmap=cm.coolwarm, shading='gouraud')
-
-	fig.savefig("plots/density/" + name)
-
-	# total proba
-	fig = plt.figure(figsize=plt.figaspect(0.5))
-	fig.suptitle(f'total_proba after { data["n_iter"] } iterations of { rule_name(data) }')
-	
-	ax = fig.add_subplot(1, 2, 1, projection='3d')
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	ax.plot_surface(teta, phi, total_proba, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	ax = fig.add_subplot(1, 2, 2)
-	ax.set_xlabel('teta')
-	ax.set_ylabel('phi')
-	pcm = ax.pcolormesh(teta, phi, total_proba, cmap=cm.coolwarm, shading='gouraud')
-
-	fig.savefig("plots/probas/" + name)
-
-def graph_probabilist(data, name):
-	p = np.array(data["p"])
-	q = np.array(data["q"])
-
-	size = np.zeros((len(p), len(q)))
-	size_std_dev = np.zeros((len(p), len(q)))
-
-	density = np.zeros((len(p), len(q)))
-	density_std_dev = np.zeros((len(p), len(q)))
-
-	for result in data["results"]:
-		i = np.where(p == result["p"])[0][0]
-		j = np.where(q == result["q"])[0][0]
-
-		size[i, j] = result["data"]["avg_size"]
-		size_std_dev[i, j] = result["data"]["std_dev_size"]
-
-		density[i, j] = result["data"]["avg_density"]
-		density_std_dev[i, j] = result["data"]["std_dev_density"]
-
-	p, q = np.meshgrid(p, q)
-
-	# size
-	fig = plt.figure(figsize=plt.figaspect(0.5))
-	fig.suptitle(f'size after { data["n_iter"] } iterations of { rule_name(data) }')
-
-	ax = fig.add_subplot(1, 2, 1, projection='3d')
-	ax.set_xlabel('p')
-	ax.set_ylabel('q')
-	ax.plot_surface(p, q, size, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	ax = fig.add_subplot(1, 2, 2)
-	ax.set_xlabel('p')
-	ax.set_ylabel('q')
-	pcm = ax.pcolormesh(p, q, size, cmap=cm.coolwarm, shading='gouraud')
-
-	fig.colorbar(pcm, ax=ax)
-
-	fig.savefig("plots/sizes/" + name)
-
-	# density
-	fig = plt.figure(figsize=plt.figaspect(0.5))
-	fig.suptitle(f'density after { data["n_iter"] } iterations of { rule_name(data) }')
-
-	ax = fig.add_subplot(1, 2, 1, projection='3d')
-	ax.set_xlabel('p')
-	ax.set_ylabel('q')
-	ax.plot_surface(p, q, density, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	ax = fig.add_subplot(1, 2, 2)
-	ax.set_xlabel('p')
-	ax.set_ylabel('q')
-	pcm = ax.pcolormesh(p, q, density, cmap=cm.coolwarm, shading='gouraud')
-
-	fig.colorbar(pcm, ax=ax)
-
-	fig.savefig("plots/density/" + name)
-
-def graph_single(data, name):
 	n_iterations = data["n_iter"] + 1
 	iterations_list = np.arange(0, n_iterations)
 
@@ -184,30 +32,31 @@ def graph_single(data, name):
 	avg_density = np.array([it["avg_density"] for it in data["iterations"]])
 	std_dev_density = np.array([it["std_dev_density"] for it in data["iterations"]])
 
-	# probability
-	fig = plt.figure()
-	ax = plt.axes()
-	ax.set_xlabel('iterations')
-	ax.set_title(f'total probabilty and number of graph', pad=20)
-
 	color = 'tab:blue'
 	color2 = 'tab:red'
 	color_p = 'tab:cyan'
 
-	ax.plot(total_probas, label="total proba", color=color)
-	ax.plot(ratios, label="ratio of graph", color = color_p)
-	ax.legend()
-	ax.set_ylabel("proba", color=color)
-	ax.tick_params(axis='y', labelcolor=color)
+	if not probabilist:
+		# probability
+		fig = plt.figure()
+		ax = plt.axes()
+		ax.set_xlabel('iterations')
+		ax.set_title(f'total probabilty and number of graph', pad=20)
 
-	# number of graphs
-	ax2 = ax.twinx()
-	ax2.plot(num_graphs, color=color2)
-	ax2.set_yscale('log')
-	ax2.set_ylabel("total number of graphs", color=color2)
-	ax2.tick_params(axis='y', labelcolor=color2)
+		ax.plot(total_probas, label="total proba", color=color)
+		ax.plot(ratios, label="ratio of graph", color = color_p)
+		ax.legend()
+		ax.set_ylabel("proba", color=color)
+		ax.tick_params(axis='y', labelcolor=color)
 
-	fig.savefig("plots/stats/" + name)
+		# number of graphs
+		ax2 = ax.twinx()
+		ax2.plot(num_graphs, color=color2)
+		ax2.set_yscale('log')
+		ax2.set_ylabel("total number of graphs", color=color2)
+		ax2.tick_params(axis='y', labelcolor=color2)
+
+		fig.savefig("plots/stats/" + name)
 
 	# graph sizes
 	fig = plt.figure()
@@ -218,40 +67,15 @@ def graph_single(data, name):
 	ax.set_ylim(0, max(avg_size + std_dev_size)*1.1)
 
 	ax.errorbar(iterations_list, avg_size, std_dev_size,
-							capsize=2, elinewidth=1, markeredgewidth=2, label="average size", color=color)
+				capsize=2, elinewidth=1, markeredgewidth=2, label="average size", color=color)
 
 	# graph densities
 	ax2 = ax.twinx()
-	ax2.set_ylabel('densities')
 	ax2.set_ylabel("average density", color=color2)
 	ax2.tick_params(axis='y', labelcolor=color2)
 	ax2.set_ylim(0, 1)
 
 	ax2.errorbar(iterations_list, avg_density, std_dev_density,
-							capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
+				capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
 
 	fig.savefig("plots/properties/" + name)
-
-
-"""
-!!!!!!!
-main function
-!!!!!!!
-"""
-
-if __name__ == "__main__":
-	for filename in filenames:
-		with open(filename) as f:
-		  data = json.load(f)
-
-		if "results" in data:
-			if "p" in data:
-				name = find_name("plots/sizes/", "probabilist_", data)
-				graph_probabilist(data, name)
-			else:
-				name = find_name("plots/sizes/", "quantum_", data)
-				graph_quantum(data, name)
-
-		elif "iterations" in data:
-			name = find_name("plots/stats/", data)
-			graph_single(data, name)
