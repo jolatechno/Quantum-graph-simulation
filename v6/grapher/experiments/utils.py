@@ -1,7 +1,11 @@
 import os
 import numpy as np
-from matplotlib import pyplot as plt 
-from matplotlib import cm
+
+try:
+	from matplotlib import pyplot as plt 
+	from matplotlib import cm
+except:
+	pass
 
 def rule_name(data):
 	rule = ""
