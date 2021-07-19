@@ -68,7 +68,7 @@ for i, p in enumerate(ps):
 		stream = os.popen(make_cmd(args, p, q))
 		data = stream.read()
 		try:
-			data = json.loads()
+			data = json.loads(data)
 		except:
 			print(data)
 			raise

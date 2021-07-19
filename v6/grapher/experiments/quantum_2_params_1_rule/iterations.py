@@ -76,7 +76,7 @@ for i, teta in enumerate(tetas):
 			stream = os.popen(make_cmd(args, teta, phi, seed))
 			data = stream.read()
 			try:
-				data = json.loads()
+				data = json.loads(data)
 			except:
 				print(data)
 				raise

@@ -74,7 +74,7 @@ for i, p in enumerate(ps):
 	stream = os.popen(make_probabilist_cmd(args, p))
 	data = stream.read()
 	try:
-		data = json.loads()
+		data = json.loads(data)
 	except:
 		print(data)
 		raise
@@ -99,7 +99,7 @@ for i, p in enumerate(ps):
 		stream = os.popen(make_quantum_cmd(args, p, seed))
 		data = stream.read()
 		try:
-			data = json.loads()
+			data = json.loads(data)
 		except:
 			print(data)
 			raise
