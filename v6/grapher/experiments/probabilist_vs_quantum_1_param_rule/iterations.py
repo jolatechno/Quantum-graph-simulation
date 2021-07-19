@@ -32,7 +32,6 @@ parser.add_argument('--q-args', nargs='+', default=[], help='cli arguments for q
 args = parser.parse_args()
 
 seeds = range(args.start_seed, args.end_seed)
-n_avg = (args.end_seed - args.start_seed) * args.n_serializing
 
 ps = list(np.linspace(args.p0, args.p1, args.n_p))
 
@@ -73,7 +72,12 @@ for i, p in enumerate(ps):
 
 	# read probabilist result
 	stream = os.popen(make_probabilist_cmd(args, p))
-	data = json.loads(stream.read())
+	data = stream.read()
+	try:
+		data = json.loads()
+	except:
+		print(data)
+		raise
 
 	# average over iterations
 	probabilist_avg = data["iterations"][0]
@@ -83,29 +87,34 @@ for i, p in enumerate(ps):
 
 	# divided average by number of point
 	for key in probabilist_avg:
-		probabilist_avg[key] /= args.n_serializing
+		probabilist_avg[key] /= len(data["iterations"])
 
 
 
 
 	# read quantum result
-	quantum_avg = None
+	quantum_list = []
 
 	for seed in seeds:
 		stream = os.popen(make_quantum_cmd(args, p, seed))
-		data = json.loads(stream.read())
+		data = stream.read()
+		try:
+			data = json.loads()
+		except:
+			print(data)
+			raise
 
-		# average over iterations
-		for it in data["iterations"]:
-			if quantum_avg is None:
-				quantum_avg = it
-			else:
-				for key in quantum_avg:
-					quantum_avg[key] += it[key]
+		quantum_list += data["iterations"]
+
+	# average over iterations
+	quantum_avg = quantum_list[0]
+	for it in quantum_list[1:]:
+		for key in quantum_avg:
+			quantum_avg[key] += it[key]
 
 	# divided average by number of point
 	for key in quantum_avg:
-		quantum_avg[key] /= n_avg
+		quantum_avg[key] /= len(quantum_list)
 
 
 

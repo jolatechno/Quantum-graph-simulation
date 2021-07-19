@@ -485,13 +485,8 @@ Non-virtual member functions are:
 	}
 
 	/* step function */
-	void step(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false, false); }
-	void step(state_t &buffer_state, rule_t const &rule, bool normalize) { step(buffer_state, rule, false, false); }
-	void step_probabilist(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false, true); }
-	void step_probabilist(state_t &buffer_state, rule_t const &rule, bool normalize) { step(buffer_state, rule, false, true); }
-
-private:
-	void step(state_t &buffer_state, rule_t const &rule, bool normalize, bool probabilist) {
+	void step(state_t &buffer_state, rule_t const &rule) { step(buffer_state, rule, false); }
+	void step(state_t &buffer_state, rule_t const &rule, bool normalize) {
 		/* check for calssical cases */
 		if (!rule.probabilist && rule.do_real == 0 && rule.do_imag == 0)
 			return;
@@ -638,7 +633,7 @@ private:
 			/* !!!!!!!!!!!!!!!!!!!!!!!!
 			potentiel d'optimisation
 			!!!!!!!!!!!!!!!!!!!!!!!! */
-			if (probabilist) {
+			if (rule.probabilist) {
 				#pragma omp for
 				for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
 					auto id = symbolic_iteration.next_gid[gid];

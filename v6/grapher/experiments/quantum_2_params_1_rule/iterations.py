@@ -34,8 +34,6 @@ parser.add_argument('--args', nargs='+', default=[], help='cli arguments for qua
 
 args = parser.parse_args()
 
-n_avg = (args.end_seed - args.start_seed) * args.n_serializing
-
 phis = list(np.linspace(args.p0, args.p1, args.n_phi))
 tetas = list(np.linspace(args.t0, args.t1, args.n_teta))
 
@@ -72,23 +70,28 @@ utils.print_to_json(1,
 for i, teta in enumerate(tetas):
 	for j, phi in enumerate(phis):
 
-		avg = None
+		quantum_list = []
 
 		for seed in seeds:
 			stream = os.popen(make_cmd(args, teta, phi, seed))
-			data = json.loads(stream.read())
+			data = stream.read()
+			try:
+				data = json.loads()
+			except:
+				print(data)
+				raise
 
-			# average over iterations
-			for it in data["iterations"]:
-				if avg is None:
-					avg = it
-				else:
-					for key in avg:
-						avg[key] += it[key]
+			quantum_list += data["iterations"]
+
+		# average over iterations
+		avg = quantum_list[0]
+		for it in quantum_list[1:]:
+			for key in avg:
+				avg[key] += it[key]
 
 		# divided average by number of point
 		for key in avg:
-			avg[key] /= n_avg
+			avg[key] /= len(quantum_list)
 
 		# print to json
 		utils.print_to_json(2, {"teta" : teta, "phi" : phi, "data" : avg}, i == 0 and j == 0)

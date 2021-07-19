@@ -66,7 +66,12 @@ for i, p in enumerate(ps):
 	for j, q in enumerate(qs):
 
 		stream = os.popen(make_cmd(args, p, q))
-		data = json.loads(stream.read())
+		data = stream.read()
+		try:
+			data = json.loads()
+		except:
+			print(data)
+			raise
 
 		# average over iterations
 		avg = data["iterations"][0]
@@ -76,7 +81,7 @@ for i, p in enumerate(ps):
 
 		# divided average by number of point
 		for key in avg:
-			avg[key] /= args.n_serializing
+			avg[key] /= len(data["iterations"])
 
 		# print to json
 		utils.print_to_json(2, {"p" : p, "q" : q, "data" : avg}, i == 0 and j == 0)
