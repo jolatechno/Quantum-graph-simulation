@@ -18,29 +18,25 @@ parser.add_argument('-n', '--n-iter', type=int, default=10, help='number of iter
 
 parser.add_argument('-N', '--n-serializing', type=int, default=1, help='number of iteration for averaging values')
 
-parser.add_argument('-r', '--start-seed', type=int, default=0, help='first seed tested')
-parser.add_argument('-R', '--end-seed', type=int, default=1, help='last seed tested')
-
 parser.add_argument('--n-p', type=int, default=10, help='number of p scaned')
 
 parser.add_argument('--p0', '--p-start', type=float, default=0, help='first p for proabilist simulation')
 parser.add_argument('--p1', '--p-end', type=float, default=1, help='last p for proabilist simulation')
 
-parser.add_argument('--p-args', nargs='+', default=[], help='cli arguments for probabilist_iterations (put a space before "-" if you begin with a flag)')
-parser.add_argument('--q-args', nargs='+', default=[], help='cli arguments for quantum_iterations (put a space before "-" if you begin with a flag)')
+parser.add_argument('--args', nargs='+', default=[], help='cli arguments for both quantum_iterations and probabilist_iterations')
+parser.add_argument('--p-args', nargs='+', default=[], help='cli arguments for probabilist_iterations')
+parser.add_argument('--q-args', nargs='+', default=[], help='cli arguments for quantum_iterations')
 
 args = parser.parse_args()
-
-seeds = range(args.start_seed, args.end_seed)
 
 ps = list(np.linspace(args.p0, args.p1, args.n_p))
 
 def make_probabilist_cmd(args, p):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0" + " ".join(args.p_args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
 
-def make_quantum_cmd(args, p, seed):
+def make_quantum_cmd(args, p):
 	teta = np.arccos(np.sqrt(1 - p)) / np.pi
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed { seed }" + " ".join(args.q_args)
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
 
 # print rules
 print("{")
@@ -93,28 +89,23 @@ for i, p in enumerate(ps):
 
 
 	# read quantum result
-	quantum_list = []
-
-	for seed in seeds:
-		stream = os.popen(make_quantum_cmd(args, p, seed))
-		data = stream.read()
-		try:
-			data = json.loads(data)
-		except:
-			print(data)
-			raise
-
-		quantum_list += data["iterations"]
+	stream = os.popen(make_quantum_cmd(args, p))
+	data = stream.read()
+	try:
+		data = json.loads(data)
+	except:
+		print(data)
+		raise
 
 	# average over iterations
-	quantum_avg = quantum_list[0]
-	for it in quantum_list[1:]:
+	quantum_avg = data["iterations"][0]
+	for it in data["iterations"][1:]:
 		for key in quantum_avg:
 			quantum_avg[key] += it[key]
 
 	# divided average by number of point
 	for key in quantum_avg:
-		quantum_avg[key] /= len(quantum_list)
+		quantum_avg[key] /= len(data["iterations"])
 
 
 

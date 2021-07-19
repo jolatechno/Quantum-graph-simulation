@@ -112,6 +112,8 @@ std::tuple<state_t,
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
+        ("n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("1"))
+
         ("N,normalize", "normalize after each iteration")
         ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
 
@@ -176,7 +178,8 @@ std::tuple<state_t,
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
-    state_t state(size);
+    unsigned int num_graph = result["n-graph"].as<unsigned int>();
+    state_t state(size, num_graph);
 
     if (!result.count("zero"))
         state.randomize();
@@ -307,7 +310,8 @@ std::tuple<state_t,
     // initialize state
 
     unsigned int size = result["size"].as<unsigned int>();
-    state_t state(size, result["n-graph"].as<unsigned int>());
+    unsigned int num_graph = result["n-graph"].as<unsigned int>();
+    state_t state(size, num_graph);
 
     if (!result.count("zero"))
         state.randomize();
