@@ -83,7 +83,13 @@ for i, teta in enumerate(tetas):
 			avg[key] /= len(data["iterations"])
 
 		# print to json
-		utils.print_to_json(2, {"teta" : teta, "phi" : phi, "data" : avg}, i == 0 and j == 0)
+		utils.print_to_json(2,
+			{
+				"teta" : teta, 
+				"phi" : phi, 
+				"data" : avg
+			}, 
+			i == 0 and j == 0)
 
 		if i != len(tetas) - 1 or j != len(phis) - 1:
 			print(',', end = '')

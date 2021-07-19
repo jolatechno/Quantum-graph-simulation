@@ -84,7 +84,13 @@ for i, p in enumerate(ps):
 			avg[key] /= len(data["iterations"])
 
 		# print to json
-		utils.print_to_json(2, {"p" : p, "q" : q, "data" : avg}, i == 0 and j == 0)
+		utils.print_to_json(2,
+			{
+				"p" : p,
+				"q" : q,
+				"data" : avg
+			},
+			i == 0 and j == 0)
 
 		if i != len(ps) - 1 or j != len(qs) - 1:
 			print(',', end = '')

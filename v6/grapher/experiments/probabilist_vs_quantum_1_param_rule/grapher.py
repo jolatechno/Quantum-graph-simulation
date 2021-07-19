@@ -19,6 +19,7 @@ for filename in filenames:
 	name = utils.find_name("../../plots/properties/", "probabilist_vs_quantum_", rule_name)
 
 	ps = np.array(data["p"])
+	tetas = np.array(data["teta"])
 
 	probabilist_size = np.zeros(len(ps))
 	probabilist_size_std_dev = np.zeros(len(ps))
@@ -100,5 +101,12 @@ for filename in filenames:
 
 	ax2_2.errorbar(ps, probabilist_density, probabilist_density_std_dev,
 					capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
+
+	n_interval = len(ps) // 5
+	ax2_2_x = ax2_2.twiny()
+	ax2_2_x.set_xlim(ax1.get_xlim())
+	ax2_2_x.set_xticks(ps[::n_interval])
+	ax2_2_x.set_xticklabels(["%.2f" % teta for teta in tetas[::n_interval]])
+	ax2_2_x.set_xlabel("teta")
 
 	fig.savefig("../../plots/properties/" + name)
