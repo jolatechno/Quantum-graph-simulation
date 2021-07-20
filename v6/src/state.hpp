@@ -43,6 +43,8 @@
 
 #ifndef _OPENMP
 	#define omp_set_nested(i)
+	#define omp_get_thread_num() 0
+	#define omp_get_num_thread() 1
 #endif
 
 // type definition
@@ -98,6 +100,11 @@ Iteration protocol is:
 */
 
 class state {
+private:
+	/* random engine */
+	mutable std::default_random_engine generator;
+  mutable std::uniform_real_distribution<PROBA_TYPE> unif = std::uniform_real_distribution<PROBA_TYPE>(0, 1);
+
 public:
 /* 
 rule virtual class definition:
@@ -113,6 +120,11 @@ Non-virtual member functions are:
 	- "write_operation(op_type_t op)" which apply the probabilist decision if the rule is probabilist, else returns op.
 */
 	typedef class rule {
+	private:
+		/* random engine */
+		mutable std::default_random_engine generator;
+    mutable std::uniform_real_distribution<PROBA_TYPE> unif = std::uniform_real_distribution<PROBA_TYPE>(0, 1);
+
 	public:
 		/* parameters of a stochiastic matrix */
 		PROBA_TYPE p = 1;
@@ -170,9 +182,7 @@ Non-virtual member functions are:
 				return op;
 			
 			/* generate random number */
-			PROBA_TYPE r = static_cast<PROBA_TYPE> (rand()) / static_cast<PROBA_TYPE> (RAND_MAX);
-
-			if (r < (op == 1 ? p : q))
+			if (unif(generator) < (op == 1 ? p : q))
 				return op;
 
 			return 0; 
@@ -513,6 +523,9 @@ Non-virtual member functions are:
 
 		#pragma omp parallel
 		{
+			unsigned int num_threads = omp_get_num_threads();
+			unsigned int thread_id = omp_get_thread_num();
+
 			#pragma omp for
 			for (unsigned int gid = 0; gid < num_graphs; ++gid) {
 				auto num_nodes_ = num_nodes(gid);
@@ -633,7 +646,10 @@ Non-virtual member functions are:
 			for (unsigned int gid = 1; gid < symbolic_iteration.num_graphs; ++gid)
 				symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid]] = symbolic_iteration.next_hash[symbolic_iteration.next_gid[gid]] != symbolic_iteration.next_hash[symbolic_iteration.next_gid[gid - 1]];
 
-			/* compute interferances */
+			/*unsigned int batch_size = symbolic_iteration.num_graphs / num_threads;
+			unsigned int begin = batch_size * thread_id;
+			unsigned int end = thread_id == num_threads - 1 ? symbolic_iteration.num_graphs : batch_size * (thread_id + 1);*/
+
 			/* !!!!!!!!!!!!!!!!!!!!!!!!
 			potentiel d'optimisation
 			!!!!!!!!!!!!!!!!!!!!!!!! */
@@ -734,9 +750,7 @@ Non-virtual member functions are:
 							PROBA_TYPE r = symbolic_iteration.next_real[*gid_it];
 							PROBA_TYPE i = symbolic_iteration.next_imag[*gid_it];
 
-							float &random_number = symbolic_iteration.random_selector[*gid_it];
-							random_number = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
-							random_number = -std::log(1 - random_number) / (r*r + i*i);
+							symbolic_iteration.random_selector[*gid_it] = -std::log(1 - unif(generator)) / (r*r + i*i);
 						} 
 
 						/* select graphs according to random selectors */
