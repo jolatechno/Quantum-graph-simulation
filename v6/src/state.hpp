@@ -170,7 +170,7 @@ Non-virtual member functions are:
 				return op;
 			
 			/* generate random number */
-			float r = static_cast<PROBA_TYPE> (rand()) / static_cast<PROBA_TYPE> (RAND_MAX);
+			PROBA_TYPE r = static_cast<PROBA_TYPE> (rand()) / static_cast<PROBA_TYPE> (RAND_MAX);
 
 			if (r < (op == 1 ? p : q))
 				return op;
@@ -328,6 +328,9 @@ Non-virtual member functions are:
 		// new graph hash
 		std::vector<size_t, allocator<size_t>> next_hash; /* of size (a) for the symbolic iteration */
 
+		// new graph random selector
+		std::vector<float, allocator<float>> random_selector; /* of size (a) for the symbolic iteration */
+
 		// new graph magnitude
 		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_real; /* of size (a) for the symbolic iteration */
 		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_imag; /* of size (a) for the symbolic iteration */
@@ -351,6 +354,7 @@ Non-virtual member functions are:
 				resize(next_imag, (size_t)(upsize_policy * size));
 				resize(node_size, (size_t)(upsize_policy * size));
 				resize(sub_node_size, (size_t)(upsize_policy * size));
+				resize(random_selector, (size_t)(upsize_policy * size));
 			}
 
 			std::iota(next_gid.begin(), next_gid.begin() + size, 0);
@@ -706,7 +710,7 @@ Non-virtual member functions are:
 					const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
 					const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 					const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-					const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE);
+					const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
 
 					long int mem_usage_per_graph = (graph_mem_usage +
 						(node_mem_usage * node_begin[num_graphs] +
@@ -722,16 +726,23 @@ Non-virtual member functions are:
 					 !!!!!!!!!!!!!!!! */
 
 					if (next_num_graphs > max_num_graphs) {
-						/* sort graphs according to probability */
+
+						/* generate random selectors */
+						//const float size_max = (float)SIZE_MAX;
+						#pragma omp parallel for
+						for (auto gid_it = symbolic_iteration.next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
+							PROBA_TYPE r = symbolic_iteration.next_real[*gid_it];
+							PROBA_TYPE i = symbolic_iteration.next_imag[*gid_it];
+
+							float &random_number = symbolic_iteration.random_selector[*gid_it];
+							random_number = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
+							random_number = -std::log(1 - random_number) / (r*r + i*i);
+						} 
+
+						/* select graphs according to random selectors */
 						__gnu_parallel::nth_element(symbolic_iteration.next_gid.begin(), symbolic_iteration.next_gid.begin() + max_num_graphs, partitioned_it,
 						[&](unsigned int const &gid1, unsigned int const &gid2) {
-							PROBA_TYPE r1 = symbolic_iteration.next_real[gid1];
-							PROBA_TYPE i1 = symbolic_iteration.next_imag[gid1];
-
-							PROBA_TYPE r2 = symbolic_iteration.next_real[gid2];
-							PROBA_TYPE i2 = symbolic_iteration.next_imag[gid2];
-
-							return r1*r1 + i1*i1 > r2*r2 + i2*i2;
+							return symbolic_iteration.random_selector[gid1] < symbolic_iteration.random_selector[gid2];
 						});
 
 						next_num_graphs = max_num_graphs;

@@ -15,6 +15,7 @@ import json
 parser = argparse.ArgumentParser(description='run quantum iteration for all possible arguments')
 
 parser.add_argument('-n', '--n-iter', type=int, default=10, help='number of iteration for each simulation')
+parser.add_argument('-s', '--size', type=int, default=10, help='initial graph size')
 
 parser.add_argument('-N', '--n-serializing', type=int, default=1, help='number of iteration for averaging values')
 
@@ -35,10 +36,10 @@ tetas = np.arccos(np.sqrt(1 - ps)) / np.pi
 ps, tetas = list(ps), list(tetas)
 
 def make_probabilist_cmd(args, p):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
 
 def make_quantum_cmd(args, teta):
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
 
 # print rules
 print("{")
@@ -88,6 +89,8 @@ for i, (p, teta) in enumerate(zip(ps, tetas)):
 	for key in probabilist_avg:
 		probabilist_avg[key] /= len(data["iterations"])
 
+	probabilist_avg["avg_size"] -= args.size
+	
 
 
 
@@ -109,6 +112,8 @@ for i, (p, teta) in enumerate(zip(ps, tetas)):
 	# divided average by number of point
 	for key in quantum_avg:
 		quantum_avg[key] /= len(data["iterations"])
+
+	quantum_avg["avg_size"] -= args.size
 
 
 

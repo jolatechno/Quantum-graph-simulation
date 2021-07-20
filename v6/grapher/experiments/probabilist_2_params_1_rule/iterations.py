@@ -12,9 +12,12 @@ import argparse
 import numpy as np
 import json
 
+
+
 parser = argparse.ArgumentParser(description='run quantum iteration for all possible arguments')
 
 parser.add_argument('-n', '--n-iter', type=int, default=10, help='number of iteration for each simulation')
+parser.add_argument('-s', '--size', type=int, default=10, help='initial graph size')
 
 parser.add_argument('-N', '--n-serializing', type=int, default=1, help='number of iteration for averaging values')
 
@@ -35,7 +38,7 @@ ps = list(np.linspace(args.p0, args.p1, args.n_p))
 qs = list(np.linspace(args.q0, args.q1, args.n_q))
 
 def make_cmd(args, p, q):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -T 1e-18 -n { args.n_iter } -q { q } -p { p } --seed 0 " + " ".join(args.args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -T 1e-18 -n { args.n_iter } -q { q } -p { p } --seed 0 " + " ".join(args.args)
 
 # print rules
 print("{")
@@ -82,6 +85,8 @@ for i, p in enumerate(ps):
 		# divided average by number of point
 		for key in avg:
 			avg[key] /= len(data["iterations"])
+
+		avg["avg_size"] -= args.size
 
 		# print to json
 		utils.print_to_json(2,
