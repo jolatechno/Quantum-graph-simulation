@@ -19,7 +19,7 @@ for filename in filenames:
 	name = utils.find_name("../../plots/properties/", "probabilist_vs_quantum_", rule_name)
 
 	ps = np.array(data["p"])
-	tetas = np.array(data["teta"])
+	thetas = np.array(data["theta"])
 
 	ratios = [it["quantum"]["ratio"] for it in data["results"]]
 	total_probas = [it["quantum"]["total_proba"] for it in data["results"]]
@@ -69,8 +69,8 @@ for filename in filenames:
 	ax1_2_x = ax1_2.twiny()
 	ax1_2_x.set_xlim(ax1.get_xlim())
 	ax1_2_x.set_xticks(ps[::n_interval])
-	ax1_2_x.set_xticklabels(["%.2fπ" % teta for teta in tetas[::n_interval]])
-	ax1_2_x.set_xlabel("teta")
+	ax1_2_x.set_xticklabels(["%.2fπ" % theta for theta in thetas[::n_interval]])
+	ax1_2_x.set_xlabel("theta")
 
 	ax1_2.errorbar(ps, quantum_density, quantum_density_std_dev,
 					capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
@@ -113,8 +113,8 @@ for filename in filenames:
 	ax_x = ax.twiny()
 	ax_x.set_xlim(ax1.get_xlim())
 	ax_x.set_xticks(ps[::n_interval])
-	ax_x.set_xticklabels(["%.2fπ" % teta for teta in tetas[::n_interval]])
-	ax_x.set_xlabel("teta")
+	ax_x.set_xticklabels(["%.2fπ" % theta for theta in thetas[::n_interval]])
+	ax_x.set_xlabel("theta")
 
 	ax.plot(ps, total_probas, label="total proba", color=color)
 	ax.plot(ps, ratios, label="ratio of graph", color = color_p)

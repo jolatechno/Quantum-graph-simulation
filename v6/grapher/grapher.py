@@ -16,6 +16,9 @@ for filename in filenames:
 	  data = json.load(f)
 
 	rule_name = utils.rule_name(data)
+	theta = round(data["rules"][0]["theta"] / np.pi, 2)
+	phi = round(data["rules"][0]["phi"] / np.pi, 2)
+
 	probabilist = "p" in data["rules"][0]
 	name = utils.find_name("plots/stats/", "probabilist_" if probabilist else "quantum_", rule_name)
 
@@ -38,8 +41,8 @@ for filename in filenames:
 
 	if not probabilist:
 		# probability
-		fig = plt.figure()
-		ax = plt.axes()
+		fig = plt.figure(constrained_layout=True)
+		ax = fig.add_subplot(1, 1, 1)
 		ax.set_xlabel('iterations')
 		ax.set_title(f'total probabilty and number of graph', pad=20)
 
@@ -56,11 +59,12 @@ for filename in filenames:
 		ax2.set_ylabel("total number of graphs", color=color2)
 		ax2.tick_params(axis='y', labelcolor=color2)
 
+		fig.suptitle(f'{ rule_name }, θ={ theta }π, φ={ phi }π\n')
 		fig.savefig("plots/stats/" + name)
 
 	# graph sizes
-	fig = plt.figure()
-	ax = plt.axes()
+	fig = plt.figure(constrained_layout=True)
+	ax = fig.add_subplot(1, 1, 1)
 	ax.set_xlabel('iterations')
 	ax.set_ylabel('sizes')
 	ax.set_title(f'graph average size and density', pad=20)
@@ -78,4 +82,5 @@ for filename in filenames:
 	ax2.errorbar(iterations_list, avg_density, std_dev_density,
 				capsize=2, elinewidth=1, markeredgewidth=2, label="average density", color=color2)
 
+	fig.suptitle(f'{ rule_name }, θ={ theta }π, φ={ phi }π\n')
 	fig.savefig("plots/properties/" + name)

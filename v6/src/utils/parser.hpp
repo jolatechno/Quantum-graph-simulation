@@ -24,7 +24,7 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool>
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
-        ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("x,xi", "xi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
@@ -79,7 +79,7 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool>
     if (!result.count("zero"))
         state.randomize();
 
-    PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
+    PROBA_TYPE const theta_pi = M_PI*result["theta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
     PROBA_TYPE const xi_pi = M_PI*result["xi"].as<PROBA_TYPE>();
 
@@ -90,14 +90,14 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool>
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
-        rule = new split_merge_rule(teta_pi, phi_pi, xi_pi);
-        reversed_rule = new split_merge_rule(teta_pi, phi_pi, -xi_pi);
+        rule = new split_merge_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new split_merge_rule(theta_pi, phi_pi, -xi_pi);
     } else if (rule_ == "erase_create") {
-        rule = new erase_create_rule(teta_pi, phi_pi, xi_pi);
-        reversed_rule = new erase_create_rule(teta_pi, phi_pi, -xi_pi);
+        rule = new erase_create_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new erase_create_rule(theta_pi, phi_pi, -xi_pi);
     } else if (rule_ == "coin") {
-        rule = new coin_rule(teta_pi, phi_pi, xi_pi);
-        reversed_rule = new coin_rule(teta_pi, phi_pi, -xi_pi);
+        rule = new coin_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new coin_rule(theta_pi, phi_pi, -xi_pi);
     } else
         throw;
     return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result.count("normalize")};
@@ -123,12 +123,12 @@ std::tuple<state_t,
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
-        ("t,teta", "teta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
         ("different-params", "allow setting different parameters for the second rule", cxxopts::value<bool>())
 
-        ("teta2", "teta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("theta2", "theta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
         ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
@@ -184,14 +184,14 @@ std::tuple<state_t,
     if (!result.count("zero"))
         state.randomize();
 
-    PROBA_TYPE const teta_pi = M_PI*result["teta"].as<PROBA_TYPE>();
+    PROBA_TYPE const theta_pi = M_PI*result["theta"].as<PROBA_TYPE>();
     PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
 
-    PROBA_TYPE teta2_pi = teta_pi;
+    PROBA_TYPE theta2_pi = theta_pi;
     PROBA_TYPE phi2_pi = phi_pi;
 
     if (result.count("different-params")) {
-        teta2_pi = M_PI*result["teta2"].as<PROBA_TYPE>();
+        theta2_pi = M_PI*result["theta2"].as<PROBA_TYPE>();
         phi2_pi = M_PI*result["phi2"].as<PROBA_TYPE>();
     }
 
@@ -202,11 +202,11 @@ std::tuple<state_t,
 
     std::string rule_ = result["rule"].as<std::string>();
     if (rule_ == "split_merge") {
-        rule = new split_merge_rule(teta_pi, phi_pi, 0);
+        rule = new split_merge_rule(theta_pi, phi_pi, 0);
     } else if (rule_ == "erase_create") {
-        rule = new erase_create_rule(teta_pi, phi_pi, 0);
+        rule = new erase_create_rule(theta_pi, phi_pi, 0);
     } else if (rule_ == "coin") {
-        rule = new coin_rule(teta_pi, phi_pi, 0);
+        rule = new coin_rule(theta_pi, phi_pi, 0);
     } else
         throw;
 
@@ -222,11 +222,11 @@ std::tuple<state_t,
 
         rule_ = result["rule2"].as<std::string>();
         if (rule_ == "split_merge") {
-            rule2 = new split_merge_rule(teta2_pi, phi2_pi, 0);
+            rule2 = new split_merge_rule(theta2_pi, phi2_pi, 0);
         } else if (rule_ == "erase_create") {
-            rule2 = new erase_create_rule(teta2_pi, phi2_pi, 0);
+            rule2 = new erase_create_rule(theta2_pi, phi2_pi, 0);
         } else if (rule_ == "coin") {
-            rule2 = new coin_rule(teta2_pi, phi2_pi, 0);
+            rule2 = new coin_rule(theta2_pi, phi2_pi, 0);
         } else
             throw;
 

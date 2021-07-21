@@ -17,19 +17,19 @@ for filename in filenames:
 	rule_name = utils.rule_name(data)
 	name = utils.find_name("../../plots/sizes/", "quantum_", rule_name)
 
-	tetas = np.array(data["teta"])
+	thetas = np.array(data["theta"])
 	phis = np.array(data["phi"])
 
-	size = np.zeros((len(tetas), len(phis)))
-	size_std_dev = np.zeros((len(tetas), len(phis)))
+	size = np.zeros((len(thetas), len(phis)))
+	size_std_dev = np.zeros((len(thetas), len(phis)))
 
-	density = np.zeros((len(tetas), len(phis)))
-	density_std_dev = np.zeros((len(tetas), len(phis)))
+	density = np.zeros((len(thetas), len(phis)))
+	density_std_dev = np.zeros((len(thetas), len(phis)))
 
-	total_proba = np.zeros((len(tetas), len(phis)))
+	total_proba = np.zeros((len(thetas), len(phis)))
 
 	for result in data["results"]:
-		i = np.where(tetas == result["teta"])[0][0]
+		i = np.where(thetas == result["theta"])[0][0]
 		j = np.where(phis == result["phi"])[0][0]
 
 		size[i, j] = result["data"]["avg_size"]
@@ -40,13 +40,13 @@ for filename in filenames:
 
 		total_proba[i, j] = result["data"]["total_proba"]
 
-	tetas, phis = np.meshgrid(tetas, phis)
+	thetas, phis = np.meshgrid(thetas, phis)
 
 	# plot size
-	fig, ax1, ax2 = utils.plot_side_by_side(tetas, phis, size)
+	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, size)
 
-	ax1.set_xlabel("teta")
-	ax2.set_xlabel("teta")
+	ax1.set_xlabel("theta")
+	ax2.set_xlabel("theta")
 
 	ax1.set_ylabel("phi")
 	ax2.set_ylabel("phi")
@@ -55,10 +55,10 @@ for filename in filenames:
 	fig.savefig("../../plots/sizes/" + name)
 
 	# plot density
-	fig, ax1, ax2 = utils.plot_side_by_side(tetas, phis, density)
+	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, density)
 
-	ax1.set_xlabel("teta")
-	ax2.set_xlabel("teta")
+	ax1.set_xlabel("theta")
+	ax2.set_xlabel("theta")
 
 	ax1.set_ylabel("phi")
 	ax2.set_ylabel("phi")
@@ -67,10 +67,10 @@ for filename in filenames:
 	fig.savefig("../../plots/density/" + name)
 
 	# plot total_proba
-	fig, ax1, ax2 = utils.plot_side_by_side(tetas, phis, total_proba)
+	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, total_proba)
 
-	ax1.set_xlabel("teta")
-	ax2.set_xlabel("teta")
+	ax1.set_xlabel("theta")
+	ax2.set_xlabel("theta")
 
 	ax1.set_ylabel("phi")
 	ax2.set_ylabel("phi")

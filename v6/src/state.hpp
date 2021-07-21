@@ -56,6 +56,7 @@ PROBA_TYPE tolerance = 0;
 float upsize_policy = 1.1;
 float downsize_policy = 0.9;
 float safety_margin = 0.2;
+unsigned int min_batch_size = 100;
 size_t min_state_size = 100000;
 
 // debugging options
@@ -85,9 +86,13 @@ Iteration protocol is:
 	
 	- (6): compute the average memory usage of a graph.
   	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_factor".
-
-  - (6.1): partition "next_gid" based on probability ("next_real" and "next_imag"), and keep only the "max_num_graphs" most probable graph
-
+	
+  - (6.1): keep "max_num_graphs" graphs, with each graph having a probability of being kept proportional to its probability:
+  	- generate random number for each graph, following an exponential distribution, for which the rate is set as the probability of the graph.
+  	- select the "max_num_graphs" graphs with the smallest previously mentioned "random number".
+  		(see "https://stackoverflow.com/questions/2140787/select-k-random-elements-from-a-list-whose-elements-have-weights" for explanation of this algorithm)
+			(see "https://stackoverflow.com/questions/2106503/pseudorandom-number-generator-exponential-distribution" for explanation on the generation of the random numbers).
+			
   - (7): reserve all public vector for a new state by iterating over the N first "next_gid" andusing "symbolic_iteration.parent_gid" and "symbolic_iteration.child_id",
   	and assign "node_begin" and "sub_node_begin".
 
@@ -638,62 +643,74 @@ Non-virtual member functions are:
 					return num_childs[symbolic_iteration.parent_gid[gid1]] < num_childs[symbolic_iteration.parent_gid[gid2]];
 				});
 
-				/* compute is_first_index */
+				/* set is_first_index */
 				symbolic_iteration.is_first_index[symbolic_iteration.next_gid[0]] = true;
 			}
 
+			/* compute is first index */
 			#pragma omp for
 			for (unsigned int gid = 1; gid < symbolic_iteration.num_graphs; ++gid)
 				symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid]] = symbolic_iteration.next_hash[symbolic_iteration.next_gid[gid]] != symbolic_iteration.next_hash[symbolic_iteration.next_gid[gid - 1]];
 
-			/*unsigned int batch_size = symbolic_iteration.num_graphs / num_threads;
-			unsigned int begin = batch_size * thread_id;
-			unsigned int end = thread_id == num_threads - 1 ? symbolic_iteration.num_graphs : batch_size * (thread_id + 1);*/
 
-			/* !!!!!!!!!!!!!!!!!!!!!!!!
-			potentiel d'optimisation
-			!!!!!!!!!!!!!!!!!!!!!!!! */
+			unsigned int gid, end;
+
+			if (min_batch_size*num_threads > symbolic_iteration.num_graphs) {
+				end = thread_id == 0 ? symbolic_iteration.num_graphs : 0;
+				gid = 0;
+			} else {
+				unsigned int batch_size = symbolic_iteration.num_graphs / num_threads;
+				end = thread_id == num_threads - 1 ? symbolic_iteration.num_graphs : batch_size * (thread_id + 1);
+				gid = batch_size * thread_id;
+			}
+
+			/* skip the first few graph which aren't unique */
+			while (!symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid]] && gid < end) { ++gid; }
+
 			if (rule.probabilist) {
-				#pragma omp for
-				for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
-					auto id = symbolic_iteration.next_gid[gid];
+				while (gid < end) {
+					unsigned int id = symbolic_iteration.next_gid[gid];
 
-					if (symbolic_iteration.is_first_index[id]) {
-						/* delete phase */
-						PROBA_TYPE r = symbolic_iteration.next_real[id];
-						PROBA_TYPE i = symbolic_iteration.next_imag[id];
+					/* delete phase */
+					PROBA_TYPE r = symbolic_iteration.next_real[id];
+					PROBA_TYPE i = symbolic_iteration.next_imag[id];
 
-						symbolic_iteration.next_real[id] = r*r + i*i;
-						symbolic_iteration.next_imag[id] = 0;
+					symbolic_iteration.next_real[id] = r*r + i*i;
+					symbolic_iteration.next_imag[id] = 0;
 
-						/* sum magnitude of equal graphs */
-						for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
-							auto id_ = symbolic_iteration.next_gid[gid_];
+					/* sum magnitude of equal graphs */
+					for (++gid; gid < symbolic_iteration.num_graphs; ++gid) {
+						unsigned int id_ = symbolic_iteration.next_gid[gid];
 
-							PROBA_TYPE r = symbolic_iteration.next_real[id_];
-							PROBA_TYPE i = symbolic_iteration.next_imag[id_];
+						if (symbolic_iteration.is_first_index[id_])
+							break;
 
-							symbolic_iteration.next_real[id] += r*r + i*i;
-						}
+						PROBA_TYPE r = symbolic_iteration.next_real[id_];
+						PROBA_TYPE i = symbolic_iteration.next_imag[id_];
 
-						/* take square root */
-						symbolic_iteration.next_real[id] = precision::sqrt(symbolic_iteration.next_real[id]);
+						symbolic_iteration.next_real[id] += r*r + i*i;
 					}
+
+					/* take square root */
+					symbolic_iteration.next_real[id] = precision::sqrt(symbolic_iteration.next_real[id]);
 				}
 			} else
-				#pragma omp for
-				for (unsigned int gid = 0; gid < symbolic_iteration.num_graphs; ++gid) {
-					auto id = symbolic_iteration.next_gid[gid];
+				while (gid < end) {
+					unsigned int id = symbolic_iteration.next_gid[gid];
 
-					if (symbolic_iteration.is_first_index[id])
-						/* sum magnitude of equal graphs */
-						for (unsigned int gid_ = gid + 1; gid_ < symbolic_iteration.num_graphs && !symbolic_iteration.is_first_index[symbolic_iteration.next_gid[gid_]]; ++gid_) {
-							auto id_ = symbolic_iteration.next_gid[gid_];
+					/* sum magnitude of equal graphs */
+					for (++gid; gid < symbolic_iteration.num_graphs; ++gid) {
+						unsigned int id_ = symbolic_iteration.next_gid[gid];
 
-							symbolic_iteration.next_real[id] += symbolic_iteration.next_real[id_];
-							symbolic_iteration.next_imag[id] += symbolic_iteration.next_imag[id_];
-						}
+						if (symbolic_iteration.is_first_index[id_])
+							break;
+
+						symbolic_iteration.next_real[id] += symbolic_iteration.next_real[id_];
+						symbolic_iteration.next_imag[id] += symbolic_iteration.next_imag[id_];
+					}
 				}
+
+			#pragma omp barrier
 
 			#pragma omp single
 			{

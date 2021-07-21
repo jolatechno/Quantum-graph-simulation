@@ -31,15 +31,15 @@ parser.add_argument('--q-args', nargs='+', default=[], help='cli arguments for q
 args = parser.parse_args()
 
 ps = np.linspace(args.p0, args.p1, args.n_p)
-tetas = np.arccos(np.sqrt(1 - ps)) / np.pi
+thetas = np.arccos(np.sqrt(1 - ps)) / np.pi
 
-ps, tetas = list(ps), list(tetas)
+ps, thetas = list(ps), list(thetas)
 
 def make_probabilist_cmd(args, p):
 	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
 
-def make_quantum_cmd(args, teta):
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -T 1e-18 -n { args.n_iter } --teta { teta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
+def make_quantum_cmd(args, theta):
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -T 1e-18 -n { args.n_iter } --theta { theta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
 
 # print rules
 print("{")
@@ -60,13 +60,13 @@ utils.print_to_json(1,
 		"rules" : rules,
 		"n_iter" : [args.n_iter - args.n_serializing, args.n_iter],
 		"p" : ps,
-		"teta" : tetas,
+		"theta" : thetas,
 		"results" : utils.OPEN_LIST()
 	},
 	True, False)
 
 # iterate throught argument space
-for i, (p, teta) in enumerate(zip(ps, tetas)):
+for i, (p, theta) in enumerate(zip(ps, thetas)):
 
 
 
@@ -95,7 +95,7 @@ for i, (p, teta) in enumerate(zip(ps, tetas)):
 
 
 	# read quantum result
-	stream = os.popen(make_quantum_cmd(args, teta))
+	stream = os.popen(make_quantum_cmd(args, theta))
 	data = stream.read()
 	try:
 		data = json.loads(data)
@@ -122,7 +122,7 @@ for i, (p, teta) in enumerate(zip(ps, tetas)):
 	utils.print_to_json(2, 
 		{
 			"p" : p,
-			"teta" : teta,
+			"theta" : theta,
 			"probabilist" : probabilist_avg,
 			"quantum" :  quantum_avg
 		}, 
