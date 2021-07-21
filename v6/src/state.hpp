@@ -143,17 +143,17 @@ Non-virtual member functions are:
 		PROBA_TYPE do_not_imag = 0;
 
 		/* parameters for print */
-		PROBA_TYPE teta, phi, xi;
+		PROBA_TYPE theta, phi, xi;
 		std::string name = "";
 		bool move = true;
 		unsigned int n_iter = 0;
 
 		/* constructor for a unitary matrix */
-		rule(PROBA_TYPE teta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : teta(teta_), phi(phi_), xi(xi_) {
-			do_real = precision::sin(teta)* precision::cos(phi);
-			do_imag = precision::sin(teta)* precision::sin(phi);
-			do_not_real = precision::cos(teta)* precision::cos(xi);
-			do_not_imag = precision::cos(teta)* precision::sin(xi);
+		rule(PROBA_TYPE theta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : theta(theta_), phi(phi_), xi(xi_) {
+			do_real = precision::sin(theta)* precision::cos(phi);
+			do_imag = precision::sin(theta)* precision::sin(phi);
+			do_not_real = precision::cos(theta)* precision::cos(xi);
+			do_not_imag = precision::cos(theta)* precision::sin(xi);
 		}
 		rule(PROBA_TYPE p_, PROBA_TYPE q_) : p(p_), q(q_), probabilist(true) {
 			do_real = precision::sqrt(p);
@@ -868,7 +868,7 @@ void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, un
 		std::cout << "\n\t\t\t\"move\" : " << (rule.move ? "true" : "false") << ",";
 
 		if (!rule.probabilist) {
-			std::cout << "\n\t\t\t\"teta\" : " << rule.teta << ",";
+			std::cout << "\n\t\t\t\"theta\" : " << rule.theta << ",";
 			std::cout << "\n\t\t\t\"phi\" : " << rule.phi << ",";
 			std::cout << "\n\t\t\t\"xi\" : " << rule.xi;
 		} else {

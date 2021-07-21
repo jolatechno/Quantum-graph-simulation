@@ -51,7 +51,7 @@ for filename in filenames:
 	ax1.set_ylabel("phi")
 	ax2.set_ylabel("phi")
 
-	fig.suptitle(f'size after { data["n_iter"] } iterations of { rule_name }')
+	fig.suptitle(f'size variation after { data["n_iter"] } iterations of { rule_name }')
 	fig.savefig("../../plots/sizes/" + name)
 
 	# plot density
