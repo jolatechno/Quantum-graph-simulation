@@ -18,7 +18,7 @@ public:
 		name = "erase_create";
 	}
 
-	op_type_t operation(state_t const &s, unsigned int gid, unsigned short int node) const override {
+	op_type_t operation(state_t::iteration_t const &s, unsigned int gid, unsigned short int node) const override {
 		short int sum = s.left(gid, node) + s.right(gid, node);
 
 		if (sum == 2)
@@ -31,7 +31,7 @@ public:
 	}
 
 	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned int &num_nodes, unsigned int &num_sub_node,
-		state_t const &s, unsigned int parent_id, unsigned short int child_id) const override {
+		state_t::iteration_t const &s, unsigned int parent_id, unsigned short int child_id) const override {
 
 		real = s.real[parent_id];
 		imag = s.imag[parent_id];
@@ -77,7 +77,7 @@ public:
 		boost::hash_combine(hash_, right_hash_);
 	}
 
-	void populate_new_graph(state_t const &s, state_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned short int child_id) const override {
+	void populate_new_graph(state_t::iteration_t const &s, state_t::iteration_t &new_state, unsigned int next_gid, unsigned int parent_id, unsigned short int child_id) const override {
 		/* copy nodes */
 		auto node_begin = s.node_begin[parent_id];
 		auto node_end = s.node_begin[parent_id + 1];

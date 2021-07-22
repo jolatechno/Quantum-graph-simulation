@@ -40,40 +40,40 @@ for filename in filenames:
 
 		total_proba[i, j] = result["data"]["total_proba"]
 
-	thetas, phis = np.meshgrid(thetas, phis)
+	phis, thetas = np.meshgrid(phis, thetas)
 
 	# plot size
-	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, size)
+	fig, ax1, ax2 = utils.plot_side_by_side(phis, thetas, size)
 
-	ax1.set_xlabel("theta")
-	ax2.set_xlabel("theta")
+	ax1.set_ylabel("theta")
+	ax2.set_ylabel("theta")
 
-	ax1.set_ylabel("phi")
-	ax2.set_ylabel("phi")
+	ax1.set_xlabel("phi")
+	ax2.set_xlabel("phi")
 
 	fig.suptitle(f'size variation after { data["n_iter"] } iterations of { rule_name }')
 	fig.savefig("../../plots/sizes/" + name)
 
 	# plot density
-	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, density)
+	fig, ax1, ax2 = utils.plot_side_by_side(phis, thetas, density)
 
-	ax1.set_xlabel("theta")
-	ax2.set_xlabel("theta")
+	ax1.set_ylabel("theta")
+	ax2.set_ylabel("theta")
 
-	ax1.set_ylabel("phi")
-	ax2.set_ylabel("phi")
+	ax1.set_xlabel("phi")
+	ax2.set_xlabel("phi")
 
 	fig.suptitle(f'density after { data["n_iter"] } iterations of { rule_name }')
 	fig.savefig("../../plots/density/" + name)
 
 	# plot total_proba
-	fig, ax1, ax2 = utils.plot_side_by_side(thetas, phis, total_proba)
+	fig, ax1, ax2 = utils.plot_side_by_side(phis, thetas, total_proba)
 
-	ax1.set_xlabel("theta")
-	ax2.set_xlabel("theta")
+	ax1.set_ylabel("theta")
+	ax2.set_ylabel("theta")
 
-	ax1.set_ylabel("phi")
-	ax2.set_ylabel("phi")
+	ax1.set_xlabel("phi")
+	ax2.set_xlabel("phi")
 
 	fig.suptitle(f'total proba after { data["n_iter"] } iterations of { rule_name }')
 	fig.savefig("../../plots/probas/" + name)

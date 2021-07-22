@@ -67,6 +67,8 @@ utils.print_to_json(1,
 
 # iterate throught argument space
 for i, (p, theta) in enumerate(zip(ps, thetas)):
+	if i != 0:
+		print(', ', end = '')
 
 
 
@@ -128,8 +130,6 @@ for i, (p, theta) in enumerate(zip(ps, thetas)):
 		}, 
 		i == 0)
 
-	if i != len(ps) - 1:
-		print(',', end = '')
 
 # finish json   
 print("\n\t]")

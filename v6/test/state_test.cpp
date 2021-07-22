@@ -16,13 +16,11 @@ int main(int argc, char* argv[]) {
 
 	print(s); std::cout << "\n";
 
-	state buffer_state(1);
-
 	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "step...\n";
 		
-		s.step(buffer_state, *rule, normalize);
+		s.step(*rule, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
@@ -36,7 +34,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "...moved\n";
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
-			std::cout << s.symbolic_iteration.num_graphs << " -> " << s.num_graphs << " graphs\n";
+			std::cout << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
 	}
 
 	for (int i = 0; i < n_reversed_iteration; ++i) {
@@ -48,7 +46,7 @@ int main(int argc, char* argv[]) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...revresed moved\nstep...\n";
 			
-		s.step(buffer_state, *reversed_rule, normalize);
+		s.step(*reversed_rule, normalize);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
@@ -57,7 +55,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "...swapped\n";
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
-			std::cout << s.symbolic_iteration.num_graphs << " -> " << s.num_graphs << " graphs\n";
+			std::cout << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
 	}
 
 	print(s);

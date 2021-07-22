@@ -67,6 +67,8 @@ utils.print_to_json(1,
 # iterate throught argument space
 for i, p in enumerate(ps):
 	for j, q in enumerate(qs):
+		if i != 0 or j != 0:
+			print(', ', end = '')
 
 		stream = os.popen(make_cmd(args, p, q))
 		data = stream.read()
@@ -96,9 +98,6 @@ for i, p in enumerate(ps):
 				"data" : avg
 			},
 			i == 0 and j == 0)
-
-		if i != len(ps) - 1 or j != len(qs) - 1:
-			print(',', end = '')
 
 # finish json   
 print("\n\t]")
