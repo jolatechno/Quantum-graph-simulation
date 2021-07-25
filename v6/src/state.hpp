@@ -52,7 +52,12 @@ typedef class state state_t;
 typedef char op_type_t;
 
 // global variable definition
-PROBA_TYPE tolerance = 0;
+#ifdef USE_MPRF
+	PROBA_TYPE tolerance = 0;
+#else
+	PROBA_TYPE tolerance = 1e-18;
+#endif
+
 float upsize_policy = 1.1;
 float downsize_policy = 0.9;
 float safety_margin = 0.2;
@@ -420,12 +425,7 @@ Non-virtual member functions are:
 			do_not_real = precision::sqrt(1 - p);
 			do_not_imag = precision::sqrt(1 - q);
 		}
-		rule(PROBA_TYPE p_) : p(p_), q(p_), probabilist(true) {
-			do_real = precision::sqrt(p);
-			do_imag = precision::sqrt(q);
-			do_not_real = precision::sqrt(1 - p);
-			do_not_imag = precision::sqrt(1 - q);
-		}
+		rule(PROBA_TYPE p_) : rule(p_, p_) {}
 		rule() {}
 
 		/* getter */
@@ -473,7 +473,9 @@ Non-virtual member functions are:
 		/* step (2) */
 		unsigned short int num_childs(iteration_t const &s, unsigned int gid) const {
 			/* check for "classical case" */
-			if (probabilist || (do_not_real == 0 && do_not_imag == 0) || (do_real == 0 && do_imag == 0))
+			if (probabilist || 
+				(precision::abs(do_not_real) <= tolerance && precision::abs(do_not_imag) <= tolerance) || 
+				(precision::abs(do_real) <= tolerance && precision::abs(do_imag) <= tolerance))
 				return 1;
 
 			/* count operations */
@@ -523,7 +525,7 @@ Non-virtual member functions are:
 	void step(rule_t const &rule, bool normalize) { step(rule, false, max_num_graphs()); }
 	void step(rule_t const &rule, bool normalize, long int max_num_graphs) {
 		/* check for calssical cases */
-		if (!rule.probabilist && rule.do_real == 0 && rule.do_imag == 0)
+		if (!rule.probabilist && precision::abs(rule.do_real) <= tolerance && precision::abs(rule.do_imag) <= tolerance)
 			return;
 
 		/* allow nested parallism for __gnu_parallel */
@@ -679,7 +681,8 @@ Non-virtual member functions are:
 			}
 
 			/* skip the first few graph which aren't unique */
-			while (!is_first_index[next_gid[gid]] && gid < end) { ++gid; }
+			while (!is_first_index[next_gid[gid]] && gid < end)
+				++gid;
 
 			if (rule.probabilist) {
 				while (gid < end) {
@@ -758,7 +761,6 @@ Non-virtual member functions are:
 				if (max_num_graphs > 0 && next_num_graphs > max_num_graphs) {
 
 					/* generate random selectors */
-					//const float size_max = (float)SIZE_MAX;
 					#pragma omp parallel for
 					for (auto gid_it = next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
 						PROBA_TYPE r = next_real[*gid_it];
@@ -888,6 +890,7 @@ void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, un
 
 
 void serialize_state_to_json(state_t const &s, bool last) {
+	// compute average values for the current iteration
 	PROBA_TYPE avg_size = 0;
 	PROBA_TYPE avg_size_squared = 0;
 
@@ -925,26 +928,36 @@ void serialize_state_to_json(state_t const &s, bool last) {
 		total_proba += proba;
 	}
 
-	PROBA_TYPE avg_size_symbolic = 0;
-
-	#ifndef USE_MPRF
-		#pragma omp parallel for reduction(+ : avg_size_symbolic)
-	#endif
-	for (unsigned int gid = 0; gid < s.symbolic_num_graphs; ++gid) {
-		PROBA_TYPE size = (PROBA_TYPE)s.node_size[gid];
-
-		PROBA_TYPE real = s.next_real[gid];
-		PROBA_TYPE imag = s.next_imag[gid];
-		PROBA_TYPE proba = real*real + imag*imag;
-
-		avg_size_symbolic += proba * size;
-	}
-
 	// correct
 	avg_size /= total_proba;
 	avg_size_squared /= total_proba;
 	avg_density /= total_proba;
 	avg_density_squared /= total_proba;
+
+	PROBA_TYPE avg_size_symbolic = 0;
+	PROBA_TYPE symbolic_total_proba = 0;
+
+	#ifndef USE_MPRF
+		#pragma omp parallel for reduction(+ : avg_size_symbolic) reduction(+ : symbolic_total_proba)
+	#endif
+	for (unsigned int i = 0; i < s.symbolic_num_graphs; ++i) {
+		unsigned int gid = s.next_gid[i];
+
+		if (s.is_first_index[gid]) {
+			PROBA_TYPE size = (PROBA_TYPE)s.node_size[gid];
+
+			PROBA_TYPE real = s.next_real[gid];
+			PROBA_TYPE imag = s.next_imag[gid];
+			PROBA_TYPE proba = real*real + imag*imag;
+
+			symbolic_total_proba += proba;
+			avg_size_symbolic += proba * size;
+		}
+	}
+
+	if (symbolic_total_proba == 0)
+		symbolic_total_proba = 1;
+	avg_size_symbolic /= symbolic_total_proba;
 
 	// compute size bias
 	PROBA_TYPE size_bias = (avg_size_symbolic - avg_size) / avg_size;

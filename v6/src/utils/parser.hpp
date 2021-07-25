@@ -66,9 +66,9 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool>
     // ------------------------------------------
     // global variables
 
-    tolerance = result["tol"].as<PROBA_TYPE>();
-    verbose = result["verbose"].as<float>();
-    max_num_graph_print = result["num-graph-print"].as<int>();
+    if (result.count("tol")) tolerance = result["tol"].as<PROBA_TYPE>();
+    if (result.count("verbose")) verbose = result["verbose"].as<float>();
+    if (result.count("num-graph-print")) max_num_graph_print = result["num-graph-print"].as<int>();
 
     // ------------------------------------------
     // initialize state
@@ -172,7 +172,7 @@ std::tuple<state_t,
     // ------------------------------------------
     // global variables
 
-    tolerance = result["tol"].as<PROBA_TYPE>();
+    if (result.count("tol")) tolerance = result["tol"].as<PROBA_TYPE>();
 
     // ------------------------------------------
     // initialize state
@@ -252,8 +252,7 @@ std::tuple<state_t,
         ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
-
-        ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        
         ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
 
         ("q", "q for the rule (useless for \"coin\" rule)", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
@@ -300,11 +299,6 @@ std::tuple<state_t,
     // parameters
 
     unsigned int n_iter = result["n-iter"].as<unsigned int>();
-
-    // ------------------------------------------
-    // global variables
-
-    tolerance = result["tol"].as<PROBA_TYPE>();
 
     // ------------------------------------------
     // initialize state

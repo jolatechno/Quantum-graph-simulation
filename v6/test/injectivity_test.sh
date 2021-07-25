@@ -75,7 +75,7 @@ for rule in $rule; do
 		fi
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
-			command="./state_test.out -t 0.375 -p 0.125 -x 0.125 -T 1e-18 -r ${rule} --seed ${seed} -s ${size} -n ${n_iter} -i"
+			command="./state_test.out -t 0.375 -p 0.125 -x 0.125 -r ${rule} --seed ${seed} -s ${size} -n ${n_iter} -i"
 			res=$(eval $command)
 
 			n_line=$(echo "${res}"  | wc -l)

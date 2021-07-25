@@ -36,10 +36,10 @@ thetas = np.arccos(np.sqrt(1 - ps)) / np.pi
 ps, thetas = list(ps), list(thetas)
 
 def make_probabilist_cmd(args, p):
-	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -T 1e-18 -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
+	return f"../../probabilist_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -n { args.n_iter } -p { p } -q { p } --seed 0 " + " ".join(args.args + args.p_args)
 
 def make_quantum_cmd(args, theta):
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -T 1e-18 -n { args.n_iter } --theta { theta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -n { args.n_iter } --theta { theta } --phi 0 --seed 0 " + " ".join(args.args + args.q_args)
 
 # print rules
 print("{")

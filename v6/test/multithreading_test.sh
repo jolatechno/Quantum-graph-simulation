@@ -29,7 +29,7 @@ while getopts 'n:s:m:ht:' flag; do
   esac
 done
 
-command="./state_test.out -r split_merge -n ${niter} -s ${size} --safety-margin ${safety_margin} -T 1e-18 --seed 26"
+command="./state_test.out -r split_merge -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 26"
 echo "" >> time.txt
 echo ${command} >> time.txt
 
