@@ -522,7 +522,7 @@ Non-virtual member functions are:
 
 	/* step function */
 	void step(rule_t const &rule) { step(rule, false); }
-	void step(rule_t const &rule, bool normalize) { step(rule, false, max_num_graphs()); }
+	void step(rule_t const &rule, bool normalize) { step(rule, normalize, max_num_graphs()); }
 	void step(rule_t const &rule, bool normalize, long int max_num_graphs) {
 		/* check for calssical cases */
 		if (!rule.probabilist && precision::abs(rule.do_real) <= tolerance && precision::abs(rule.do_imag) <= tolerance)
@@ -592,6 +592,7 @@ Non-virtual member functions are:
 			if (normalize) {
 				#pragma omp single
 				total_proba = precision::sqrt(total_proba);
+				
 
 				#pragma omp for
 				for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
