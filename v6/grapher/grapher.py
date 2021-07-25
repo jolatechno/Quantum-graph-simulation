@@ -25,10 +25,6 @@ for filename in filenames:
 	n_iterations = data["n_iter"] + 1
 	iterations_list = np.arange(0, n_iterations)
 
-	total_probas = np.array([it["total_proba"] for it in data["iterations"]])
-	ratios = np.array([it["ratio"] for it in data["iterations"]])
-	num_graphs = np.array([it["num_graphs"] for it in data["iterations"]])
-
 	avg_size = np.array([it["avg_size"] for it in data["iterations"]])
 	std_dev_size = np.array([it["std_dev_size"] for it in data["iterations"]])
 
@@ -36,28 +32,39 @@ for filename in filenames:
 	std_dev_density = np.array([it["std_dev_density"] for it in data["iterations"]])
 
 	color = 'tab:blue'
-	color2 = 'tab:red'
 	color_p = 'tab:cyan'
+	color2 = 'tab:red'
 
 	if not probabilist:
-		# probability
-		fig = plt.figure(constrained_layout=True)
-		ax = fig.add_subplot(1, 1, 1)
-		ax.set_xlabel('iterations')
-		ax.set_title(f'total probabilty and number of graph', pad=20)
+		total_probas = np.array([it["total_proba"] for it in data["iterations"]])
+		ratios = np.array([it["ratio"] for it in data["iterations"]])
+		num_graphs = np.array([it["num_graphs"] for it in data["iterations"]])
+		size_bias = np.array([it["size_bias"] for it in data["iterations"]][1:])
 
-		ax.plot(total_probas, label="total proba", color=color)
-		ax.plot(ratios, label="ratio of graph", color = color_p)
-		ax.legend()
-		ax.set_ylabel("proba", color=color)
-		ax.tick_params(axis='y', labelcolor=color)
+		# probability
+		fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
+		ax1 = fig.add_subplot(1, 2, 1)
+		ax1.set_xlabel('iterations')
+		ax1.set_title(f'total probabilty and number of graph', pad=20)
+
+		ax1.plot(total_probas, label="total proba", color=color)
+		ax1.plot(ratios, label="ratio of graph", color = color_p)
+		ax1.legend()
+		ax1.set_ylabel("proba", color=color)
+		ax1.tick_params(axis='y', labelcolor=color)
 
 		# number of graphs
-		ax2 = ax.twinx()
-		ax2.plot(num_graphs, color=color2)
-		ax2.set_yscale('log')
-		ax2.set_ylabel("total number of graphs", color=color2)
-		ax2.tick_params(axis='y', labelcolor=color2)
+		ax1_2 = ax1.twinx()
+		ax1_2.plot(num_graphs, color=color2)
+		ax1_2.set_yscale('log')
+		ax1_2.set_ylabel("total number of graphs", color=color2)
+		ax1_2.tick_params(axis='y', labelcolor=color2)
+
+		# plot size bias
+		ax2 = fig.add_subplot(1, 2, 2)
+		ax2.plot(np.arange(1, len(size_bias) + 1), size_bias)
+		ax2.set_xlabel('iterations')
+		ax2.set_ylabel("size bias (proportion)")
 
 		fig.suptitle(f'{ rule_name }, θ={ theta }π, φ={ phi }π\n')
 		fig.savefig("plots/stats/" + name)

@@ -500,9 +500,28 @@ Non-virtual member functions are:
 	definition of the step function
 	!!!!!!!!! */
 
+	long int inline max_num_graphs() {
+		auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
+
+		const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
+		const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
+		const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
+		const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
+
+		long int mem_usage_per_graph = (graph_mem_usage +
+			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] +
+			sub_node_mem_usage * current_iteration.sub_node_begin[current_iteration.num_graphs] +
+			symbolic_mem_usage * symbolic_num_graphs) / current_iteration.num_graphs
+			) * upsize_policy;
+
+			long int mem_difference = free_mem - total_memory*safety_margin;
+			return (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+	}
+
 	/* step function */
 	void step(rule_t const &rule) { step(rule, false); }
-	void step(rule_t const &rule, bool normalize) {
+	void step(rule_t const &rule, bool normalize) { step(rule, false, max_num_graphs()); }
+	void step(rule_t const &rule, bool normalize, long int max_num_graphs) {
 		/* check for calssical cases */
 		if (!rule.probabilist && rule.do_real == 0 && rule.do_imag == 0)
 			return;
@@ -732,48 +751,29 @@ Non-virtual member functions are:
 				if (verbose >= STEP_DEBUG_LEVEL)
 						std::cout << "step 6\n";
 
-				if (next_num_graphs >= min_state_size) {
-					auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
+				/* !!!!!!!!!!!!!!!!
+				step (6.1) 
+				 !!!!!!!!!!!!!!!! */
 
-					const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
-					const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
-					const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-					const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
+				if (max_num_graphs > 0 && next_num_graphs > max_num_graphs) {
 
-					long int mem_usage_per_graph = (graph_mem_usage +
-						(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] +
-						sub_node_mem_usage * current_iteration.sub_node_begin[current_iteration.num_graphs] +
-						symbolic_mem_usage * symbolic_num_graphs) / current_iteration.num_graphs
-						) * upsize_policy;
+					/* generate random selectors */
+					//const float size_max = (float)SIZE_MAX;
+					#pragma omp parallel for
+					for (auto gid_it = next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
+						PROBA_TYPE r = next_real[*gid_it];
+						PROBA_TYPE i = next_imag[*gid_it];
 
-					long int mem_difference = free_mem - total_memory*safety_margin;
-					long int max_num_graphs = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+						random_selector[*gid_it] = precision::log( -precision::log(1 - unif(generator)) / (r*r + i*i));
+					} 
 
-					//printf("mem_difference=%fGb, graph=%ldB, max_num_graphs=%ld\n", (float)mem_difference / 1e9, mem_usage_per_graph, max_num_graphs);
-					/* !!!!!!!!!!!!!!!!
-					step (6.1) 
-					 !!!!!!!!!!!!!!!! */
+					/* select graphs according to random selectors */
+					__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, partitioned_it,
+					[&](unsigned int const &gid1, unsigned int const &gid2) {
+						return random_selector[gid1] < random_selector[gid2];
+					});
 
-					if (next_num_graphs > max_num_graphs) {
-
-						/* generate random selectors */
-						//const float size_max = (float)SIZE_MAX;
-						#pragma omp parallel for
-						for (auto gid_it = next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
-							PROBA_TYPE r = next_real[*gid_it];
-							PROBA_TYPE i = next_imag[*gid_it];
-
-							random_selector[*gid_it] = -std::log(1 - unif(generator)) / (r*r + i*i);
-						} 
-
-						/* select graphs according to random selectors */
-						__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, partitioned_it,
-						[&](unsigned int const &gid1, unsigned int const &gid2) {
-							return random_selector[gid1] < random_selector[gid2];
-						});
-
-						next_num_graphs = max_num_graphs;
-					}
+					next_num_graphs = max_num_graphs;
 				}
 
 				next_iteration.num_graphs = next_num_graphs;
@@ -925,11 +925,29 @@ void serialize_state_to_json(state_t const &s, bool last) {
 		total_proba += proba;
 	}
 
+	PROBA_TYPE avg_size_symbolic = 0;
+
+	#ifndef USE_MPRF
+		#pragma omp parallel for reduction(+ : avg_size_symbolic)
+	#endif
+	for (unsigned int gid = 0; gid < s.symbolic_num_graphs; ++gid) {
+		PROBA_TYPE size = (PROBA_TYPE)s.node_size[gid];
+
+		PROBA_TYPE real = s.next_real[gid];
+		PROBA_TYPE imag = s.next_imag[gid];
+		PROBA_TYPE proba = real*real + imag*imag;
+
+		avg_size_symbolic += proba * size;
+	}
+
 	// correct
 	avg_size /= total_proba;
 	avg_size_squared /= total_proba;
 	avg_density /= total_proba;
 	avg_density_squared /= total_proba;
+
+	// compute size bias
+	PROBA_TYPE size_bias = (avg_size_symbolic - avg_size) / avg_size;
 
 	// compute size standard deviation
 	PROBA_TYPE std_dev_size = avg_size_squared - avg_size*avg_size;
@@ -951,6 +969,7 @@ void serialize_state_to_json(state_t const &s, bool last) {
 
 	// print sizes
 	std::cout << ",\n\t\t\t\"avg_size\": " << avg_size;
+	std::cout << ",\n\t\t\t\"size_bias\": " << size_bias;
 	std::cout << ",\n\t\t\t\"std_dev_size\": " << std_dev_size;
 
 	// print densities
