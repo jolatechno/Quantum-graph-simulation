@@ -503,6 +503,9 @@ Non-virtual member functions are:
 	!!!!!!!!! */
 
 	long int inline max_num_graphs() {
+		if (next_iteration.num_graphs == 0)
+			return -1;
+
 		auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
 
 		const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
@@ -511,13 +514,18 @@ Non-virtual member functions are:
 		const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
 
 		long int mem_usage_per_graph = (graph_mem_usage +
-			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] +
-			sub_node_mem_usage * current_iteration.sub_node_begin[current_iteration.num_graphs] +
-			symbolic_mem_usage * symbolic_num_graphs) / current_iteration.num_graphs
+			(node_mem_usage * next_iteration.node_begin[next_iteration.num_graphs] +
+			sub_node_mem_usage * next_iteration.sub_node_begin[next_iteration.num_graphs] +
+			symbolic_mem_usage * symbolic_num_graphs) / next_iteration.num_graphs
 			) * upsize_policy;
 
-			long int mem_difference = free_mem - total_memory*safety_margin;
-			return (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+		long int mem_difference = free_mem - total_memory*safety_margin;
+		long int max_num_graph = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+
+		if (max_num_graph <= 0)
+			max_num_graph = current_iteration.num_graphs;
+
+		return std::max(max_num_graph, (long int)min_state_size);
 	}
 
 	/* step function */
