@@ -123,10 +123,18 @@ public:
 		pair_t,
 	} node_type_t;
 
-	/* vectors can have 3 different sizes :
+	/* 
+	vectors can have 3 different sizes :
 		- (a) the numer of graph (so a single element per graph), and + 1
 		- (b) the total numer of nodes (sum of the numer of nodes for each graph)
 		- (c) the total numer of sub-nodes
+	*/
+
+	/* 
+	definition of the iteration struct:
+		- stores vector describing an iteration
+		- has member functions to resize sizes (a), (b), and (c)
+		- has getters and setters for each properties
 	*/
 
 	typedef struct iteration {
@@ -160,7 +168,8 @@ public:
 		// numer of sub-graph for each parent
 		std::vector<unsigned short int, allocator<unsigned short int>> num_childs; /* of size (a) */
 
-		// resize operators
+		/* resize operators */
+		// resize size (a)
 		void resize_num_graphs(size_t size) {
 			size = std::max(min_state_size, size);
 			if (num_childs.size() < size ||
@@ -174,6 +183,7 @@ public:
 			}
 		}
 
+		// resize size (b)
 		void resize_num_nodes(size_t size) {
 			size = std::max(min_state_size, size);
 			if (node_id_c.size() < size ||
@@ -186,6 +196,7 @@ public:
 			}
 		}
 
+		// resize size (c)
 		void resize_num_sub_nodes(size_t size) {
 			size = std::max(min_state_size, size);
 			if (node_hash.size() < size ||
@@ -288,55 +299,74 @@ public:
 		}
 	} iteration_t;
 
+	/* two iterations are stored in a state and are swaped at the end of each step */
 	iteration_t current_iteration, next_iteration;
-
-	/* constructor for a single graph of a given size */
-	state(unsigned int size) : state(size, 1) {}
 
 	/* constructor for multiple graph of a given size */
 	state(unsigned int size, unsigned int n) {
 		current_iteration.num_graphs = n;
 
+		// resize symbolic iteration
 		resize_num_graphs(n);
 
+		// resize current_iteration
 		current_iteration.resize_num_graphs(n);
 		current_iteration.resize_num_nodes(size*n);
 		current_iteration.resize_num_sub_nodes(size*n);
 
+		// resize next_iteration
 		next_iteration.resize_num_graphs(n);
 		next_iteration.resize_num_nodes(size*n);
 		next_iteration.resize_num_sub_nodes(size*n);
 
+		// set intitial vector values
 		current_iteration.real[0] = 1 / precision::sqrt((PROBA_TYPE)n);
 		current_iteration.node_begin[0] = 0;
 		current_iteration.sub_node_begin[0] = 0;
 
+		// set the node type for all nodes
 		std::fill(current_iteration.right_idx__or_type_.begin(),
 			current_iteration.right_idx__or_type_.begin() + size*n,
 			element_t);
 
 		for (unsigned int gid = 0; gid < n; ++gid) {
+			// set the magnitude and node_begin and sub_node_begin for each graphs
 			current_iteration.real[gid] = current_iteration.real[0]; current_iteration.imag[gid] = 0;
 			current_iteration.node_begin[gid + 1] = size*(gid + 1);
 			current_iteration.sub_node_begin[gid + 1] = size*(gid + 1);
 
+			// initiate the sub-node id of each node
 			std::iota(current_iteration.node_id_c.begin() + current_iteration.node_begin[gid],
 				current_iteration.node_id_c.begin() + current_iteration.node_begin[gid + 1],
 				0);
+
+			// intiate the name of each sub-node
 			std::iota(current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + current_iteration.node_begin[gid],
 				current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + current_iteration.node_begin[gid + 1],
 				1);
+
+			// set has_most_left_zero for the first node of each graph
 			current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_[current_iteration.node_begin[gid]] = -1;
 
+			// hash each node
 			for (unsigned int node = 0; node < size; ++node)
 				current_iteration.hash_node(gid, node);
 		}
 	}
 
+	/* constructor for a single graph of a given size */
+	state(unsigned int size) : state(size, 1) {}
+
 	/* randomize function */
 	void randomize() { current_iteration.randomize(); }
 
-	/* symbolic iteration */
+	/* 
+	symbolic iteration: 
+		- vectors for temporary properties stored at the symbolic iteration
+		- member function to resize the number of graph at symbolic iteration
+	*/
+
+	// number of graphs
 	size_t symbolic_num_graphs = 0;
 
 	// new graphs
@@ -412,23 +442,30 @@ Non-virtual member functions are:
 		bool move = true;
 		unsigned int n_iter = 0;
 
-		/* constructor for a unitary matrix */
+		/* constructors */
+		// constructors for a unitary matrix
 		rule(PROBA_TYPE theta_, PROBA_TYPE phi_, PROBA_TYPE xi_) : theta(theta_), phi(phi_), xi(xi_) {
 			do_real = precision::sin(theta)* precision::cos(phi);
 			do_imag = precision::sin(theta)* precision::sin(phi);
 			do_not_real = precision::cos(theta)* precision::cos(xi);
 			do_not_imag = precision::cos(theta)* precision::sin(xi);
 		}
+
+		// probabilist constructor (p != q)
 		rule(PROBA_TYPE p_, PROBA_TYPE q_) : p(p_), q(q_), probabilist(true) {
 			do_real = precision::sqrt(p);
 			do_imag = precision::sqrt(q);
 			do_not_real = precision::sqrt(1 - p);
 			do_not_imag = precision::sqrt(1 - q);
 		}
+
+		// probabilist constructor (p == q)
 		rule(PROBA_TYPE p_) : rule(p_, p_) {}
+
+		// empty constructor
 		rule() {}
 
-		/* getter */
+		/* multiply the magnitude of a graph according to the operation and the rule */
 		void inline multiply_proba(PROBA_TYPE &real, PROBA_TYPE &imag, op_type_t op /* either 0 or 1 */, bool do_) const {
 			if (!probabilist) {
 
@@ -441,6 +478,12 @@ Non-virtual member functions are:
 			}
 		}
 
+		/* 
+		probabilist:
+			- randomly chooses whether to do operation or not according to p and q
+		classical / quantum:
+			- always write the operation
+		*/
 		op_type_t inline write_operation(op_type_t op) const {
 			if (!probabilist || op == 0)
 				return op;
@@ -452,6 +495,12 @@ Non-virtual member functions are:
 			return 0; 
 		}
 
+		/*
+		quantum:
+			- check (according to child_id) whether to do an operation or not
+		classical / probabilist:
+			- always do the operation
+		*/
 		bool inline do_operation(unsigned short int &child_id) const {
 			/* check if the rule is classical */
 			if (probabilist || (do_not_real == 0 && do_not_imag == 0))
@@ -468,9 +517,16 @@ Non-virtual member functions are:
 		}
 
 		/* step (1) */
+		// virtual function to be overloaded
 		virtual op_type_t operation(iteration_t const &s, unsigned int gid, unsigned short int node) const { return '\0'; }
 
 		/* step (2) */
+		/*
+		probabilist / classical:
+			- return 1 (since there is only one child)
+		quantum:
+			- count the number of operations in the graph (n), and returns 2^n (since each operation can be done or not independantly)
+		*/
 		unsigned short int num_childs(iteration_t const &s, unsigned int gid) const {
 			/* check for "classical case" */
 			if (probabilist || 
@@ -489,37 +545,45 @@ Non-virtual member functions are:
 		}
 
 		/* step (4) */
+		// virtual function to be overloaded
 		virtual void child_properties(size_t& hash_,
 			PROBA_TYPE& real, PROBA_TYPE& imag,
 			unsigned int& num_nodes, unsigned int& num_sub_node,
 			iteration_t const &s, unsigned int parent_id, unsigned short int child_id) const { }
 
 		/* step (8) */
+		// virtual function to be overloaded
 		virtual void populate_new_graph(iteration_t const &s, iteration_t &next_iteration, unsigned int next_gid, unsigned int parent_id, unsigned short int child_id) const {}
 	} rule_t;
 
-	/* !!!!!!!!!
-	definition of the step function
-	!!!!!!!!! */
 
+	/* compute the maximum number of graph that can fit in memory accross two iterations */
 	long int inline max_num_graphs() {
 		if (next_iteration.num_graphs == 0)
 			return -1;
 
+		// get the free memory and the total amount of memory...
 		auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
 
+		// and according to the "safety_margin" (a proportion of total memory) compute the total delta between the amount free memory and the target
+		long int mem_difference = free_mem - total_memory*safety_margin;
+
+		// constant mem usage per vector elements for each size
 		const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
 		const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 		const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
 		const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
 
-		long int mem_usage_per_graph = (graph_mem_usage +
-			(node_mem_usage * next_iteration.node_begin[next_iteration.num_graphs] +
-			sub_node_mem_usage * next_iteration.sub_node_begin[next_iteration.num_graphs] +
-			symbolic_mem_usage * symbolic_num_graphs) / next_iteration.num_graphs
-			) * upsize_policy;
+		long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
+			(node_mem_usage * next_iteration.node_begin[next_iteration.num_graphs] + // usage for a node * total number of nodes
+			sub_node_mem_usage * next_iteration.sub_node_begin[next_iteration.num_graphs] + // usage for a sub-node * total number of sub-nodes
+			symbolic_mem_usage * symbolic_num_graphs) // usage for a graph at the symbolic iteration  * total number of graphs at the symbolic iteration
+			/ next_iteration.num_graphs // divided by the number of graphs at the last step to obtain per-graph memory usage
+			) * upsize_policy; // time the "upsize_policy" since it adds an memory inneficiency
 
-		long int mem_difference = free_mem - total_memory*safety_margin;
+		// get the total number of graphs that can fit in memory,
+		// by adding the number of graphs that can fit in the "mem_difference" to the number of graphs in both iterations
+		// then divided it by two since we need to have two iteartions at the same time.
 		long int max_num_graph = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
 
 		if (max_num_graph <= 0)
@@ -539,6 +603,7 @@ Non-virtual member functions are:
 		/* allow nested parallism for __gnu_parallel */
 		omp_set_nested(1);
 
+		// set the proba to 1 if we won't normalize
 		PROBA_TYPE total_proba = !normalize;
 
 		symbolic_num_graphs = 0;
@@ -552,9 +617,8 @@ Non-virtual member functions are:
 
 		#pragma omp parallel
 		{
-			unsigned int num_threads = omp_get_num_threads();
-			unsigned int thread_id = omp_get_thread_num();
 
+			// get operations for each node of each graph
 			#pragma omp for
 			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
 				auto num_nodes_ = current_iteration.num_nodes(gid);
@@ -677,19 +741,21 @@ Non-virtual member functions are:
 			for (unsigned int gid = 1; gid < symbolic_num_graphs; ++gid)
 				is_first_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid - 1]];
 
-
+			unsigned int num_threads = omp_get_num_threads();
+			unsigned int thread_id = omp_get_thread_num();
 			unsigned int gid, end;
-
 			if (min_batch_size*num_threads > symbolic_num_graphs) {
+				// if there aren't enough graph to share them in batch large enough, do the work on a single thread
 				end = thread_id == 0 ? symbolic_num_graphs : 0;
 				gid = 0;
 			} else {
+				// find the begin and the end of each batch assigned to each thread
 				unsigned int batch_size = symbolic_num_graphs / num_threads;
 				end = thread_id == num_threads - 1 ? symbolic_num_graphs : batch_size * (thread_id + 1);
 				gid = batch_size * thread_id;
 			}
 
-			/* skip the first few graph which aren't unique */
+			// skip the first few graph which aren't unique at the begining of each thread
 			while (!is_first_index[next_gid[gid]] && gid < end)
 				++gid;
 
