@@ -619,7 +619,7 @@ Non-virtual member functions are:
 		{
 
 			// get operations for each node of each graph
-			#pragma omp for
+			#pragma omp for schedule(static)
 			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
 				auto num_nodes_ = current_iteration.num_nodes(gid);
 
@@ -637,7 +637,7 @@ Non-virtual member functions are:
 				std::cout << "step 2\n";
 
 			#ifndef USE_MPRF
-				#pragma omp for reduction(+:symbolic_num_graphs) reduction(+:total_proba)
+				#pragma omp for schedule(static) reduction(+:symbolic_num_graphs) reduction(+:total_proba)
 			#else
 				#pragma omp single
 			#endif
@@ -666,7 +666,7 @@ Non-virtual member functions are:
 				total_proba = precision::sqrt(total_proba);
 				
 
-				#pragma omp for
+				#pragma omp for schedule(static)
 				for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
 					current_iteration.real[gid] /= total_proba;
 					current_iteration.imag[gid] /= total_proba;
@@ -704,7 +704,7 @@ Non-virtual member functions are:
 					std::cout << "step 4\n";
 			}
 
-			#pragma omp for
+			#pragma omp for schedule(static)
 			for (unsigned int gid = 0; gid < symbolic_num_graphs; ++gid)
 				rule.child_properties(next_hash[gid],
 					next_real[gid], next_imag[gid],
@@ -737,7 +737,7 @@ Non-virtual member functions are:
 			}
 
 			/* compute is first index */
-			#pragma omp for
+			#pragma omp for schedule(static)
 			for (unsigned int gid = 1; gid < symbolic_num_graphs; ++gid)
 				is_first_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid - 1]];
 
@@ -836,7 +836,7 @@ Non-virtual member functions are:
 				if (max_num_graphs > 0 && next_num_graphs > max_num_graphs) {
 
 					/* generate random selectors */
-					#pragma omp parallel for
+					#pragma omp parallel for schedule(static)
 					for (auto gid_it = next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
 						PROBA_TYPE r = next_real[*gid_it];
 						PROBA_TYPE i = next_imag[*gid_it];
@@ -870,7 +870,7 @@ Non-virtual member functions are:
 			}
 
 			/* prepare for partial sum */
-			#pragma omp for
+			#pragma omp for schedule(static)
 			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				unsigned int id = next_gid[gid];
 
@@ -903,7 +903,7 @@ Non-virtual member functions are:
 					std::cout << "step 8\n";
 			}
 
-			#pragma omp for
+			#pragma omp for schedule(static)
 			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				auto id = next_gid[gid];
 				/* populate graphs */
@@ -975,7 +975,7 @@ void serialize_state_to_json(state_t const &s, bool last) {
 	PROBA_TYPE total_proba = 0;
 
 	#ifndef USE_MPRF
-		#pragma omp parallel for \
+		#pragma omp parallel for schedule(static) \
 			reduction(+ : avg_size) reduction(+ : avg_size_squared) \
 			reduction(+ : avg_density) reduction(+ : avg_density_squared) \
 			reduction(+ : total_proba)
@@ -1013,7 +1013,7 @@ void serialize_state_to_json(state_t const &s, bool last) {
 	PROBA_TYPE symbolic_total_proba = 0;
 
 	#ifndef USE_MPRF
-		#pragma omp parallel for reduction(+ : avg_size_symbolic) reduction(+ : symbolic_total_proba)
+		#pragma omp parallel for schedule(static) reduction(+ : avg_size_symbolic) reduction(+ : symbolic_total_proba)
 	#endif
 	for (unsigned int i = 0; i < s.symbolic_num_graphs; ++i) {
 		unsigned int gid = s.next_gid[i];
