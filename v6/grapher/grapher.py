@@ -39,7 +39,7 @@ for filename in filenames:
 		total_probas = np.array([it["total_proba"] for it in data["iterations"]])
 		ratios = np.array([it["ratio"] for it in data["iterations"]])
 		num_graphs = np.array([it["num_graphs"] for it in data["iterations"]])
-		size_bias = np.array([it["size_bias"] for it in data["iterations"]][1:])
+		size_bias = np.array([it["size_bias"] for it in data["iterations"]])
 
 		# probability
 		fig = plt.figure(figsize=plt.figaspect(0.5), constrained_layout=True)
@@ -62,7 +62,7 @@ for filename in filenames:
 
 		# plot size bias
 		ax2 = fig.add_subplot(1, 2, 2)
-		ax2.plot(np.arange(1, len(size_bias) + 1), size_bias)
+		ax2.plot(size_bias)
 		ax2.set_xlabel('iterations')
 		ax2.set_ylabel("size bias (proportion)")
 
