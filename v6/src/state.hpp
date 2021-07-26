@@ -348,18 +348,10 @@ public:
 	state(unsigned int size, unsigned int n) {
 		current_iteration.num_graphs = n;
 
-		// resize symbolic iteration
-		resize_symbolic_num_graphs(n);
-
 		// resize current_iteration
 		current_iteration.resize_num_graphs(n);
 		current_iteration.resize_num_nodes(size*n);
 		current_iteration.resize_num_sub_nodes(size*n);
-
-		// resize next_iteration
-		next_iteration.resize_num_graphs(n);
-		next_iteration.resize_num_nodes(size*n);
-		next_iteration.resize_num_sub_nodes(size*n);
 
 		// set intitial vector values
 		current_iteration.real[0] = 1 / precision::sqrt((PROBA_TYPE)n);
@@ -639,10 +631,10 @@ Non-virtual member functions are:
 		long int mem_difference = free_mem - total_memory*safety_margin;
 
 		// constant mem usage per vector elements for each size
-		const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
-		const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
-		const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
+		static const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
+		static const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
+		static const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
+		static const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
 
 		long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes

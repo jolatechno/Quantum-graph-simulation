@@ -30,6 +30,7 @@ void resize(std::vector<T, allocator<T>> &v, size_t size) {
 	/* assign from each thread */
 	#pragma omp parallel for ordered schedule(static)
 	for (unsigned int i = 0; i < size; ++i)
+		#pragma omp ordered
 		new_vec.push_back(i < old_size ? v[i] : zero);
 
 	/* swap vectors */
