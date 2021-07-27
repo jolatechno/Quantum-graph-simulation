@@ -13,12 +13,48 @@
 #include "utils/complex.hpp"
 
 // debug levels
-#define STEP_DEBUG_LEVEL 1
-#define PRINT_DEBUG_LEVEL_1 0.5
-#define PRINT_DEBUG_LEVEL_2 0.75
-#define PRINT_DEBUG_LEVEL_3 1.5
+#ifndef STEP_DEBUG_LEVEL
+	#define STEP_DEBUG_LEVEL 1
+#endif
+#ifndef PRINT_DEBUG_LEVEL_1
+	#define PRINT_DEBUG_LEVEL_1 0.5
+#endif
+#ifndef PRINT_DEBUG_LEVEL_2
+	#define PRINT_DEBUG_LEVEL_2 0.75
+#endif
+#ifndef PRINT_DEBUG_LEVEL_3
+	#define PRINT_DEBUG_LEVEL_3 1.5
+#endif
+
+/* default variables preprocessor definition:
+	- "UPSIZE_POLICY" corresponds to "upsize_policy" (described in iteration_t resize operators).
+	- "DOWNSIZE_POLICY" corresponds to "downsize_policy" (described in iteration_t resize operators).
+	- "SAFETY_MARGIN" correpsponds to "safety_margin" (described in the definition of "get_max_num_graphs()").
+	- "MIN_BATCH_SIZE" correpsponds to "min_batch_size" which is the smallest workload for a thread.
+	- "MIN_STATE_SIZE" corresponds to "min_state_size" which is the smallest size of a vector (described in iteration_t resize operators). 
+*/
+#ifndef UPSIZE_POLICY
+	#define UPSIZE_POLICY 1.1
+#endif
+#ifndef DOWNSIZE_POLICY
+	#define DOWNSIZE_POLICY 0.85
+#endif
+#ifndef SAFETY_MARGIN
+	#define SAFETY_MARGIN 0.2
+#endif
+#ifndef MIN_BATCH_SIZE
+	#define MIN_BATCH_SIZE 100
+#endif
+#ifndef MIN_STATE_SIZE
+	#define MIN_STATE_SIZE 100000
+#endif
 
 #ifdef USE_MPRF
+	// default tolerance
+	#ifndef TOLERANCE
+		#define TOLERANCE 0
+	#endif
+
 	// import
 	#include "utils/mpreal.h"
 	
@@ -31,6 +67,11 @@
 	// precision setter
 	#define SET_PRECISION(precision_) PROBA_TYPE::set_default_prec(precision_);
 #else
+	// default tolerance
+	#ifndef TOLERANCE
+		#define TOLERANCE 1e-18
+	#endif
+
 	// standard type
 	#define PROBA_TYPE long double
 
@@ -52,21 +93,36 @@ typedef class state state_t;
 typedef char op_type_t;
 
 // global variable definition
-#ifdef USE_MPRF
-	PROBA_TYPE tolerance = 0;
-#else
-	PROBA_TYPE tolerance = 1e-18;
-#endif
-
-float upsize_policy = 1.1;
-float downsize_policy = 0.9;
-float safety_margin = 0.2;
-unsigned int min_batch_size = 100;
-size_t min_state_size = 100000;
+PROBA_TYPE tolerance = TOLERANCE;
+float upsize_policy = UPSIZE_POLICY;
+float downsize_policy = DOWNSIZE_POLICY;
+float safety_margin = SAFETY_MARGIN;
+unsigned int min_batch_size = MIN_BATCH_SIZE;
+size_t min_state_size = MIN_STATE_SIZE;
 
 // debugging options
 float verbose = 0;
 int max_num_graph_print = 20;
+
+/*
+global header that can be used to define global variables from other files:
+*/
+
+#ifdef STATE_GLOBAL_HEADER
+	STATE_GLOBAL_HEADER
+#endif
+
+/*
+The "MID_STEP_FUNCTION(n)" function is called at the end of each step (inside a "omp single" region) with n between 0 (the first step) and the total number of step.
+If not predefined, it will be defined as a debug function (that won't print for n=0).
+It can be used to insert timming or debuging code in the step function:
+*/
+
+#ifndef MID_STEP_FUNCTION
+	#define MID_STEP_FUNCTION(n) \
+		if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
+					std::cout << "step "#n"\n";
+#endif
 
 /*
 !!!!!
@@ -675,8 +731,7 @@ Non-virtual member functions are:
 		step (1) 
 		 !!!!!!!!!!!!!!!! */
 
-		if (verbose >= STEP_DEBUG_LEVEL)
-			std::cout << "step 1\n";
+		MID_STEP_FUNCTION(0);
 
 		#pragma omp parallel
 		{
@@ -696,8 +751,9 @@ Non-virtual member functions are:
 			 !!!!!!!!!!!!!!!! */
 
 			#pragma omp single
-			if (verbose >= STEP_DEBUG_LEVEL)
-				std::cout << "step 2\n";
+			{
+				MID_STEP_FUNCTION(1);
+			}
 
 			#ifndef USE_MPRF
 				#pragma omp for schedule(static) reduction(+:symbolic_num_graphs) reduction(+:total_proba)
@@ -742,8 +798,7 @@ Non-virtual member functions are:
 			
 			#pragma omp single
 			{
-				if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 3\n";
+				MID_STEP_FUNCTION(2);
 
 				/* resize variables with the right_ number of elements */
 				resize_symbolic_num_graphs(symbolic_num_graphs);
@@ -763,8 +818,7 @@ Non-virtual member functions are:
 				step (4) 
 				 !!!!!!!!!!!!!!!! */
 
-				if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 4\n";
+				MID_STEP_FUNCTION(3);
 			}
 
 			/* symbolic iteration :
@@ -784,8 +838,7 @@ Non-virtual member functions are:
 			if (!rule.probabilist) {
 				#pragma omp single
 				{
-					if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 5\n";
+					MID_STEP_FUNCTION(4);
 			
 					/* sort graphs hash to compute interference */
 					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -869,8 +922,7 @@ Non-virtual member functions are:
 					step (6) 
 					 !!!!!!!!!!!!!!!! */
 
-					if (verbose >= STEP_DEBUG_LEVEL)
-							std::cout << "step 6\n";
+					MID_STEP_FUNCTION(5);
 
 					/* !!!!!!!!!!!!!!!!
 					step (6.1) 
@@ -905,8 +957,7 @@ Non-virtual member functions are:
 					step (7) 
 					 !!!!!!!!!!!!!!!! */
 
-					if (verbose >= STEP_DEBUG_LEVEL)
-						std::cout << "step 7\n";
+					MID_STEP_FUNCTION(6);
 
 					/* sort to make memory access more continuous */
 					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + next_iteration.num_graphs);
@@ -952,8 +1003,7 @@ Non-virtual member functions are:
 				step (8) 
 				 !!!!!!!!!!!!!!!! */
 
-				if (verbose >= STEP_DEBUG_LEVEL)
-					std::cout << "step 8\n";
+				MID_STEP_FUNCTION(7);
 			}
 
 			#pragma omp for schedule(static)
@@ -964,12 +1014,16 @@ Non-virtual member functions are:
 			}
 		}
 
+		MID_STEP_FUNCTION(8);
+
 		/* !!!!!!!!!!!!!!!!
 		step (9) 
 		 !!!!!!!!!!!!!!!! */
 
 		/* swap states */
 		std::swap(current_iteration, next_iteration);
+
+		MID_STEP_FUNCTION(9);
 	}
 };
 
@@ -1269,9 +1323,6 @@ void print(state_t &s) {
 
 		std::cout << real << (imag >= 0 ? "+" : "") << imag << "i   ";
 
-		if (verbose >= PRINT_DEBUG_LEVEL_1)
-			std::cout << s.next_hash[gid] << "   ";
-
 		unsigned int num_nodes_ = s.current_iteration.num_nodes(gid);
 		for (unsigned short int node = 0; node < num_nodes_; ++node) {
 			std::cout << "-|" << (s.current_iteration.left(gid, node) ? "<" : " ") << "|";
@@ -1279,7 +1330,7 @@ void print(state_t &s) {
 			print_node(gid, s.current_iteration.node_id(gid, node), false);
 
 			if (verbose >= PRINT_DEBUG_LEVEL_2)
-				std::cout << "-" << s.current_iteration.hash(gid, s.current_iteration.node_id(gid, node));
+				std::cout << "|" << s.current_iteration.hash(gid, s.current_iteration.node_id(gid, node));
 
 			std::cout << "|" << (s.current_iteration.right(gid, node) ? ">" : " ") << "|-";
 		}

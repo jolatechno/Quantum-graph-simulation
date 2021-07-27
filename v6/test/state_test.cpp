@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...swaped\nmove...\n";
-
+		
 		move_all(s);
 
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)

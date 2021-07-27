@@ -4,6 +4,7 @@ print_usage() {
   printf "Usage: ./multithreading_test.sh ops...
 	-h: this help menu
 	-n: number of iterations (default = 2)
+	-r: rule (default = 'split_merge')
 	-s: initial state size (default = 12)
 	-m: safety margin (default = 0.2)
 
@@ -14,13 +15,15 @@ print_usage() {
 niter="2"
 size="12"
 safety_margin="0.2"
+rule="split_merge"
 n_thread=$(nproc --all)
 
-while getopts 'n:s:m:ht:' flag; do
+while getopts 'n:r:s:m:ht:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
     n) niter="${OPTARG}" ;;
+		r) rule="${OPTARG}" ;;
     s) size="${OPTARG}" ;;
 		m) safety_margin="${OPTARG}" ;;
 		t) n_thread="${OPTARG}" ;;
@@ -29,14 +32,14 @@ while getopts 'n:s:m:ht:' flag; do
   esac
 done
 
-command="./state_test.out -r split_merge -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 26"
-echo "" >> time.txt
-echo ${command} >> time.txt
+command="./state_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0"
+echo ""
+echo ${command}
 
 while [ $n_thread -ge 1 ]
 do
-	echo "" >> time.txt; echo "OMP_NUM_THREADS=${n_thread}" >> time.txt
+	echo ""; echo "OMP_NUM_THREADS=${n_thread}"
 
-	time (OMP_NUM_THREADS=${n_thread} ${command}) 2>> time.txt >> /dev/null
+	echo $(OMP_NUM_THREADS=${n_thread} ${command})
 	n_thread=$(( $n_thread / 2))
 done
