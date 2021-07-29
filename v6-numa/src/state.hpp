@@ -7,6 +7,7 @@
 #include <random>
 #include <iostream>
 
+#include "utils/random.hpp"
 #include "utils/memory.hpp"
 #include "utils/vector.hpp"
 #include "utils/complex.hpp"
@@ -148,10 +149,9 @@ Iteration protocol is:
 	
 	- (6): compute the average memory usage of a graph.
   	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_margin" (a proportion of memory which should be left free).
-	
-  - (6.1): keep "max_num_graphs" graphs, with each graph having a probability of being kept (hopefully) proportional to its probability:
-  	- generate a random number for each graph, following an given distribution (****), for which the rate is the probability of the graph.
-  	- select the "max_num_graphs" graphs with the smallest previously mentioned "random number".
+		We then keep "max_num_graphs" graphs, with each graph having a probability of being kept (hopefully) proportional to its probability:
+  		- generate a random number for each graph, following an given distribution (****), for which the rate is the probability of the graph.
+  		- select the "max_num_graphs" graphs with the smallest previously mentioned "random number".
 			
   - (7): reserve all public vectors for the new iteration by iterating over the N first "next_gid" and using "parent_gid" and "child_id",
   	and assign "node_begin" and "sub_node_begin" by accumulating "symbolic_num_nodes" and "symbolic_num_sub_nodes".
@@ -167,8 +167,7 @@ Iteration protocol is:
 */
 
 /* random generator */
-std::default_random_engine generator;
-std::uniform_real_distribution<float> unif(0, 1);
+unfiorm random_generator;
 
 class state {
 public:
@@ -608,7 +607,7 @@ Non-virtual member functions are:
 				return op;
 			
 			/* generate random number */
-			if (unif(generator) < (op == 1 ? p : q))
+			if (random_generator() < (op == 1 ? p : q))
 				return op;
 
 			return 0; 
@@ -919,10 +918,6 @@ Non-virtual member functions are:
 
 					MID_STEP_FUNCTION(5);
 
-					/* !!!!!!!!!!!!!!!!
-					step (6.1) 
-					 !!!!!!!!!!!!!!!! */
-
 					if (overwrite_max_num_graphs)
 						max_num_graphs = get_max_num_graphs();
 
@@ -934,7 +929,7 @@ Non-virtual member functions are:
 							PROBA_TYPE r = next_real[*gid_it];
 							PROBA_TYPE i = next_imag[*gid_it];
 
-							random_selector[*gid_it] = precision::log( -precision::log(1 - unif(generator)) / (r*r + i*i));
+							random_selector[*gid_it] = precision::log( -precision::log(1 - random_generator()) / (r*r + i*i));
 						} 
 
 						/* select graphs according to random selectors */

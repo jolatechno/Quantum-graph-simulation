@@ -7,7 +7,7 @@
 template <typename value_type>
 class numa_vector {
 private:
-    value_type* ptr;
+    value_type* ptr = 0;
 
     size_t size_ = 0;
  
@@ -54,8 +54,10 @@ public:
 		for (unsigned long int i = 0; i < n; ++i)
 			new_ptr[i] = i < size_ ? ptr[i] : zero;
 
-		//free(ptr);
-		std::swap(ptr, new_ptr);
+		if (ptr != 0)
+			free(ptr);
+
+		ptr = new_ptr;
 		size_ = n;
     }
  
