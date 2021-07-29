@@ -33,13 +33,20 @@ while getopts 'n:r:s:m:ht:' flag; do
 done
 
 command="./state_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0"
-echo ""
-echo ${command}
+echo "{"
+echo "	\"command\" : \"${command}\","
+echo "	\"results\" : {"
 
 while [ $n_thread -ge 1 ]
 do
-	echo ""; echo "OMP_NUM_THREADS=${n_thread}"
-
-	echo $(OMP_NUM_THREADS=${n_thread} ${command})
+	separator=""
+	if [ $n_thread -gt 1 ]; then
+		separator=","
+	fi
+	
+	echo "		\"${n_thread}\" :	$(OMP_NUM_THREADS=${n_thread} ${command})${separator}"
 	n_thread=$(( $n_thread / 2))
 done
+
+echo "	}"
+echo "}"

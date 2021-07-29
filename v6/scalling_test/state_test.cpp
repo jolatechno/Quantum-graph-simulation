@@ -1,11 +1,11 @@
 #include <chrono>
 
 /* number of step */
-#define N_STEP 10
+#define N_STEP 9
 
 /* define a custom "MID_STEP_FUNCTION(n)" that accumulate the time taken in each step */
 #define MID_STEP_FUNCTION(n) \
-	if (n > 0) \
+	if (n > 0 && n < N_STEP) \
 		step_duration[n - 1] += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - step_time[n - 1]).count() / 1e3; \
 	if (n < N_STEP - 1) \
 		step_time[n] = std::chrono::steady_clock::now();
@@ -40,11 +40,12 @@ int main(int argc, char* argv[]) {
 
 	auto end = std::chrono::steady_clock::now();
 
+	printf("{ \"steps\" : [");
 	for (unsigned int i = 0; i < N_STEP; ++i) {
-		printf("step %d=%fs", i + 1, step_duration[i]);
-		printf(", ");
-		if (i == N_STEP - 1) {
-			printf("total=%fs\n", std::chrono::duration<double, std::milli>(end - begin).count() / 1e3);
-		}
+		printf("%f", step_duration[i]);
+		if (i < N_STEP - 1) {
+			printf(", ");
+		} else
+			printf("], \"total\" : %f }", std::chrono::duration<double, std::milli>(end - begin).count() / 1e3);
 	}
 }
