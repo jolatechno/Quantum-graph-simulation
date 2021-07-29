@@ -39,7 +39,17 @@ public:
         new code :
         */
 
-        return static_cast<value_type*>(malloc(n*sizeof(value_type)));
+        value_type* ptr = static_cast<value_type*>(malloc(n*sizeof(value_type)));
+
+        #ifndef IGNORE_NUMA
+            value_type zero;
+
+            #pragma omp parallel for schedule(static)
+            for (unsigned int i = 0; i < n; ++i)
+                ptr[i] = zero;
+        #endif
+
+        return ptr;
     }
 
     void
