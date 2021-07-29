@@ -64,7 +64,5 @@ ax2.set_xticklabels(n_threads)
 for step in range(proportions.shape[1]):
 	ax2.bar(bar_starting_position + bar_width*step, proportions[:, step], width=bar_width, label=f'step { step + 1 }')
 
-ax2.legend()
-
 fig.suptitle(fig_title)
 fig.savefig("plots/scalling.png")

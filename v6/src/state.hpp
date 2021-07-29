@@ -469,9 +469,9 @@ public:
 
 	// new graphs
 	/*
-	"is_first_index[gid]" is true if the graph "gid" is the graph which will accumulate the magnitude of the graphs of equal hash
+	"is_last_index[gid]" is true if the graph "gid" is the graph which will accumulate the magnitude of the graphs of equal hash
 	*/
-	numa_vector</*bool*/ char> is_first_index; /* of size (a) for the symbolic iteration */
+	numa_vector</*bool*/ char> is_last_index; /* of size (a) for the symbolic iteration */
 	numa_vector<unsigned int> next_gid; /* of size (a) for the symbolic iteration */
 	numa_vector<unsigned int> parent_gid; /* of size (a) for the symbolic iteration */
 	numa_vector<unsigned short int> child_id; /* of size (a) for the symbolic iteration */
@@ -499,7 +499,7 @@ public:
 			next_gid.resize(upsize_policy * size);
 			parent_gid.resize(upsize_policy * size);
 			child_id.resize(upsize_policy * size);
-			is_first_index.resize(upsize_policy * size);
+			is_last_index.resize(upsize_policy * size);
 			next_hash.resize(upsize_policy * size);
 			next_real.resize(upsize_policy * size);
 			next_imag.resize(upsize_policy * size);
@@ -725,6 +725,15 @@ Non-virtual member functions are:
 
 		symbolic_num_graphs = 0;
 
+		// variables to share work
+		unsigned int num_threads;
+
+		#pragma omp parallel
+		#pragma omp single
+		num_threads = omp_get_num_threads();
+
+		std::vector<unsigned int> work_sharing_begin(num_threads + 1, 0);
+
 		/* !!!!!!!!!!!!!!!!
 		step (1) 
 		 !!!!!!!!!!!!!!!! */
@@ -850,46 +859,44 @@ Non-virtual member functions are:
 						return std::popcount(child_id[gid1]) < std::popcount(child_id[gid2]);
 					});
 
-					/* set is_first_index of the first graph */
-					is_first_index[next_gid[0]] = true;
+					/* set is_last_index of the first graph */
+					is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
 				}
 
-				/* compute is_first_index */
+				/* compute is_last_index */
 				#pragma omp for schedule(static)
-				for (unsigned int gid = 1; gid < symbolic_num_graphs; ++gid)
-					is_first_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid - 1]];
+				for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
+					is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
 
-				/* get the thread_id and the number of threads to share the for loop equally between threads */
-				unsigned int num_threads = omp_get_num_threads();
-				unsigned int thread_id = omp_get_thread_num();
-
-				// find the number of used thread
+				/* find the number of used thread */
 				unsigned int max_num_thread = std::max(std::min(num_threads, (unsigned int)symbolic_num_graphs / min_batch_size), (unsigned int)1);
 
-				// find the begin and the end of each batch assigned to each thread
+				/* get the thread_id and the number of threads to share the for loop equally between threads */
+				unsigned int thread_id = omp_get_thread_num();
+
+				/* find the begin and the end of each batch assigned to each thread */
 				unsigned int batch_size = symbolic_num_graphs / max_num_thread;
-				unsigned int end = thread_id >= max_num_thread ? 0 : (thread_id == max_num_thread - 1 ? symbolic_num_graphs : batch_size * (thread_id + 1));
-				unsigned int gid = thread_id >= max_num_thread ? 0 : batch_size * thread_id;
+				unsigned int &end = work_sharing_begin[thread_id + 1];
+				end = thread_id == max_num_thread - 1 || thread_id >= max_num_thread ? symbolic_num_graphs : batch_size * (thread_id + 1);
 
 				// skip the first few graph which aren't unique at the begining of each thread
-				while (!is_first_index[next_gid[gid]] && gid < end)
-					++gid;
+				for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
+				end = end == symbolic_num_graphs ? end : end + 1; 
 
-				while (gid < end) {
+				#pragma omp barrier
+
+				/* partial sum over the interval since we know it starts and end at unique graphs */
+				PROBA_TYPE sign;
+				unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
+				for (unsigned int gid =  work_sharing_begin[thread_id] + 1; gid < end; ++gid) {
 					unsigned int id = next_gid[gid];
+					sign = !is_last_index[last_id];
 
-					/* sum magnitude of equal graphs */
-					for (++gid; gid < symbolic_num_graphs; ++gid) {
-						unsigned int id_ = next_gid[gid];
+					/* add probabilites of graph with equal hashes */
+						next_real[id] += sign*next_real[last_id];
+						next_imag[id] += sign*next_imag[last_id];
 
-						/* break if the "gid_" graphs doesn't have the same hash */
-						if (is_first_index[id_])
-							break;
-
-						/* add probabilites of graph with equal hashes */
-						next_real[id] += next_real[id_];
-						next_imag[id] += next_imag[id_];
-					}
+						last_id = id;
 				}
 
 				#pragma omp barrier
@@ -900,7 +907,7 @@ Non-virtual member functions are:
 					auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
 					[&](unsigned int const &gid) {
 						/* check if graph is unique */
-						if (!is_first_index[gid])
+						if (!is_last_index[gid])
 							return false;
 
 						/* check for zero probability */
@@ -1126,7 +1133,7 @@ void serialize_state_to_json(state_t const &s, bool last) {
 	for (unsigned int i = 0; i < s.symbolic_num_graphs; ++i) {
 		unsigned int gid = s.next_gid[i];
 
-		if (s.is_first_index[gid]) {
+		if (s.is_last_index[gid]) {
 			PROBA_TYPE size = (PROBA_TYPE)s.symbolic_num_nodes[gid];
 
 			// compute proba

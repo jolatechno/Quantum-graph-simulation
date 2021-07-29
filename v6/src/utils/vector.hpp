@@ -34,14 +34,14 @@ public:
 
     value_type& operator[](size_t index) {
 	    if (index >= size_)
-	        exit(0);
+	        throw;
 	 
 	    return *(ptr + index);
 	}
 
 	value_type operator[](size_t index) const {
 	    if (index >= size_)
-	        exit(0);
+	        throw;
 	 
 	    return *(ptr + index);
 	}
