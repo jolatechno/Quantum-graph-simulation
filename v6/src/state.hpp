@@ -7,7 +7,7 @@
 #include <random>
 #include <iostream>
 
-#include "utils/allocator.hpp"
+#include "utils/random.hpp"
 #include "utils/memory.hpp"
 #include "utils/vector.hpp"
 #include "utils/complex.hpp"
@@ -149,10 +149,9 @@ Iteration protocol is:
 	
 	- (6): compute the average memory usage of a graph.
   	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_margin" (a proportion of memory which should be left free).
-	
-  - (6.1): keep "max_num_graphs" graphs, with each graph having a probability of being kept (hopefully) proportional to its probability:
-  	- generate a random number for each graph, following an given distribution (****), for which the rate is the probability of the graph.
-  	- select the "max_num_graphs" graphs with the smallest previously mentioned "random number".
+		We then keep "max_num_graphs" graphs, with each graph having a probability of being kept (hopefully) proportional to its probability:
+  		- generate a random number for each graph, following an given distribution (****), for which the rate is the probability of the graph.
+  		- select the "max_num_graphs" graphs with the smallest previously mentioned "random number".
 			
   - (7): reserve all public vectors for the new iteration by iterating over the N first "next_gid" and using "parent_gid" and "child_id",
   	and assign "node_begin" and "sub_node_begin" by accumulating "symbolic_num_nodes" and "symbolic_num_sub_nodes".
@@ -168,8 +167,7 @@ Iteration protocol is:
 */
 
 /* random generator */
-std::default_random_engine generator;
-std::uniform_real_distribution<float> unif(0, 1);
+unfiorm random_generator;
 
 class state {
 public:
@@ -199,20 +197,20 @@ public:
 		size_t num_graphs = 0;
 
 		// graph magnitude
-		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> real; /* of size (a) */
-		std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> imag; /* of size (a) */
+		numa_vector<PROBA_TYPE> real; /* of size (a) */
+		numa_vector<PROBA_TYPE> imag; /* of size (a) */
 
 		// begin for each size
-		std::vector<unsigned int, allocator<unsigned int>> node_begin; /* of size (a + 1), refers to vector of size (b) */
-		std::vector <unsigned int, allocator<unsigned int>> sub_node_begin; /* of size (a + 1), refers to vectors of size (c) */
+		numa_vector<unsigned int> node_begin; /* of size (a + 1), refers to vector of size (b) */
+		numa_vector<unsigned int> sub_node_begin; /* of size (a + 1), refers to vectors of size (c) */
 
 		// node properties
 		/* !!!
 		can't use bool because bit vectors aren't thread safe
 		!!! */
-		std::vector</*bool*/ char, allocator<char>> left_; /* of size (b), correspond to the presence of a particule going left at a node */
-		std::vector</*bool*/ char, allocator<char>> right_; /* of size (b), correspond to the presence of a particule going right at a node */
-		std::vector<unsigned short int, allocator<unsigned short int>> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
+		numa_vector</*bool*/ char> left_; /* of size (b), correspond to the presence of a particule going left at a node */
+		numa_vector</*bool*/ char> right_; /* of size (b), correspond to the presence of a particule going right at a node */
+		numa_vector<unsigned short int> node_id_c; /* of size (b), points to the sunode_node (c) namming the ith node (b) */
 
 		// sub node properties
 		/*
@@ -229,19 +227,19 @@ public:
 		(*) "has_most_left_zero" is an arbitrary lexicographic order to create a "reference rotation of graphs".
 			The node which is the "most_left_zero" is the node countaining the name "0(.l)^n" with the greatest n.
 		*/
-		std::vector<short int, allocator<short int>> left_idx__or_element__and_has_most_left_zero__or_is_trash_; /* of size (c) */
-		std::vector<short int, allocator<short int>> right_idx__or_type_; /* of size (c) */
-		std::vector<size_t, allocator<size_t>> node_hash; /* of size (c) */
+		numa_vector<short int> left_idx__or_element__and_has_most_left_zero__or_is_trash_; /* of size (c) */
+		numa_vector<short int> right_idx__or_type_; /* of size (c) */
+		numa_vector<size_t> node_hash; /* of size (c) */
 
 		/*
 		intermediary vectors used to generate the next iteration :
 		*/
 
 		// vector of operations
-		std::vector<op_type_t, allocator<op_type_t>> operations; /* of size (b) */
+		numa_vector<op_type_t> operations; /* of size (b) */
 
 		// number of sub-graph for each parent
-		std::vector<unsigned short int, allocator<unsigned short int>> num_childs; /* of size (a) */
+		numa_vector<unsigned short int> num_childs; /* of size (a) */
 
 		/* resize operators */
 		/*
@@ -258,11 +256,11 @@ public:
 			if (num_childs.size() < size || // resize if we absolutly need to
 			downsize_policy * num_childs.size() > size * upsize_policy) { // downsize according to the downsize_policy
 
-				resize(real, (size_t)(upsize_policy * size));
-				resize(imag, (size_t)(upsize_policy * size));
-				resize(node_begin, (size_t)(upsize_policy * size) + 1);
-				resize(sub_node_begin, (size_t)(upsize_policy * size) + 1);
-				resize(num_childs, (size_t)(upsize_policy * size));
+				real.resize(upsize_policy * size);
+				imag.resize(upsize_policy * size);
+				node_begin.resize(upsize_policy * size + 1);
+				sub_node_begin.resize(upsize_policy * size + 1);
+				num_childs.resize(upsize_policy * size);
 			}
 		}
 
@@ -272,10 +270,10 @@ public:
 			if (node_id_c.size() < size || // resize if we absolutly need to
 			downsize_policy * node_id_c.size() > size * upsize_policy) { // downsize according to the downsize_policy
 
-				resize(left_, (size_t)(upsize_policy * size));
-				resize(right_, (size_t)(upsize_policy * size));
-				resize(node_id_c, (size_t)(upsize_policy * size));
-				resize(operations, (size_t)(upsize_policy * size));
+				left_.resize(upsize_policy * size);
+				right_.resize(upsize_policy * size);
+				node_id_c.resize(upsize_policy * size);
+				operations.resize(upsize_policy * size);
 			}
 		}
 
@@ -285,9 +283,9 @@ public:
 			if (node_hash.size() < size || // resize if we absolutly need to
 			downsize_policy * node_hash.size() > size * upsize_policy) { // downsize according to the downsize_policy
 
-				resize(left_idx__or_element__and_has_most_left_zero__or_is_trash_, (size_t)(upsize_policy * size));
-				resize(right_idx__or_type_, (size_t)(upsize_policy * size));
-				resize(node_hash, (size_t)(upsize_policy * size));
+				left_idx__or_element__and_has_most_left_zero__or_is_trash_.resize(upsize_policy * size);
+				right_idx__or_type_.resize(upsize_policy * size);
+				node_hash.resize(upsize_policy * size);
 			}
 		}
 
@@ -473,24 +471,24 @@ public:
 	/*
 	"is_first_index[gid]" is true if the graph "gid" is the graph which will accumulate the magnitude of the graphs of equal hash
 	*/
-	std::vector</*bool*/ char, allocator<char>> is_first_index; /* of size (a) for the symbolic iteration */
-	std::vector<unsigned int, allocator<unsigned int>> next_gid; /* of size (a) for the symbolic iteration */
-	std::vector<unsigned int, allocator<unsigned int>> parent_gid; /* of size (a) for the symbolic iteration */
-	std::vector<unsigned short int, allocator<unsigned short int>> child_id; /* of size (a) for the symbolic iteration */
+	numa_vector</*bool*/ char> is_first_index; /* of size (a) for the symbolic iteration */
+	numa_vector<unsigned int> next_gid; /* of size (a) for the symbolic iteration */
+	numa_vector<unsigned int> parent_gid; /* of size (a) for the symbolic iteration */
+	numa_vector<unsigned short int> child_id; /* of size (a) for the symbolic iteration */
 
 	// new graph hash
-	std::vector<size_t, allocator<size_t>> next_hash; /* of size (a) for the symbolic iteration */
+	numa_vector<size_t> next_hash; /* of size (a) for the symbolic iteration */
 
 	// new graph random selector
-	std::vector<float, allocator<float>> random_selector; /* of size (a) for the symbolic iteration */
+	numa_vector<float> random_selector; /* of size (a) for the symbolic iteration */
 
 	// new graph magnitude
-	std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_real; /* of size (a) for the symbolic iteration */
-	std::vector<PROBA_TYPE, allocator<PROBA_TYPE>> next_imag; /* of size (a) for the symbolic iteration */
+	numa_vector<PROBA_TYPE> next_real; /* of size (a) for the symbolic iteration */
+	numa_vector<PROBA_TYPE> next_imag; /* of size (a) for the symbolic iteration */
 
 	// size for each size
-	std::vector<unsigned int, allocator<unsigned int>> symbolic_num_nodes; /* of size (a + 1), refers to vector of size (b) */
-	std::vector <unsigned int, allocator<unsigned int>> symbolic_num_sub_nodes; /* of size (a + 1), refers to vectors of size (c) */
+	numa_vector<unsigned int> symbolic_num_nodes; /* of size (a + 1), refers to vector of size (b) */
+	numa_vector<unsigned int> symbolic_num_sub_nodes; /* of size (a + 1), refers to vectors of size (c) */
 
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
@@ -498,16 +496,16 @@ public:
 		if (next_gid.size() < size || // resize if we absolutly need to
 		downsize_policy * next_gid.size() > size * upsize_policy) { // downsize according to the downsize_policy
 
-			resize(next_gid, (size_t)(upsize_policy * size));
-			resize(parent_gid, (size_t)(upsize_policy * size));
-			resize(child_id, (size_t)(upsize_policy * size));
-			resize(is_first_index, (size_t)(upsize_policy * size));
-			resize(next_hash, (size_t)(upsize_policy * size));
-			resize(next_real, (size_t)(upsize_policy * size));
-			resize(next_imag, (size_t)(upsize_policy * size));
-			resize(symbolic_num_nodes, (size_t)(upsize_policy * size));
-			resize(symbolic_num_sub_nodes, (size_t)(upsize_policy * size));
-			resize(random_selector, (size_t)(upsize_policy * size));
+			next_gid.resize(upsize_policy * size);
+			parent_gid.resize(upsize_policy * size);
+			child_id.resize(upsize_policy * size);
+			is_first_index.resize(upsize_policy * size);
+			next_hash.resize(upsize_policy * size);
+			next_real.resize(upsize_policy * size);
+			next_imag.resize(upsize_policy * size);
+			symbolic_num_nodes.resize(upsize_policy * size);
+			symbolic_num_sub_nodes.resize(upsize_policy * size);
+			random_selector.resize(upsize_policy * size);
 		}
 
 		// initialize next_gid with 1, 2, 3....
@@ -609,7 +607,7 @@ Non-virtual member functions are:
 				return op;
 			
 			/* generate random number */
-			if (unif(generator) < (op == 1 ? p : q))
+			if (random_generator() < (op == 1 ? p : q))
 				return op;
 
 			return 0; 
@@ -920,10 +918,6 @@ Non-virtual member functions are:
 
 					MID_STEP_FUNCTION(5);
 
-					/* !!!!!!!!!!!!!!!!
-					step (6.1) 
-					 !!!!!!!!!!!!!!!! */
-
 					if (overwrite_max_num_graphs)
 						max_num_graphs = get_max_num_graphs();
 
@@ -935,7 +929,7 @@ Non-virtual member functions are:
 							PROBA_TYPE r = next_real[*gid_it];
 							PROBA_TYPE i = next_imag[*gid_it];
 
-							random_selector[*gid_it] = precision::log( -precision::log(1 - unif(generator)) / (r*r + i*i));
+							random_selector[*gid_it] = precision::log( -precision::log(1 - random_generator()) / (r*r + i*i));
 						} 
 
 						/* select graphs according to random selectors */

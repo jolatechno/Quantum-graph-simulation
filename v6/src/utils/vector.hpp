@@ -1,39 +1,73 @@
 #pragma once
 
+#include <iterator>     // std::iterator, std::input_iterator_tag
+
 #include <vector>
 
-/* 
-create a resize function that touches the right pages for numa optimization
-*/
-template<class T>
-void resize(std::vector<T, allocator<T>> &v, size_t size) {
-//#ifdef IGNORE_NUMA
-	/* check if the resize is a downsize */
-	bool downsize = size < v.size();
+template <typename value_type>
+class numa_vector {
+private:
+    value_type* ptr = 0;
 
-	/* resize the vector */
-	v.resize(size);
+    size_t size_ = 0;
+ 
+public:
+    explicit numa_vector(size_t n = 0) {
+    	resize(n);
+	}
+ 
+    // NOT SUPPORTED !!!
+    size_t push_back(value_type) {
+    	exit(0);
+    	return 0;
+    }
+ 
+    // function that returns the popped element
+    value_type pop_back() {
+    	return ptr[size_-- - 1];
+    }
+ 
+    // Function that return the size of vector
+    size_t size() const {
+    	return size_;
+    }
 
-	/* if the resize is a downsize, and the downsize wasn't effected then force shrink_to_fit */
-	if (downsize && v.capacity() > size)
-		std::vector<T, allocator<T>>(v).swap(v);
-/*#else
-	// create new vector
-	// reserve does not touch pages
-	std::vector<T, allocator<T>> new_vec;
-	new_vec.reserve(size);
+    value_type& operator[](size_t index) {
+	    if (index >= size_)
+	        exit(0);
+	 
+	    return *(ptr + index);
+	}
 
-	// get all size and default element
-	size_t old_size = v.size();
-	T zero;
+	value_type operator[](size_t index) const {
+	    if (index >= size_)
+	        exit(0);
+	 
+	    return *(ptr + index);
+	}
 
-	// assign from each thread
-	#pragma omp parallel for ordered schedule(static)
-	for (unsigned int i = 0; i < size; ++i)
-		#pragma omp ordered
-		new_vec.push_back(i < old_size ? v[i] : zero);
+    void resize(size_t n) {
+    	value_type* new_ptr = static_cast<value_type*>(malloc(n*sizeof(value_type)));
+		value_type zero;
 
-	// swap vectors
-	std::swap(v, new_vec);
-#endif*/
-}
+		#pragma omp parallel for schedule(static)
+		for (unsigned long int i = 0; i < n; ++i)
+			new_ptr[i] = i < size_ ? ptr[i] : zero;
+
+		if (ptr != 0)
+			free(ptr);
+
+		ptr = new_ptr;
+		size_ = n;
+    }
+ 
+    // Begin iterator
+    inline value_type* begin() const {
+    	return ptr;
+    }
+ 
+    // End iterator
+    inline value_type* end() const {
+    	return begin() + size_;
+    }
+};
