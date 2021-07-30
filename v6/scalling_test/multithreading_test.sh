@@ -7,6 +7,7 @@ print_usage() {
 	-r: rule (default = 'split_merge')
 	-s: initial state size (default = 12)
 	-m: safety margin (default = 0.2)
+	-a: additional arguments
 
 	-t: starting num thread (as a power of 2)
 "
@@ -17,8 +18,9 @@ size="12"
 safety_margin="0.2"
 rule="split_merge"
 n_thread=$(nproc --all)
+args=""
 
-while getopts 'n:r:s:m:ht:' flag; do
+while getopts 'n:r:s:m:a:ht:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -26,13 +28,14 @@ while getopts 'n:r:s:m:ht:' flag; do
 		r) rule="${OPTARG}" ;;
     s) size="${OPTARG}" ;;
 		m) safety_margin="${OPTARG}" ;;
+		a) args="${OPTARG}" ;;
 		t) n_thread="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
   esac
 done
 
-command="./state_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0"
+command="./state_test.out -N -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 echo "{"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"

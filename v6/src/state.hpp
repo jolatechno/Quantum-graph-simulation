@@ -144,8 +144,8 @@ Iteration protocol is:
   	and populate "symbolic_num_nodes" and "symbolic_num_sub_nodes" which are respectively the number of node and of sub-nodes for each new graph.
 
   - (5): using "next_hash" sum the probability ("next_real" and "next_imag") of equal graphs.
-  	When sorting graphs according to "next_hash" to sum their probability, we also sort accroding to "std::popcount(child_id)" (which is the number of operations to create this child (***))
-  	so we keep the graphs with the smallest number of operations which are easier to compute. 
+  	When sorting graphs according to "next_hash" to then sum the magnitude of graph of equal hash.
+  	We then partinion the state so we only keep the graphs that accumulated the magnitude of graphs of equal hash.
 	
 	- (6): compute the average memory usage of a graph.
   	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_margin" (a proportion of memory which should be left free).
@@ -480,7 +480,7 @@ public:
 	numa_vector<size_t> next_hash; /* of size (a) for the symbolic iteration */
 
 	// new graph random selector
-	numa_vector<float> random_selector; /* of size (a) for the symbolic iteration */
+	numa_vector<double> random_selector; /* of size (a) for the symbolic iteration */
 
 	// new graph magnitude
 	numa_vector<PROBA_TYPE> next_real; /* of size (a) for the symbolic iteration */
@@ -688,7 +688,7 @@ Non-virtual member functions are:
 		static const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
 		static const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 		static const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		static const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(float);
+		static const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
 
 		long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes
@@ -709,10 +709,15 @@ Non-virtual member functions are:
 	}
 
 	/* step function */
-	void inline step(rule_t const &rule) { step(rule, false); }
-	void inline step(rule_t const &rule, bool normalize) { step(rule, normalize, 0, true); }
-	void inline step(rule_t const &rule, bool normalize, long int max_num_graphs) { step(rule, normalize, max_num_graphs, false); }
-	void step(rule_t const &rule, bool normalize, long int max_num_graphs, bool overwrite_max_num_graphs) {
+	void inline step(rule_t const &rule) { step(rule, true); }
+	void inline step(rule_t const &rule, bool normalize) { step(rule, normalize, 0, true, false); }
+	void inline step(rule_t const &rule, bool normalize, long int max_num_graphs) { step(rule, normalize, max_num_graphs, false, false); }
+
+	void inline fast_step(rule_t const &rule) { fast_step(rule, true); }
+	void inline fast_step(rule_t const &rule, bool normalize) { step(rule, normalize, 0, true, true); }
+
+private:
+	void step(rule_t const &rule, bool normalize, long int max_num_graphs, bool overwrite_max_num_graphs, bool fast) {
 		/* check for calssical cases */
 		if (rule.identity)
 			return;
@@ -843,79 +848,76 @@ Non-virtual member functions are:
 
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
-				#pragma omp single
-				{
-					MID_STEP_FUNCTION(4);
-			
-					/* sort graphs hash to compute interference */
-					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
-						size_t hash1 = next_hash[gid1];
-						size_t hash2 = next_hash[gid2];
+				if (!fast) {
+					#pragma omp single
+					{
+						MID_STEP_FUNCTION(4);
+				
+						/* sort graphs hash to compute interference */
+						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
+							return next_hash[gid1] > next_hash[gid2];
+						});
 
-						if (hash1 != hash2)
-							return hash1 > hash2;
+						/* set is_last_index of the first graph */
+						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
+					}
 
-						/* graph with less operations are less costly to compute */
-						return std::popcount(child_id[gid1]) < std::popcount(child_id[gid2]);
-					});
+					/* compute is_last_index */
+					#pragma omp for schedule(static)
+					for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
+						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
 
-					/* set is_last_index of the first graph */
-					is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
-				}
+					/* find the number of used thread */
+					unsigned int max_num_thread = std::max(std::min(num_threads, (unsigned int)symbolic_num_graphs / min_batch_size), (unsigned int)1);
 
-				/* compute is_last_index */
-				#pragma omp for schedule(static)
-				for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
-					is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
+					/* get the thread_id and the number of threads to share the for loop equally between threads */
+					unsigned int thread_id = omp_get_thread_num();
 
-				/* find the number of used thread */
-				unsigned int max_num_thread = std::max(std::min(num_threads, (unsigned int)symbolic_num_graphs / min_batch_size), (unsigned int)1);
+					/* find the begin and the end of each batch assigned to each thread */
+					unsigned int batch_size = symbolic_num_graphs / max_num_thread;
+					unsigned int &end = work_sharing_begin[thread_id + 1];
+					end = thread_id == max_num_thread - 1 || thread_id >= max_num_thread ? symbolic_num_graphs : batch_size * (thread_id + 1);
 
-				/* get the thread_id and the number of threads to share the for loop equally between threads */
-				unsigned int thread_id = omp_get_thread_num();
+					// skip the first few graph which aren't unique at the begining of each thread
+					for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
+					end = end == symbolic_num_graphs ? end : end + 1; 
 
-				/* find the begin and the end of each batch assigned to each thread */
-				unsigned int batch_size = symbolic_num_graphs / max_num_thread;
-				unsigned int &end = work_sharing_begin[thread_id + 1];
-				end = thread_id == max_num_thread - 1 || thread_id >= max_num_thread ? symbolic_num_graphs : batch_size * (thread_id + 1);
+					#pragma omp barrier
 
-				// skip the first few graph which aren't unique at the begining of each thread
-				for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
-				end = end == symbolic_num_graphs ? end : end + 1; 
+					/* partial sum over the interval since we know it starts and end at unique graphs */
+					PROBA_TYPE sign;
+					unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
+					for (unsigned int gid =  work_sharing_begin[thread_id] + 1; gid < end; ++gid) {
+						unsigned int id = next_gid[gid];
+						sign = !is_last_index[last_id];
 
-				#pragma omp barrier
-
-				/* partial sum over the interval since we know it starts and end at unique graphs */
-				PROBA_TYPE sign;
-				unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
-				for (unsigned int gid =  work_sharing_begin[thread_id] + 1; gid < end; ++gid) {
-					unsigned int id = next_gid[gid];
-					sign = !is_last_index[last_id];
-
-					/* add probabilites of graph with equal hashes */
+						/* add probabilites of graph with equal hashes */
 						next_real[id] += sign*next_real[last_id];
 						next_imag[id] += sign*next_imag[last_id];
 
 						last_id = id;
+					}
 				}
 
 				#pragma omp barrier
 
 				#pragma omp single
 				{
-					/* get all unique graphs with a non zero probability */
-					auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
-					[&](unsigned int const &gid) {
-						/* check if graph is unique */
-						if (!is_last_index[gid])
-							return false;
+					auto partitioned_it = next_gid.begin() + symbolic_num_graphs;
+					if (!fast)
+						/* get all unique graphs with a non zero probability */
+						partitioned_it = __gnu_parallel::partition(next_gid.begin(), partitioned_it,
+						[&](unsigned int const &gid) {
+							/* check if graph is unique */
+							if (!is_last_index[gid])
+								return false;
 
-						/* check for zero probability */
-						PROBA_TYPE r = next_real[gid];
-						PROBA_TYPE i = next_imag[gid];
+							/* check for zero probability */
+							PROBA_TYPE r = next_real[gid];
+							PROBA_TYPE i = next_imag[gid];
 
-						return r*r + i*i > tolerance; 
-					});
+							return r*r + i*i > tolerance; 
+						});
 
 					long int next_num_graphs = std::distance(next_gid.begin(), partitioned_it);
 							
@@ -966,7 +968,7 @@ Non-virtual member functions are:
 				#pragma omp single
 				{
 					/* same number of graphs for a probabilist simulation */
-					next_iteration.num_graphs = current_iteration.num_graphs;
+					next_iteration.num_graphs = symbolic_num_graphs;
 					next_iteration.resize_num_graphs(next_iteration.num_graphs);
 				}
 

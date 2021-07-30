@@ -29,12 +29,16 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("file used for multi-threading test (does not run reversed iterations");
-	auto [s, rule, _, n_iter, __, normalize] = test_parser(options, argc, argv);
+	auto [s, rule, _, n_iter, __, normalize, n_fast] = test_parser(options, argc, argv);
 
 	auto begin = std::chrono::steady_clock::now();
 
 	for (int i = 0; i < n_iter; ++i) {
-		s.step(*rule, normalize);
+		if (n_fast == 0 || i % (n_fast + 1) == 0) {
+			s.step(*rule, normalize);
+		} else
+			s.fast_step(*rule, normalize);
+		
 		move_all(s);
 	}
 

@@ -3,109 +3,9 @@
 #include "../rules.hpp"
 #include <ctime>
 
-std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool> test_parser(
-    cxxopts::Options &options, int argc, char* argv[]) {
-
-    options.add_options() ("h,help", "Print help")
-        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
-
-        ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
-
-        ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
-
-        ("N,normalize", "normalize after each iteration")
-
-        ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
-
-        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
-        ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
-
-        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
-        ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
-
-        ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
-        ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-        ("x,xi", "xi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
-
-        ("seed", "random engine seed", cxxopts::value<unsigned>())
-        ("z,zero", "start with and empty state");
-
-    // parse
-    auto result = options.parse(argc, argv);
-
-    if (result.count("help")) {
-      std::cout << options.help() << std::endl;
-      exit(0);
-    }
-
-    // ------------------------------------------
-    // use current time as seed for random generator
-
-    if (result.count("seed")) {
-        std::srand(result["seed"].as<unsigned>()); 
-    } else
-        std::srand(std::time(0));
-
-    // ------------------------------------------
-    // set precision
-
-    SET_PRECISION(result["precision"].as<unsigned int>())
-    safety_margin = result["safety-margin"].as<float>();
-
-    // ------------------------------------------
-    // parameters
-
-    unsigned int n_iter = result["n-iter"].as<unsigned int>();
-    unsigned int n_reversed_iteration = result["n-reversed-iter"].as<unsigned int>();
-    if (result.count("injectivity"))
-        n_reversed_iteration = n_iter;
-
-    // ------------------------------------------
-    // global variables
-
-    if (result.count("tol")) tolerance = result["tol"].as<PROBA_TYPE>();
-    if (result.count("verbose")) verbose = result["verbose"].as<float>();
-    if (result.count("num-graph-print")) max_num_graph_print = result["num-graph-print"].as<int>();
-
-    // ------------------------------------------
-    // initialize state
-
-    unsigned int size = result["size"].as<unsigned int>();
-    state_t state(size);
-
-    if (!result.count("zero"))
-        state.randomize();
-
-    PROBA_TYPE const theta_pi = M_PI*result["theta"].as<PROBA_TYPE>();
-    PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
-    PROBA_TYPE const xi_pi = M_PI*result["xi"].as<PROBA_TYPE>();
-
-    // ------------------------------------------
-    // read rule
-
-    state_t::rule_t *rule, *reversed_rule;
-
-    std::string rule_ = result["rule"].as<std::string>();
-    if (rule_ == "split_merge") {
-        rule = new split_merge_rule(theta_pi, phi_pi, xi_pi);
-        reversed_rule = new split_merge_rule(theta_pi, phi_pi, -xi_pi);
-    } else if (rule_ == "erase_create") {
-        rule = new erase_create_rule(theta_pi, phi_pi, xi_pi);
-        reversed_rule = new erase_create_rule(theta_pi, phi_pi, -xi_pi);
-    } else if (rule_ == "coin") {
-        rule = new coin_rule(theta_pi, phi_pi, xi_pi);
-        reversed_rule = new coin_rule(theta_pi, phi_pi, -xi_pi);
-    } else
-        throw;
-    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result.count("normalize")};
-}
-
 std::tuple<state_t,
     state_t::rule_t*, state_t::rule_t*, 
-    unsigned int, int, bool> iteration_parser(
+    unsigned int, int, bool, unsigned int> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -113,6 +13,8 @@ std::tuple<state_t,
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
         ("n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("1"))
+
+        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("N,normalize", "normalize after each iteration")
         ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
@@ -236,7 +138,7 @@ std::tuple<state_t,
 
     return {state,
         rule, rule2, 
-        n_iter, result["start-serializing"].as<unsigned int>(), result.count("normalize")};
+        n_iter, result["start-serializing"].as<unsigned int>(), result.count("normalize"), result["n-fast"].as<unsigned int>()};
 }
 
 std::tuple<state_t,
@@ -363,4 +265,106 @@ std::tuple<state_t,
     return {state,
         rule, rule2, 
         n_iter, result["start-serializing"].as<unsigned int>()};
+}
+
+std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool, unsigned int> test_parser(
+    cxxopts::Options &options, int argc, char* argv[]) {
+
+    options.add_options() ("h,help", "Print help")
+        ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
+
+        ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
+
+        ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
+
+        ("N,normalize", "normalize after each iteration")
+
+        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
+
+        ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
+
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+        ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
+
+        ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
+        ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
+
+        ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
+        ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+        ("x,xi", "xi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
+
+        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+
+        ("seed", "random engine seed", cxxopts::value<unsigned>())
+        ("z,zero", "start with and empty state");
+
+    // parse
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+      std::cout << options.help() << std::endl;
+      exit(0);
+    }
+
+    // ------------------------------------------
+    // use current time as seed for random generator
+
+    if (result.count("seed")) {
+        std::srand(result["seed"].as<unsigned>()); 
+    } else
+        std::srand(std::time(0));
+
+    // ------------------------------------------
+    // set precision
+
+    SET_PRECISION(result["precision"].as<unsigned int>())
+    safety_margin = result["safety-margin"].as<float>();
+
+    // ------------------------------------------
+    // parameters
+
+    unsigned int n_iter = result["n-iter"].as<unsigned int>();
+    unsigned int n_reversed_iteration = result["n-reversed-iter"].as<unsigned int>();
+    if (result.count("injectivity"))
+        n_reversed_iteration = n_iter;
+
+    // ------------------------------------------
+    // global variables
+
+    if (result.count("tol")) tolerance = result["tol"].as<PROBA_TYPE>();
+    if (result.count("verbose")) verbose = result["verbose"].as<float>();
+    if (result.count("num-graph-print")) max_num_graph_print = result["num-graph-print"].as<int>();
+
+    // ------------------------------------------
+    // initialize state
+
+    unsigned int size = result["size"].as<unsigned int>();
+    state_t state(size);
+
+    if (!result.count("zero"))
+        state.randomize();
+
+    PROBA_TYPE const theta_pi = M_PI*result["theta"].as<PROBA_TYPE>();
+    PROBA_TYPE const phi_pi = M_PI*result["phi"].as<PROBA_TYPE>();
+    PROBA_TYPE const xi_pi = M_PI*result["xi"].as<PROBA_TYPE>();
+
+    // ------------------------------------------
+    // read rule
+
+    state_t::rule_t *rule, *reversed_rule;
+
+    std::string rule_ = result["rule"].as<std::string>();
+    if (rule_ == "split_merge") {
+        rule = new split_merge_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new split_merge_rule(theta_pi, phi_pi, -xi_pi);
+    } else if (rule_ == "erase_create") {
+        rule = new erase_create_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new erase_create_rule(theta_pi, phi_pi, -xi_pi);
+    } else if (rule_ == "coin") {
+        rule = new coin_rule(theta_pi, phi_pi, xi_pi);
+        reversed_rule = new coin_rule(theta_pi, phi_pi, -xi_pi);
+    } else
+        throw;
+    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result.count("normalize"), result["n-fast"].as<unsigned int>()};
 }

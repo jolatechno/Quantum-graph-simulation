@@ -14,6 +14,8 @@ print_usage() {
 	-e: test erase create rule
 	-c: test coin rule
 
+	-a: additional arguments
+
 	-v: enable verbose
 "
 }
@@ -32,7 +34,9 @@ rule="erase_create coin split_merge"
 rule_=""
 overwriten_rule=false
 
-while getopts 's:S:n:r:R:hvmec' flag; do
+args=""
+
+while getopts 's:S:n:r:R:hvmeca:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -56,6 +60,8 @@ while getopts 's:S:n:r:R:hvmec' flag; do
 		c) rule_+=" coin";
 		overwriten_rule=true;;
 
+		a) args="${OPTARG}" ;;
+
     *) print_usage
        exit 1 ;;
   esac
@@ -75,7 +81,7 @@ for rule in $rule; do
 		fi
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
-			command="./state_test.out -t 0.375 -p 0.125 -x 0.125 -r ${rule} --seed ${seed} -s ${size} -n ${n_iter} -i"
+			command="./state_test.out -t 0.375 -p 0.125 -x 0.125 -r ${rule} --seed ${seed} -s ${size} -n ${n_iter} -i ${args}"
 			res=$(eval $command)
 
 			n_line=$(echo "${res}"  | wc -l)
