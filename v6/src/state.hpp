@@ -143,11 +143,11 @@ Iteration protocol is:
   - (4, "symbolic iteartion"): by iterating over "next_gid" and using the rule, populate "next_hash", "next_real" and "next_imag" through a symbolic iteration (**),
   	and populate "symbolic_num_nodes" and "symbolic_num_sub_nodes" which are respectively the number of node and of sub-nodes for each new graph.
 
-  - (5): using "next_hash" sum the probability ("next_real" and "next_imag") of equal graphs.
+  - (5), (f), (p): using "next_hash" sum the probability ("next_real" and "next_imag") of equal graphs.
   	When sorting graphs according to "next_hash" to then sum the magnitude of graph of equal hash.
   	We then partinion the state so we only keep the graphs that accumulated the magnitude of graphs of equal hash.
 	
-	- (6): compute the average memory usage of a graph.
+	- (6), (p): compute the average memory usage of a graph.
   	We can then compute "max_num_graphs" according to the value of "get_free_mem_size()" and a "safety_margin" (a proportion of memory which should be left free).
 		We then keep "max_num_graphs" graphs, with each graph having a probability of being kept (hopefully) proportional to its probability:
   		- generate a random number for each graph, following an given distribution (****), for which the rate is the probability of the graph.
@@ -159,6 +159,9 @@ Iteration protocol is:
   - (8): generate all new graphs of the new state by iterating over the N first "next_gid" and using "parent_gid" and "child_id".
 
 	- (9): swap the previous iteration with the next iteration.
+
+(f) step that can be skiped for "fast iterations"
+(p) step that have to be skiped for probabilist iteration
 
 (*) to compute the number of child you just compute "pow(2, num_operations)"
 (**) it's possible to compute the hash of a child graph without actually computing it for most rules
@@ -846,12 +849,16 @@ private:
 			step (5) 
 			 !!!!!!!!!!!!!!!! */
 
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(4);
+			}
+
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
 				if (!fast) {
 					#pragma omp single
 					{
-						MID_STEP_FUNCTION(4);
 				
 						/* sort graphs hash to compute interference */
 						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
@@ -967,6 +974,9 @@ private:
 			} else
 				#pragma omp single
 				{
+					MID_STEP_FUNCTION(5);
+					MID_STEP_FUNCTION(6);
+
 					/* same number of graphs for a probabilist simulation */
 					next_iteration.num_graphs = symbolic_num_graphs;
 					next_iteration.resize_num_graphs(next_iteration.num_graphs);
