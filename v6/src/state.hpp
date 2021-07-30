@@ -42,9 +42,6 @@
 #ifndef SAFETY_MARGIN
 	#define SAFETY_MARGIN 0.2
 #endif
-#ifndef MIN_BATCH_SIZE
-	#define MIN_BATCH_SIZE 100
-#endif
 #ifndef MIN_STATE_SIZE
 	#define MIN_STATE_SIZE 100000
 #endif
@@ -97,7 +94,6 @@ PROBA_TYPE tolerance = TOLERANCE;
 float upsize_policy = UPSIZE_POLICY;
 float downsize_policy = DOWNSIZE_POLICY;
 float safety_margin = SAFETY_MARGIN;
-unsigned int min_batch_size = MIN_BATCH_SIZE;
 size_t min_state_size = MIN_STATE_SIZE;
 
 // debugging options
@@ -860,12 +856,14 @@ private:
 					#pragma omp single
 					{
 						/* share work according to hash */
+						/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
+						unsigned int const window = num_threads - 1;
 						auto partitioned_it = next_gid.begin();
 						for (unsigned int thread_id = 0; thread_id < num_threads - 1; ++thread_id) {
 							if (partitioned_it != next_gid.begin() + symbolic_num_graphs)
-								partitioned_it = __gnu_parallel::partition(partitioned_it, next_gid.begin() + symbolic_num_graphs, 
+								partitioned_it = __gnu_parallel::partition(partitioned_it, next_gid.begin() + symbolic_num_graphs,
 									[&](unsigned int const &gid) {
-										return next_hash[gid] % num_threads == thread_id;
+										return (next_hash[gid] & window) == thread_id;
 									});
 
 							work_sharing_begin[thread_id + 1] = std::distance(next_gid.begin(), partitioned_it);
