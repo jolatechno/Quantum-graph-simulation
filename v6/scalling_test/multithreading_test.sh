@@ -47,7 +47,8 @@ do
 		separator=","
 	fi
 	
-	echo "		\"${n_thread}\" :	$(OMP_NUM_THREADS=${n_thread} ${command})${separator}"
+	cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
+	echo "		\"${n_thread}\" :	$(numactl --physcpubind="${cpu_cores}" ${command})${separator}"
 	n_thread=$(( $n_thread / 2))
 done
 
