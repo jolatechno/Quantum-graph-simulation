@@ -859,51 +859,51 @@ private:
 				if (!fast) {
 					#pragma omp single
 					{
-				
-						/* sort graphs hash to compute interference */
-						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, [&](unsigned int const &gid1, unsigned int const &gid2) {
-							return next_hash[gid1] > next_hash[gid2];
-						});
+						/* share work according to hash */
+						auto partitioned_it = next_gid.begin();
+						for (unsigned int thread_id = 0; thread_id < num_threads - 1; ++thread_id) {
+							if (partitioned_it != next_gid.begin() + symbolic_num_graphs)
+								partitioned_it = __gnu_parallel::partition(partitioned_it, next_gid.begin() + symbolic_num_graphs, 
+									[&](unsigned int const &gid) {
+										return next_hash[gid] % num_threads == thread_id;
+									});
 
-						/* set is_last_index of the first graph */
-						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
+							work_sharing_begin[thread_id + 1] = std::distance(next_gid.begin(), partitioned_it);
+						}
+						work_sharing_begin[num_threads] = symbolic_num_graphs;
 					}
 
-					/* compute is_last_index */
-					#pragma omp for schedule(static)
-					for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
-						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
-
-					/* find the number of used thread */
-					unsigned int max_num_thread = std::max(std::min(num_threads, (unsigned int)symbolic_num_graphs / min_batch_size), (unsigned int)1);
-
-					/* get the thread_id and the number of threads to share the for loop equally between threads */
 					unsigned int thread_id = omp_get_thread_num();
+				
+					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
+						/* sort graphs hash to compute interference */
+						std::sort(next_gid.begin() + work_sharing_begin[thread_id], next_gid.begin() + work_sharing_begin[thread_id + 1],
+							[&](unsigned int const &gid1, unsigned int const &gid2) {
+								return next_hash[gid1] > next_hash[gid2];
+							});
 
-					/* find the begin and the end of each batch assigned to each thread */
-					unsigned int batch_size = symbolic_num_graphs / max_num_thread;
-					unsigned int &end = work_sharing_begin[thread_id + 1];
-					end = thread_id == max_num_thread - 1 || thread_id >= max_num_thread ? symbolic_num_graphs : batch_size * (thread_id + 1);
+						/* set is_last_index of the last graph */
+						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
 
-					// skip the first few graph which aren't unique at the begining of each thread
-					for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
-					end = end == symbolic_num_graphs ? end : end + 1; 
+						/* compute is_last_index */
+						for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
+							is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
 
-					#pragma omp barrier
+						/* partial sum over the interval since we know it starts and end at unique graphs */
+						PROBA_TYPE sign;
+						unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
+						for (unsigned int gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+							unsigned int id = next_gid[gid];
+							sign = !is_last_index[last_id];
 
-					/* partial sum over the interval since we know it starts and end at unique graphs */
-					PROBA_TYPE sign;
-					unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
-					for (unsigned int gid =  work_sharing_begin[thread_id] + 1; gid < end; ++gid) {
-						unsigned int id = next_gid[gid];
-						sign = !is_last_index[last_id];
+							/* add probabilites of graph with equal hashes */
+							next_real[id] += sign*next_real[last_id];
+							next_imag[id] += sign*next_imag[last_id];
 
-						/* add probabilites of graph with equal hashes */
-						next_real[id] += sign*next_real[last_id];
-						next_imag[id] += sign*next_imag[last_id];
-
-						last_id = id;
+							last_id = id;
+						}
 					}
+					
 				}
 
 				#pragma omp barrier
