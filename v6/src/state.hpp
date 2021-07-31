@@ -736,7 +736,7 @@ private:
 		std::vector<unsigned int> work_sharing_begin(num_threads + 1, 0);
 
 		/* allow nested parallism for __gnu_parallel inside omp single */
-		omp_set_nested(1);
+		omp_set_nested(3);
 
 		/* !!!!!!!!!!!!!!!!
 		step (1) 
@@ -855,32 +855,30 @@ private:
 				if (!fast) {
 					#pragma omp single
 					{
-						/* share work according to hash */
-						/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
-						unsigned int const window = num_threads - 1;
-
-						auto partition = [&](unsigned int start, unsigned int end, unsigned int limit) {
-							auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + start, next_gid.begin() + end,
-								[&](unsigned int const &gid) {
-									return (next_hash[gid] & window) < limit;
-								});
-
-							return std::distance(next_gid.begin(), partitioned_it);
-						};
-
-						std::function<void(unsigned int,unsigned int)> recursion = [&](unsigned int start, unsigned int end){
-							unsigned int middle = (end + start ) / 2;
-							work_sharing_begin[middle] = partition(work_sharing_begin[start], work_sharing_begin[end], middle);
-							if (end - start > 2) {
-								recursion(start, middle);
-								recursion(middle, end);
-							}
-						};
-
 						work_sharing_begin[0] = 0;
 						work_sharing_begin[num_threads] = symbolic_num_graphs;
 
-						recursion(0, num_threads);
+						/* share work according to hash */
+						unsigned int const window = num_threads - 1;
+						for (unsigned int num_partition = 2; num_partition < num_threads; num_partition *= 2) {
+							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
+							unsigned int const partition_width = num_threads / num_partition;
+
+							#pragma omp parallel for schedule(static)
+							for (unsigned int partition = 0; partition < num_partition - 1; ++partition) {
+								unsigned int begin = partition*partition_width;
+								unsigned int end = (partition + 1)*partition_width;
+								unsigned int middle = (begin + end)/2;
+
+								auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + work_sharing_begin[begin],
+								next_gid.begin() + work_sharing_begin[end],
+								[&](unsigned int const &gid) {
+									return (next_hash[gid] & window) < middle;
+								});
+
+								work_sharing_begin[middle] = std::distance(next_gid.begin(), partitioned_it);
+							}
+						}
 					}
 
 					unsigned int thread_id = omp_get_thread_num();
