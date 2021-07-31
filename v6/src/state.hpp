@@ -855,48 +855,35 @@ private:
 				if (!fast) {
 					#pragma omp single
 					{
-						work_sharing_begin[0] = 0;
-						work_sharing_begin[num_threads] = symbolic_num_graphs;
-
-						/* share work according to hash */
-						unsigned int const window = num_threads - 1;
-						for (unsigned int num_partition = 2; num_partition < num_threads; num_partition *= 2) {
-							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
-							unsigned int const partition_width = num_threads / num_partition;
-
-							#pragma omp parallel for schedule(static)
-							for (unsigned int partition = 0; partition < num_partition - 1; ++partition) {
-								unsigned int begin = partition*partition_width;
-								unsigned int end = (partition + 1)*partition_width;
-								unsigned int middle = (begin + end)/2;
-
-								auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + work_sharing_begin[begin],
-								next_gid.begin() + work_sharing_begin[end],
-								[&](unsigned int const &gid) {
-									return (next_hash[gid] & window) < middle;
-								});
-
-								work_sharing_begin[middle] = std::distance(next_gid.begin(), partitioned_it);
-							}
-						}
-					}
-
-					unsigned int thread_id = omp_get_thread_num();
-				
-					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
 						/* sort graphs hash to compute interference */
-						std::sort(next_gid.begin() + work_sharing_begin[thread_id], next_gid.begin() + work_sharing_begin[thread_id + 1],
+						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
 							[&](unsigned int const &gid1, unsigned int const &gid2) {
 								return next_hash[gid1] > next_hash[gid2];
 							});
 
-						/* set is_last_index of the last graph */
-						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
+						/* prepare work sizes */
+						for (unsigned int i = 0; i < num_threads + 1; ++i)
+							work_sharing_begin[i] = (i * symbolic_num_graphs) / num_threads;
 
-						/* compute is_last_index */
-						for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
-							is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
+						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
+					}
 
+					/* compute is_last_index */
+					#pragma omp for schedule(static)
+					for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
+						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
+
+					unsigned int thread_id = omp_get_thread_num();
+
+					#pragma omp barrier
+
+					auto &end = work_sharing_begin[thread_id + 1];
+					for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
+					if (end < symbolic_num_graphs) ++end;
+
+					#pragma omp barrier
+
+					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
 						/* partial sum over the interval since we know it starts and end at unique graphs */
 						PROBA_TYPE sign;
 						unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
