@@ -853,7 +853,6 @@ private:
 			}
 
 			/* no need to compute interference if we are in the probabilist case */
-#ifdef PARTITION
 			if (!rule.probabilist) {
 				if (!fast) {
 					#pragma omp single
@@ -863,12 +862,12 @@ private:
 
 						/* share work according to hash */
 						unsigned int const window = num_threads - 1;
-						for (unsigned int num_partition = 2; num_partition < num_threads; num_partition *= 2) {
+						for (unsigned int num_partition = 1; num_partition < num_threads; num_partition *= 2) {
 							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
 							unsigned int const partition_width = num_threads / num_partition;
 
-							#pragma omp parallel for schedule(static)
-							for (unsigned int partition = 0; partition < num_partition - 1; ++partition) {
+							//#pragma omp parallel for schedule(static)
+							for (unsigned int partition = 0; partition < num_partition; ++partition) {
 								unsigned int begin = partition*partition_width;
 								unsigned int end = (partition + 1)*partition_width;
 								unsigned int middle = (begin + end)/2;
@@ -913,61 +912,8 @@ private:
 
 							last_id = id;
 						}
-					}
-					
+					}	
 				}
-#else
-			/* no need to compute interference if we are in the probabilist case */
-			if (!rule.probabilist) {
-				if (!fast) {
-					#pragma omp single
-					{
-						/* sort graphs hash to compute interference */
-						ska_sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
-							[&](unsigned int const &gid) {
-								return next_hash[gid];
-							});
-
-						/* prepare work sizes */
-						for (unsigned int i = 0; i < num_threads + 1; ++i)
-							work_sharing_begin[i] = (i * symbolic_num_graphs) / num_threads;
-
-						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
-					}
-
-					/* compute is_last_index */
-					#pragma omp for schedule(static)
-					for (unsigned int gid = 0; gid < symbolic_num_graphs - 1; ++gid)
-						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
-
-					unsigned int thread_id = omp_get_thread_num();
-
-					#pragma omp barrier
-
-					auto &end = work_sharing_begin[thread_id + 1];
-					for (; end < symbolic_num_graphs && !is_last_index[next_gid[end]]; ++end) {}
-					if (end < symbolic_num_graphs) ++end;
-
-					#pragma omp barrier
-
-					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-						/* partial sum over the interval since we know it starts and end at unique graphs */
-						PROBA_TYPE sign;
-						unsigned int last_id = next_gid[work_sharing_begin[thread_id]];
-						for (unsigned int gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-							unsigned int id = next_gid[gid];
-							sign = !is_last_index[last_id];
-
-							/* add probabilites of graph with equal hashes */
-							next_real[id] += sign*next_real[last_id];
-							next_imag[id] += sign*next_imag[last_id];
-
-							last_id = id;
-						}
-					}
-					
-				}
-#endif
 
 				#pragma omp barrier
 
