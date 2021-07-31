@@ -657,7 +657,7 @@ Non-virtual member functions are:
 				num_op += s.operation(gid, node) != 0; // 0 is the "none" operation for all dynamics
 
 			/* 2^n_op childs */
-			return std::pow(2, num_op);
+			return 1 << num_op;
 		}
 
 		/* step (4) */
@@ -721,9 +721,6 @@ private:
 		if (rule.identity)
 			return;
 
-		/* allow nested parallism for __gnu_parallel inside omp single */
-		omp_set_nested(1);
-
 		// set the proba to 1 if we won't normalize, else 0 since we need to accumulate the probabilities
 		PROBA_TYPE total_proba = !normalize;
 
@@ -737,6 +734,9 @@ private:
 		num_threads = omp_get_num_threads();
 
 		std::vector<unsigned int> work_sharing_begin(num_threads + 1, 0);
+
+		/* allow nested parallism for __gnu_parallel inside omp single */
+		omp_set_nested(1);
 
 		/* !!!!!!!!!!!!!!!!
 		step (1) 
@@ -858,17 +858,29 @@ private:
 						/* share work according to hash */
 						/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
 						unsigned int const window = num_threads - 1;
-						auto partitioned_it = next_gid.begin();
-						for (unsigned int thread_id = 0; thread_id < num_threads - 1; ++thread_id) {
-							if (partitioned_it != next_gid.begin() + symbolic_num_graphs)
-								partitioned_it = __gnu_parallel::partition(partitioned_it, next_gid.begin() + symbolic_num_graphs,
-									[&](unsigned int const &gid) {
-										return (next_hash[gid] & window) == thread_id;
-									});
 
-							work_sharing_begin[thread_id + 1] = std::distance(next_gid.begin(), partitioned_it);
-						}
+						auto partition = [&](unsigned int start, unsigned int end, unsigned int limit) {
+							auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + start, next_gid.begin() + end,
+								[&](unsigned int const &gid) {
+									return (next_hash[gid] & window) < limit;
+								});
+
+							return std::distance(next_gid.begin(), partitioned_it);
+						};
+
+						std::function<void(unsigned int,unsigned int)> recursion = [&](unsigned int start, unsigned int end){
+							unsigned int middle = (end + start ) / 2;
+							work_sharing_begin[middle] = partition(work_sharing_begin[start], work_sharing_begin[end], middle);
+							if (end - start > 2) {
+								recursion(start, middle);
+								recursion(middle, end);
+							}
+						};
+
+						work_sharing_begin[0] = 0;
 						work_sharing_begin[num_threads] = symbolic_num_graphs;
+
+						recursion(0, num_threads);
 					}
 
 					unsigned int thread_id = omp_get_thread_num();
