@@ -6,6 +6,7 @@
 #include <boost/functional/hash.hpp>
 #include <random>
 #include <iostream>
+#include <boost/sort/sort.hpp>
 
 #include "utils/random.hpp"
 #include "utils/memory.hpp"
@@ -856,9 +857,9 @@ private:
 					#pragma omp single
 					{
 						/* sort graphs hash to compute interference */
-						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
+						boost::sort::block_indirect_sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
 							[&](unsigned int const &gid1, unsigned int const &gid2) {
-								return next_hash[gid1] > next_hash[gid2];
+								return next_hash[gid1] < next_hash[gid2];
 							});
 
 						/* prepare work sizes */
