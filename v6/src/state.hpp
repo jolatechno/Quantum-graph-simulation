@@ -862,15 +862,18 @@ private:
 
 						/* share work according to hash */
 						unsigned int const window = num_threads - 1;
-						for (unsigned int num_partition = 1; num_partition < num_threads; num_partition *= 2) {
+						for (unsigned int num_partition = 1; num_partition < num_threads; num_partition <<= 1) {
 							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
 							unsigned int const partition_width = num_threads / num_partition;
 
-							//#pragma omp parallel for schedule(static)
+							#pragma omp parallel for schedule(static) num_threads(num_partition)
 							for (unsigned int partition = 0; partition < num_partition; ++partition) {
 								unsigned int begin = partition*partition_width;
 								unsigned int end = (partition + 1)*partition_width;
 								unsigned int middle = (begin + end)/2;
+
+								/* set number of thread for subsequent parallel partition */
+								omp_set_num_threads(partition_width);
 
 								auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + work_sharing_begin[begin],
 								next_gid.begin() + work_sharing_begin[end],

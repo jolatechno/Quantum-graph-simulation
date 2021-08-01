@@ -1,4 +1,5 @@
 #include <chrono>
+#include <unistd.h>
 
 /* number of step */
 #define N_STEP 9
@@ -26,6 +27,25 @@
 #include <math.h>
 
 int main(int argc, char* argv[]) {
+	std::vector<int> rand(1000000000);
+	std::iota(rand.begin(), rand.end(), 1);
+
+	int batch = rand.size() / 4;
+
+	omp_set_nested(3);
+
+	/*#pragma omp parallel for num_threads(4) schedule(static)
+	for (unsigned int i = 0; i < 4; ++i) {
+		printf("thread=%d/%d, i=%d\n", omp_get_thread_num(), omp_get_num_threads(), i);
+
+		omp_set_num_threads(2);
+
+		#pragma omp parallel
+		printf("thread=%d/%d, i=%d\n", omp_get_thread_num(), omp_get_num_threads(), i);
+
+		__gnu_parallel::sort(rand.begin() + batch*i, rand.begin() + batch*(i + 1), [](int x, int y) { return x > y; });
+	}*/
+
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("file used for multi-threading test (does not run reversed iterations");
