@@ -6,7 +6,6 @@
 #include <boost/functional/hash.hpp>
 #include <random>
 #include <iostream>
-#include <boost/sort/sort.hpp>
 
 #include "utils/random.hpp"
 #include "utils/memory.hpp"
@@ -190,9 +189,6 @@ Iteration protocol is:
 (***) the n_th bit of child_id corresponds to whether we do the n_th operation or not. 
 (****) the optimal distribution found through experiments is "X_p = log( -log(U) / p )" (see ../../validation/)
 */
-
-/* random generator */
-unfiorm random_generator;
 
 class state {
 public:
@@ -554,6 +550,10 @@ Non-virtual member functions are:
 	- "write_operation(op_type_t op)" which apply the probabilist decision if the rule is probabilist, else returns op.
 */
 	typedef class rule {
+	private:
+		/* random generator */
+		mutable unfiorm random_generator;
+
 	public:
 		/* flag to determine the type of rule */
 		bool probabilist = false;
@@ -986,7 +986,8 @@ private:
 							PROBA_TYPE r = next_real[*gid_it];
 							PROBA_TYPE i = next_imag[*gid_it];
 
-							random_selector[*gid_it] = precision::log( -precision::log(1 - random_generator()) / (r*r + i*i));
+							float random_value = (float)next_hash[*gid_it] / 18446744073709551616.;
+							random_selector[*gid_it] = precision::log( -precision::log(1 - random_value) / (r*r + i*i));
 						} 
 
 						/* select graphs according to random selectors */
