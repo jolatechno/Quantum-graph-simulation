@@ -8,7 +8,6 @@
 #include <iostream>
 #include <boost/sort/sort.hpp>
 
-#include "utils/ska_sort.hpp"
 #include "utils/random.hpp"
 #include "utils/memory.hpp"
 #include "utils/vector.hpp"
@@ -121,6 +120,31 @@ It can be used to insert timming or debuging code in the step function:
 		if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
 					std::cout << "step "#n"\n";
 #endif
+
+/*
+number of threads
+*/
+
+int inline fast_log2(unsigned int x) {
+	int i = 0;
+	for(; (x >> i + 1) != 0 && i < 31; ++i) {}
+	return i;
+};
+
+int inline fast_log2(size_t x) {
+	int i = 0;
+	for(; (x >> i + 1) != 0 && i < 63; ++i) {}
+	return i;
+};
+
+const unsigned int num_threads = []() {
+	int num_threads;
+	#pragma omp parallel
+	#pragma omp single
+	num_threads = omp_get_num_threads();
+
+	return num_threads;
+}();
 
 /*
 !!!!!
@@ -453,6 +477,9 @@ public:
 		}
 	}
 
+	/* vector for work sharing */
+	std::vector<unsigned int> work_sharing_begin = std::vector<unsigned int>(num_threads + 1);
+
 	/* constructor for a single graph of a given size */
 	state(unsigned int size) : state(size, 1) {}
 
@@ -689,7 +716,7 @@ Non-virtual member functions are:
 		static const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 2*sizeof(unsigned int) + sizeof(unsigned short int);
 		static const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 		static const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		static const long int symbolic_mem_usage = sizeof(char) + 2*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
+		static const long int symbolic_mem_usage = sizeof(char) + 3*sizeof(unsigned int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
 
 		long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes
@@ -727,15 +754,6 @@ private:
 		PROBA_TYPE total_proba = !normalize;
 
 		symbolic_num_graphs = 0;
-
-		// variables to share work
-		unsigned int num_threads;
-
-		#pragma omp parallel
-		#pragma omp single
-		num_threads = omp_get_num_threads();
-
-		std::vector<unsigned int> work_sharing_begin(num_threads + 1, 0);
 
 		/* allow nested parallism for __gnu_parallel inside omp single */
 		omp_set_nested(3);
@@ -855,15 +873,16 @@ private:
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
 				if (!fast) {
+					int log_num_thread = fast_log2(num_threads);
 					#pragma omp single
 					{
 						work_sharing_begin[0] = 0;
 						work_sharing_begin[num_threads] = symbolic_num_graphs;
 
 						/* share work according to hash */
-						unsigned int const window = num_threads - 1;
-						for (unsigned int num_partition = 1; num_partition < num_threads; num_partition <<= 1) {
+						for (int shift = 0; shift < log_num_thread; ++shift) {
 							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
+							unsigned int num_partition = 1 << shift;
 							unsigned int const partition_width = num_threads / num_partition;
 
 							#pragma omp parallel for schedule(static) num_threads(num_partition)
@@ -878,7 +897,7 @@ private:
 								auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + work_sharing_begin[begin],
 								next_gid.begin() + work_sharing_begin[end],
 								[&](unsigned int const &gid) {
-									return (next_hash[gid] & window) < middle;
+									return (next_hash[gid] >> shift) & 1;
 								});
 
 								work_sharing_begin[middle] = std::distance(next_gid.begin(), partitioned_it);
@@ -889,11 +908,21 @@ private:
 					unsigned int thread_id = omp_get_thread_num();
 				
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-						/* sort graphs hash to compute interference */
-						ska_sort(next_gid.begin() + work_sharing_begin[thread_id], next_gid.begin() + work_sharing_begin[thread_id + 1],
-							[&](unsigned int const &gid) {
-								return next_hash[gid];
+						unsigned int *max_idx = std::max_element(next_gid.begin() + work_sharing_begin[thread_id],
+							next_gid.begin() + work_sharing_begin[thread_id + 1],
+							[&](unsigned int gid1, unsigned int gid2) {
+								return next_hash[gid1] > next_hash[gid2];
 							});
+						unsigned int max_shift = fast_log2(next_hash[*max_idx]);
+
+						/* sort graphs hash to compute interference */
+						/* using radix lsd sort */
+						for (unsigned int shift = log_num_thread + 1; shift < max_shift; ++shift)
+							std::stable_partition(next_gid.begin() + work_sharing_begin[thread_id],
+								next_gid.begin() + work_sharing_begin[thread_id + 1],
+								[&](unsigned int gid) {
+									return (next_hash[gid] >> shift) & 1;
+								});
 
 						/* set is_last_index of the last graph */
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
@@ -1043,8 +1072,6 @@ private:
 
 		/* swap states */
 		std::swap(current_iteration, next_iteration);
-
-		MID_STEP_FUNCTION(9);
 	}
 };
 
