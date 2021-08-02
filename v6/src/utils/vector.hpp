@@ -60,6 +60,20 @@ public:
 		ptr = new_ptr;
 		size_ = n;
     }
+
+    void iota_resize(size_t n) {
+    	value_type* new_ptr = static_cast<value_type*>(malloc(n*sizeof(value_type)));
+
+		#pragma omp parallel for schedule(static)
+		for (unsigned long int i = 0; i < n; ++i)
+			new_ptr[i] = i;
+
+		if (ptr != 0)
+			free(ptr);
+
+		ptr = new_ptr;
+		size_ = n;
+    }
  
     // Begin iterator
     inline value_type* begin() const {

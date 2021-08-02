@@ -7,6 +7,7 @@
 #include <random>
 #include <iostream>
 
+#include "utils/sort.hpp"
 #include "utils/random.hpp"
 #include "utils/memory.hpp"
 #include "utils/vector.hpp"
@@ -123,18 +124,6 @@ It can be used to insert timming or debuging code in the step function:
 /*
 number of threads
 */
-
-int inline fast_log2(unsigned int x) {
-	int i = 0;
-	for(; (x >> i + 1) != 0 && i < 31; ++i) {}
-	return i;
-};
-
-int inline fast_log2(size_t x) {
-	int i = 0;
-	for(; (x >> i + 1) != 0 && i < 63; ++i) {}
-	return i;
-};
 
 const unsigned int num_threads = []() {
 	int num_threads;
@@ -478,6 +467,7 @@ public:
 
 	/* vector for work sharing */
 	std::vector<unsigned int> work_sharing_begin = std::vector<unsigned int>(num_threads + 1);
+	numa_vector<unsigned int> next_gid_buffer;
 
 	/* constructor for a single graph of a given size */
 	state(unsigned int size) : state(size, 1) {}
@@ -524,6 +514,8 @@ public:
 		downsize_policy * next_gid.size() > size * upsize_policy) { // downsize according to the downsize_policy
 
 			next_gid.resize(upsize_policy * size);
+			next_gid_buffer.iota_resize(upsize_policy * size);
+
 			parent_gid.resize(upsize_policy * size);
 			child_id.resize(upsize_policy * size);
 			is_last_index.resize(upsize_policy * size);
@@ -533,10 +525,8 @@ public:
 			symbolic_num_nodes.resize(upsize_policy * size);
 			symbolic_num_sub_nodes.resize(upsize_policy * size);
 			random_selector.resize(upsize_policy * size);
-		}
-
-		// initialize next_gid with 1, 2, 3....
-		std::iota(next_gid.begin(), next_gid.begin() + size, 0);
+		} else
+			std::iota(next_gid_buffer.begin(), next_gid_buffer.begin() + size, 0);
 	}
 
 /* 
@@ -872,56 +862,55 @@ private:
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
 				if (!fast) {
-					int log_num_thread = fast_log2(num_threads);
 					#pragma omp single
 					{
+						/* share work according to hash */
+						unsigned int count[256] = {0};
+						parallel_radix_indexed_sort_offset(next_gid_buffer.begin(), next_gid_buffer.begin() + symbolic_num_graphs,
+							next_hash.begin(),
+							next_gid.begin(),
+							count,
+							0);
+
+						/* share work according to count */
 						work_sharing_begin[0] = 0;
 						work_sharing_begin[num_threads] = symbolic_num_graphs;
-
-						/* share work according to hash */
-						for (int shift = 0; shift < log_num_thread; ++shift) {
-							/* assuming thread_id is a power of two, x % num_threads = x & (thread_id - 1) */
-							unsigned int num_partition = 1 << shift;
-							unsigned int const partition_width = num_threads / num_partition;
-
-							#pragma omp parallel for schedule(static) num_threads(num_partition)
-							for (unsigned int partition = 0; partition < num_partition; ++partition) {
-								unsigned int begin = partition*partition_width;
-								unsigned int end = (partition + 1)*partition_width;
-								unsigned int middle = (begin + end)/2;
-
-								/* set number of thread for subsequent parallel partition */
-								omp_set_num_threads(partition_width);
-
-								auto partitioned_it = __gnu_parallel::partition(next_gid.begin() + work_sharing_begin[begin],
-								next_gid.begin() + work_sharing_begin[end],
-								[&](unsigned int const &gid) {
-									return (next_hash[gid] >> shift) & 1;
-								});
-
-								work_sharing_begin[middle] = std::distance(next_gid.begin(), partitioned_it);
-							}
+						for (unsigned int i = 1; i < num_threads; ++i) {
+							unsigned int idx = (i * 256) / num_threads;
+							work_sharing_begin[i] = count[idx];
 						}
 					}
 
 					unsigned int thread_id = omp_get_thread_num();
 				
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-						unsigned int *max_idx = std::max_element(next_gid.begin() + work_sharing_begin[thread_id],
+						/* sort all graphs */
+						/*radix_indexed_sort_offset(next_gid.begin() + work_sharing_begin[thread_id],
+							next_gid.begin() + work_sharing_begin[thread_id + 1],
+							next_hash.begin(),
+							next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							8);
+						radix_indexed_sort_offset(next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1],
+							next_hash.begin(),
+							next_gid.begin() + work_sharing_begin[thread_id],
+							16);
+						radix_indexed_sort_offset(next_gid.begin() + work_sharing_begin[thread_id],
+							next_gid.begin() + work_sharing_begin[thread_id + 1],
+							next_hash.begin(),
+							next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							32);
+						radix_indexed_sort_offset(next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1],
+							next_hash.begin(),
+							next_gid.begin() + work_sharing_begin[thread_id],
+							48);*/
+
+						std::sort(next_gid.begin() + work_sharing_begin[thread_id],
 							next_gid.begin() + work_sharing_begin[thread_id + 1],
 							[&](unsigned int gid1, unsigned int gid2) {
 								return next_hash[gid1] > next_hash[gid2];
 							});
-						unsigned int max_shift = fast_log2(next_hash[*max_idx]);
-
-						/* sort graphs hash to compute interference */
-						/* using radix lsd sort */
-						for (unsigned int shift = log_num_thread + 1; shift < max_shift; ++shift)
-							std::stable_partition(next_gid.begin() + work_sharing_begin[thread_id],
-								next_gid.begin() + work_sharing_begin[thread_id + 1],
-								[&](unsigned int gid) {
-									return (next_hash[gid] >> shift) & 1;
-								});
 
 						/* set is_last_index of the last graph */
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
