@@ -8,7 +8,7 @@ void inline radix_indexed_sort_offset(RandomReadIt begin, RandomReadIt end, Valu
 	// counting occurences of each key
 	for (RandomReadIt it = begin; it != end; ++it) {
 		unsigned char key = valueBegin[*it] >> offset;
-		count[key]++;
+		++count[key];
 	}
 
 	// accumulating occurences to get indexes
@@ -31,7 +31,7 @@ void inline parallel_radix_indexed_sort_offset(RandomReadIt begin, RandomReadIt 
 		unsigned char key = valueBegin[*it] >> offset;;
 
 		#pragma omp atomic
-		count[key]++;
+		++count[key];
 	}
 
 	// accumulating occurences to get indexes

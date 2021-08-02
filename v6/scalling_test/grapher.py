@@ -14,7 +14,7 @@ filename = "res.json" if len(sys.argv) == 1 else sys.argv[1]
 with open(filename) as f:
 	data = json.load(f)
 
-n_threads = data["results"].keys()
+n_threads = list(data["results"].keys())[::-1]
 fig_title = data["command"]
 
 scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
@@ -45,6 +45,17 @@ for step in range(proportions.shape[1]):
 	ax1.bar(bar_starting_position + bar_width*step, scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
 bars = ax1.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
+
+x_points, y_points = [], []
+for i, n_thread in enumerate(n_threads):
+	n_thread = int(n_thread)
+
+	x_points.append(bar_starting_position[i])
+	y_points.append(int(n_thread))
+
+	x_points.append(bar_starting_position[i] + bar_width*proportions.shape[1])
+	y_points.append(int(n_thread))
+ax1.plot(x_points, y_points, "k--")
 
 ax1.legend()
 
@@ -78,7 +89,8 @@ ax3.set_xticklabels(n_threads)
 for step in range(proportions.shape[1]):
 	ax3.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-bars = ax1.bar(bar_starting_position + bar_width*proportions.shape[1], inverse_scaling[:, -1], width=bar_width, label='total')
+bars = ax3.bar(bar_starting_position + bar_width*proportions.shape[1], inverse_scaling[:, -1], width=bar_width, label='total')
+ax3.plot(ax3.get_xlim(), [1, 1], "k--")
 
 
 
