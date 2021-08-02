@@ -885,7 +885,7 @@ private:
 				
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
 						/* sort all graphs */
-						/*radix_indexed_sort_offset(next_gid.begin() + work_sharing_begin[thread_id],
+						radix_indexed_sort_offset(next_gid.begin() + work_sharing_begin[thread_id],
 							next_gid.begin() + work_sharing_begin[thread_id + 1],
 							next_hash.begin(),
 							next_gid_buffer.begin() + work_sharing_begin[thread_id],
@@ -899,18 +899,22 @@ private:
 							next_gid.begin() + work_sharing_begin[thread_id + 1],
 							next_hash.begin(),
 							next_gid_buffer.begin() + work_sharing_begin[thread_id],
-							32);
+							24);
 						radix_indexed_sort_offset(next_gid_buffer.begin() + work_sharing_begin[thread_id],
 							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1],
 							next_hash.begin(),
 							next_gid.begin() + work_sharing_begin[thread_id],
-							48);*/
-
-						std::sort(next_gid.begin() + work_sharing_begin[thread_id],
+							32);
+						radix_indexed_sort_offset(next_gid.begin() + work_sharing_begin[thread_id],
 							next_gid.begin() + work_sharing_begin[thread_id + 1],
-							[&](unsigned int gid1, unsigned int gid2) {
-								return next_hash[gid1] > next_hash[gid2];
-							});
+							next_hash.begin(),
+							next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							40);
+						radix_indexed_sort_offset(next_gid_buffer.begin() + work_sharing_begin[thread_id],
+							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1],
+							next_hash.begin(),
+							next_gid.begin() + work_sharing_begin[thread_id],
+							48);
 
 						/* set is_last_index of the last graph */
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
