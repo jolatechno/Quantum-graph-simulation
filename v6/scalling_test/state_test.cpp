@@ -2,7 +2,7 @@
 #include <sys/time.h>
 
 /* number of step */
-#define N_STEP 8
+#define N_STEP 9
 
 /* define a custom "MID_STEP_FUNCTION(n)" that accumulate the time taken in each step */
 #define MID_STEP_FUNCTION(n) \

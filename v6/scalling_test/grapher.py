@@ -23,6 +23,7 @@ proportions = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"
 
 for i, n_thread in enumerate(n_threads):
 	scaling[i, -1] = data["results"]["1"]["wall"]["total"] / data["results"][n_thread]["wall"]["total"]
+	inverse_scaling[i, -1] = data["results"][n_thread]["cpu"]["total"] / data["results"]["1"]["cpu"]["total"]
 
 	for step in range(proportions.shape[1]):
 		proportions[i, step] = data["results"][n_thread]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["total"]
@@ -34,9 +35,33 @@ fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 13), constrained_layout=T
 # plot wall time scalling
 ax1.set_title("execution time reduction (in wall time) for each step")
 
-bar_width = width / proportions.shape[1]
+bar_width = width / (scaling.shape[1] - 1)
 tick_position = np.arange(len(n_threads), dtype=float)  # the label locations
-bar_starting_position = tick_position - bar_width * proportions.shape[1] / 2
+bar_starting_position = tick_position - bar_width * (scaling.shape[1] - 1) / 2
+
+
+bar_width_1 = width / (proportions.shape[1] - 1)
+tick_position_1 = np.arange(len(n_threads), dtype=float)  # the label locations
+bar_starting_position_1 = tick_position - bar_width_1 * (proportions.shape[1] - 1) / 2
+
+
+x_points, y_points = [[]], [[]]
+total_end = bar_starting_position[-1] + bar_width*proportions.shape[1] + bar_width/2
+for i, n_thread in enumerate(n_threads):
+	n_thread = int(n_thread) if i < len(n_threads) - 1 else int(n_threads[-2])
+
+	begin = bar_starting_position[i] - bar_width/2
+	end = bar_starting_position[i] + bar_width*proportions.shape[1] + bar_width/2
+
+	if i < len(n_threads) - 2:
+		x_points.append([end, total_end])
+		y_points.append([n_thread, n_thread])
+
+	x_points[0].append(begin)
+	y_points[0].append(n_thread)
+
+	x_points[0].append(end)
+	y_points[0].append(n_thread)
 
 ax1.set_xticks(tick_position)
 ax1.set_xticklabels(n_threads)
@@ -46,17 +71,11 @@ for step in range(proportions.shape[1]):
 
 bars = ax1.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
 
-x_points, y_points = [], []
-for i, n_thread in enumerate(n_threads):
-	n_thread = int(n_thread)
+ax1.plot(x_points[0], y_points[0], "k--")
+for i in range(1, len(x_points)):
+	ax1.plot(x_points[i], y_points[i], "--", color="dimgrey")
 
-	x_points.append(bar_starting_position[i])
-	y_points.append(int(n_thread))
-
-	x_points.append(bar_starting_position[i] + bar_width*proportions.shape[1])
-	y_points.append(int(n_thread))
-ax1.plot(x_points, y_points, "k--")
-
+ax1.set_yscale('log')
 ax1.legend()
 
 
@@ -64,33 +83,28 @@ ax1.legend()
 # plot proportions
 ax2.set_title("proportion of the total execution cpu time taken by each step")
 
-bar_width = width / (proportions.shape[1] - 1)
-tick_position = np.arange(len(n_threads), dtype=float)  # the label locations
-bar_starting_position = tick_position - bar_width * (proportions.shape[1] - 1) / 2
-
-ax2.set_xticks(tick_position)
+ax2.set_xticks(tick_position_1)
 ax2.set_xticklabels(n_threads)
 
 for step in range(proportions.shape[1]):
-	ax2.bar(bar_starting_position + bar_width*step, proportions[:, step], width=bar_width, label=f'step { step + 1 }')
+	ax2.bar(bar_starting_position_1 + bar_width_1*step, proportions[:, step], width=bar_width_1, label=f'step { step + 1 }')
 
 
 
 # plot cpu time scalling
 ax3.set_title("execution time multiplication (in cpu time) for each step")
 
-bar_width = width / proportions.shape[1]
-tick_position = np.arange(len(n_threads), dtype=float)  # the label locations
-bar_starting_position = tick_position - bar_width * proportions.shape[1] / 2
-
 ax3.set_xticks(tick_position)
 ax3.set_xticklabels(n_threads)
 
-for step in range(proportions.shape[1]):
+for step in range(scaling.shape[1]):
 	ax3.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-bars = ax3.bar(bar_starting_position + bar_width*proportions.shape[1], inverse_scaling[:, -1], width=bar_width, label='total')
-ax3.plot(ax3.get_xlim(), [1, 1], "k--")
+ax3.plot(x_points[0], y_points[0], "k--")
+for i in range(1, len(x_points)):
+	ax3.plot(x_points[i], y_points[i], "--", color="dimgrey")
+
+ax3.set_yscale('log')
 
 
 
