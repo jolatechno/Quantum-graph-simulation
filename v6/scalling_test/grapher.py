@@ -30,23 +30,24 @@ for i, n_thread in enumerate(n_threads):
 		scaling[i, step] = data["results"]["1"]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["steps"][step]
 		inverse_scaling[i, step] = data["results"][n_thread]["cpu"]["steps"][step] / data["results"]["1"]["cpu"]["steps"][step]
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 13), constrained_layout=True)
 
-# plot wall time scalling
-ax1.set_title("execution time reduction (in wall time) for each step")
 
+# bar positions
 bar_width = width / (scaling.shape[1] - 1)
 tick_position = np.arange(len(n_threads), dtype=float)  # the label locations
 bar_starting_position = tick_position - bar_width * (scaling.shape[1] - 1) / 2
 
 
+# second bar positions
 bar_width_1 = width / (proportions.shape[1] - 1)
 tick_position_1 = np.arange(len(n_threads), dtype=float)  # the label locations
 bar_starting_position_1 = tick_position - bar_width_1 * (proportions.shape[1] - 1) / 2
 
 
+# limit graph values
 x_points, y_points = [[]], [[]]
 total_end = bar_starting_position[-1] + bar_width*proportions.shape[1] + bar_width/2
+total_begin = bar_starting_position[0] - bar_width/2
 for i, n_thread in enumerate(n_threads):
 	n_thread = int(n_thread) if i < len(n_threads) - 1 else int(n_threads[-2])
 
@@ -63,6 +64,14 @@ for i, n_thread in enumerate(n_threads):
 	x_points[0].append(end)
 	y_points[0].append(n_thread)
 
+
+
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 13), constrained_layout=True)
+
+# plot wall time scalling
+ax1.set_title("execution time reduction (in wall time) for each step")
+
 ax1.set_xticks(tick_position)
 ax1.set_xticklabels(n_threads)
 
@@ -75,7 +84,6 @@ ax1.plot(x_points[0], y_points[0], "k--")
 for i in range(1, len(x_points)):
 	ax1.plot(x_points[i], y_points[i], "--", color="dimgrey")
 
-ax1.set_yscale('log')
 ax1.legend()
 
 
@@ -100,11 +108,7 @@ ax3.set_xticklabels(n_threads)
 for step in range(scaling.shape[1]):
 	ax3.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-ax3.plot(x_points[0], y_points[0], "k--")
-for i in range(1, len(x_points)):
-	ax3.plot(x_points[i], y_points[i], "--", color="dimgrey")
-
-ax3.set_yscale('log')
+ax3.plot([total_begin, total_end], [1, 1], "k--")
 
 
 

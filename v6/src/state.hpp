@@ -752,19 +752,26 @@ private:
 
 		#pragma omp parallel
 		{
+			unsigned int thread_id = omp_get_thread_num();
+
 			if (normalize) {
-				#ifndef USE_MPRF
-					#pragma omp for schedule(static) reduction(+:total_proba)
-				#else
-					#pragma omp single
-				#endif
-				for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
+				unsigned int partition_size = current_iteration.num_graphs / num_threads;
+				unsigned int begin = partition_size * thread_id;
+				unsigned int end = thread_id < num_threads - 1 ? partition_size * (thread_id + 1) : current_iteration.num_graphs;
+
+				PROBA_TYPE private_total_proba = 0;
+				for (unsigned int gid = begin; gid < end; ++gid) {
 					/* compute total proba */
 					PROBA_TYPE r = current_iteration.real[gid];
 					PROBA_TYPE i = current_iteration.imag[gid];
 
-					total_proba += r*r + i*i;
+					private_total_proba += r*r + i*i;
 				}
+
+				#pragma omp atomic
+				total_proba += private_total_proba;
+
+				#pragma omp barrier
 
 				#pragma omp single
 				total_proba = precision::sqrt(total_proba);
@@ -888,8 +895,6 @@ private:
 							work_sharing_begin[i] = count[idx];
 						}
 					}
-
-					unsigned int thread_id = omp_get_thread_num();
 				
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
 						/* sort all graphs */
