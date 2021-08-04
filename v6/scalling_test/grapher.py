@@ -83,6 +83,7 @@ bars = ax1.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:
 ax1.plot(x_points[0], y_points[0], "k--")
 for i in range(1, len(x_points)):
 	ax1.plot(x_points[i], y_points[i], "--", color="dimgrey")
+ax1.set_yscale('log')
 
 ax1.legend()
 
@@ -109,7 +110,7 @@ for step in range(scaling.shape[1]):
 	ax3.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
 ax3.plot([total_begin, total_end], [1, 1], "k--")
-
+ax3.set_yscale('log')
 
 
 # saving fig

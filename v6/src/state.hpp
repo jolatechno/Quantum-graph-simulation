@@ -744,14 +744,17 @@ private:
 		/* allow nested parallism for __gnu_parallel inside omp single */
 		omp_set_nested(3);
 
-		/* !!!!!!!!!!!!!!!!
-		step (1) 
-		 !!!!!!!!!!!!!!!! */
-
-		MID_STEP_FUNCTION(0);
-
 		#pragma omp parallel
 		{
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(0)
+			}
+			
+			/* !!!!!!!!!!!!!!!!
+			step (1) 
+			 !!!!!!!!!!!!!!!! */
+
 			unsigned int thread_id = omp_get_thread_num();
 
 			if (normalize) {
@@ -777,21 +780,20 @@ private:
 				total_proba = precision::sqrt(total_proba);
 				
 				/* normalize by divinding magnitudes by the square root of the total probability */
-				#pragma omp for schedule(static)
-				for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
+				for (unsigned int gid = begin; gid < end; ++gid) {
 					current_iteration.real[gid] /= total_proba;
 					current_iteration.imag[gid] /= total_proba;
 				}
 			}
 
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(1)
+			}
+
 			/* !!!!!!!!!!!!!!!!
 			step (2) 
 			 !!!!!!!!!!!!!!!! */
-
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION(1);
-			}
 
 			/* get operations for each node of each graph */
 			#pragma omp for schedule(static)
@@ -803,27 +805,27 @@ private:
 					current_iteration.set_operation(gid, node, rule.operation(current_iteration, gid, node));
 			}
 
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(2)
+			}
+
 			/* !!!!!!!!!!!!!!!!
 			step (3) 
 			 !!!!!!!!!!!!!!!! */
-
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION(2);
-			}
 
 			/* get the number of child for each graph */
 			#pragma omp for schedule(static)
 			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid)
 				current_iteration.num_childs[gid + 1] = rule.num_childs(current_iteration, gid);
 
-			/* !!!!!!!!!!!!!!!!
-			step (4) 
-			 !!!!!!!!!!!!!!!! */
-
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(3);
+				MID_STEP_FUNCTION(3)
+
+				/* !!!!!!!!!!!!!!!!
+				step (4) 
+				 !!!!!!!!!!!!!!!! */
 
 				/* partial sum of number of graph */
 				current_iteration.num_childs[0] = 0;
@@ -847,14 +849,14 @@ private:
 					0);
 			}
 
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(4)
+			}
+
 			/* !!!!!!!!!!!!!!!!
 			step (5) 
 			 !!!!!!!!!!!!!!!! */
-
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION(4);
-			}
 
 			/* symbolic iteration :
 				compute properties of each possible future graph */ 
@@ -865,14 +867,14 @@ private:
 					symbolic_num_nodes[gid], symbolic_num_sub_nodes[gid],
 					current_iteration, parent_gid[gid], child_id[gid]);
 
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(5)
+			}
+
 			/* !!!!!!!!!!!!!!!!
 			step (6) 
 			 !!!!!!!!!!!!!!!! */
-
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION(5);
-			}
 
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
@@ -973,12 +975,12 @@ private:
 						});
 
 					long int next_num_graphs = std::distance(next_gid.begin(), partitioned_it);
-							
+					
+					MID_STEP_FUNCTION(6)
+
 					/* !!!!!!!!!!!!!!!!
 					step (7) 
 					 !!!!!!!!!!!!!!!! */
-
-					MID_STEP_FUNCTION(6);
 
 					if (overwrite_max_num_graphs)
 						max_num_graphs = get_max_num_graphs();
@@ -1005,11 +1007,11 @@ private:
 
 					next_iteration.num_graphs = next_num_graphs;
 
+					MID_STEP_FUNCTION(7)
+
 					/* !!!!!!!!!!!!!!!!
 					step (8) 
 					 !!!!!!!!!!!!!!!! */
-
-					MID_STEP_FUNCTION(7);
 
 					/* sort to make memory access more continuous */
 					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + next_iteration.num_graphs);
@@ -1020,8 +1022,8 @@ private:
 			} else
 				#pragma omp single
 				{
-					MID_STEP_FUNCTION(6);
-					MID_STEP_FUNCTION(7);
+					MID_STEP_FUNCTION(6)
+					MID_STEP_FUNCTION(7)
 
 					/* same number of graphs for a probabilist simulation */
 					next_iteration.num_graphs = symbolic_num_graphs;
@@ -1054,11 +1056,12 @@ private:
 				next_iteration.resize_num_nodes(next_iteration.node_begin[next_iteration.num_graphs]);
 				next_iteration.resize_num_sub_nodes(next_iteration.sub_node_begin[next_iteration.num_graphs]);
 
+
+				MID_STEP_FUNCTION(8)
+
 				/* !!!!!!!!!!!!!!!!
 				step (9) 
 				 !!!!!!!!!!!!!!!! */
-
-				MID_STEP_FUNCTION(8);
 			}
 
 			#pragma omp for schedule(static)
@@ -1067,9 +1070,12 @@ private:
 				/* populate graphs */
 				rule.populate_new_graph(current_iteration, next_iteration, gid, parent_gid[id], child_id[id]);
 			}
-		}
 
-		MID_STEP_FUNCTION(9);
+			#pragma omp single
+			{
+				MID_STEP_FUNCTION(9)
+			}
+		}
 
 		/* !!!!!!!!!!!!!!!!
 		step (10) 
