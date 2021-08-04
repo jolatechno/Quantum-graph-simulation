@@ -42,16 +42,16 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("file used for multi-threading test (does not run reversed iterations");
-	auto [s, rule, _, n_iter, __, normalize, n_fast] = test_parser(options, argc, argv);
+	auto [s, rule, _, n_iter, __, n_fast] = test_parser(options, argc, argv);
 
 	double total_cpu_time = -get_cpu_time();
 	double total_wall_time = -get_wall_time();
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (n_fast == 0 || i % (n_fast + 1) == 0) {
-			s.step(*rule, normalize);
+			s.step(*rule);
 		} else
-			s.fast_step(*rule, normalize);
+			s.fast_step(*rule);
 		
 		move_all(s);
 	}

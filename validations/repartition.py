@@ -5,7 +5,7 @@ import numpy as np
 import random
 from scipy.interpolate import interp1d
 
-n_iter = 1000
+n_iter = 3000
 n_graph = 2000
 n_smooth = 20
 
@@ -99,7 +99,7 @@ ax.set_yticks([])
 ax.set_xticks([])
 
 # plotting occurences for different proportions of graph selected
-for proportion in [.1, .25, .5]:
+for proportion in [.5, .25, .05]:
 	n_select = int(len(random_list) * proportion)
 	ax.plot(smooth(generate(selector_1, random_list, n_select)), label=f"log(log()), { proportion * 100 }% selected", linewidth=2)
 	#ax1.plot(smooth(generate(selector_2, random_list)), label="histograms")

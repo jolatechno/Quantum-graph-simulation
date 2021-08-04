@@ -35,7 +35,7 @@ while getopts 'n:r:s:m:a:ht:' flag; do
   esac
 done
 
-command="./state_test.out -N -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
+command="./state_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 echo "{"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"

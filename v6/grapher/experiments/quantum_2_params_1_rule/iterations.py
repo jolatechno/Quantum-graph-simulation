@@ -39,7 +39,7 @@ phis = list(np.linspace(args.p0, args.p1, args.n_phi))
 thetas = list(np.linspace(args.t0, args.t1, args.n_theta))
 
 def make_cmd(args, theta, phi):
-	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -N -n { args.n_iter } -t { theta } -p { phi } --seed 0 " + " ".join(args.args)
+	return f"../../quantum_iterations.out --start-serializing { max(0, args.n_iter - args.n_serializing + 1) } -s { args.size } -n { args.n_iter } -t { theta } -p { phi } --seed 0 " + " ".join(args.args)
 
 # print rules
 print("{")

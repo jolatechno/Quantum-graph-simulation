@@ -12,19 +12,18 @@ int main(int argc, char* argv[]) {
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("check for quantum injectivity");
-	auto [s, rule, reversed_rule, n_iter, n_reversed_iteration, normalize, n_fast] = test_parser(options, argc, argv);
+	auto [s, rule, reversed_rule, n_iter, n_reversed_iteration, n_fast] = test_parser(options, argc, argv);
 
 	print(s); std::cout << "\n";
 
-	int total_iteration = 0;
-	for (int i = 0; i < n_iter; ++i, ++total_iteration) {
+	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "step...\n";
 		
-		if (n_fast == 0 || total_iteration % (n_fast + 1)) {
-			s.step(*rule, normalize);
+		if (n_fast == 0 || i % (n_fast + 1)) {
+			s.step(*rule);
 		} else
-			s.fast_step(*rule, normalize);
+			s.fast_step(*rule);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";
@@ -41,7 +40,7 @@ int main(int argc, char* argv[]) {
 			std::cout << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
 	}
 
-	for (int i = 0; i < n_reversed_iteration; ++i, ++total_iteration) {
+	for (int i = n_reversed_iteration - 1; i >= 0; --i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "reversed move...\n";
 		
@@ -50,10 +49,10 @@ int main(int argc, char* argv[]) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...revresed moved\nstep...\n";
 		
-		if (n_fast == 0 || total_iteration % (n_fast + 1)) {
-			s.step(*reversed_rule, normalize);
+		if (n_fast == 0 || i % (n_fast + 1)) {
+			s.step(*reversed_rule);
 		} else
-			s.fast_step(*reversed_rule, normalize);
+			s.fast_step(*reversed_rule);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cout << "...steped\nswap...\n";

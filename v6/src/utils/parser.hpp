@@ -5,7 +5,7 @@
 
 std::tuple<state_t,
     state_t::rule_t*, state_t::rule_t*, 
-    unsigned int, int, bool, unsigned int> iteration_parser(
+    unsigned int, int, unsigned int> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -15,8 +15,6 @@ std::tuple<state_t,
         ("n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("1"))
 
         ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
-
-        ("N,normalize", "normalize after each iteration")
         ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
 
         ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
@@ -138,7 +136,7 @@ std::tuple<state_t,
 
     return {state,
         rule, rule2, 
-        n_iter, result["start-serializing"].as<unsigned int>(), result.count("normalize"), result["n-fast"].as<unsigned int>()};
+        n_iter, result["start-serializing"].as<unsigned int>(), result["n-fast"].as<unsigned int>()};
 }
 
 std::tuple<state_t,
@@ -267,7 +265,7 @@ std::tuple<state_t,
         n_iter, result["start-serializing"].as<unsigned int>()};
 }
 
-std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool, unsigned int> test_parser(
+std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsigned int> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -276,8 +274,6 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool,
         ("num-graph-print", "maximum number of graphs to print", cxxopts::value<int>()->default_value("20"))
 
         ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
-
-        ("N,normalize", "normalize after each iteration")
 
         ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
 
@@ -366,5 +362,5 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, bool,
         reversed_rule = new coin_rule(theta_pi, phi_pi, -xi_pi);
     } else
         throw;
-    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result.count("normalize"), result["n-fast"].as<unsigned int>()};
+    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result["n-fast"].as<unsigned int>()};
 }
