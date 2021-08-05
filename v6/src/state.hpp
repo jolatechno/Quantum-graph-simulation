@@ -1031,25 +1031,25 @@ private:
 			step (9) 
 			 !!!!!!!!!!!!!!!! */
 			
-			PROBA_TYPE private_total_proba = 0;
-			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+			#ifdef USE_MPRF
+				#pragma omp single
+			#else
+				#pragma omp for schedule(static) reduction(+ : total_proba)
+			#endif
+			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				/* compute total proba */
 				PROBA_TYPE r = next_iteration.real[gid];
 				PROBA_TYPE i = next_iteration.imag[gid];
 
-				private_total_proba += r*r + i*i;
+				total_proba += r*r + i*i;
 			}
-
-			#pragma omp atomic
-			total_proba += private_total_proba;
-
-			#pragma omp barrier
 
 			#pragma omp single
 			total_proba = precision::sqrt(total_proba);
 			
 			/* normalize by divinding magnitudes by the square root of the total probability */
-			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+			#pragma omp for schedule(static)
+			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				next_iteration.real[gid] /= total_proba;
 				next_iteration.imag[gid] /= total_proba;
 			}
