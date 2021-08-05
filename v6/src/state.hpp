@@ -7,6 +7,7 @@
 #include <random>
 #include <iostream>
 
+#include "utils/load_balancing.hpp"
 #include "utils/sort.hpp"
 #include "utils/random.hpp"
 #include "utils/memory.hpp"
@@ -749,21 +750,29 @@ private:
 			#pragma omp single
 			{
 				MID_STEP_FUNCTION(0)
+
+				/* !!!!!!!!!!!!!!!!
+				step (1) 
+				 !!!!!!!!!!!!!!!! */
+
+				/* load sharing according to number of nodes */
+				load_balancing_from_prefix_sum(current_iteration.node_begin.begin() + 1,
+					current_iteration.node_begin.begin() + current_iteration.num_graphs + 1,
+					work_sharing_begin.begin(), work_sharing_begin.end());
 			}
 
-			/* !!!!!!!!!!!!!!!!
-			step (1) 
-			 !!!!!!!!!!!!!!!! */
+			unsigned int thread_id = omp_get_thread_num();
 
 			/* get operations for each node of each graph */
-			#pragma omp for schedule(static)
-			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				auto num_nodes_ = current_iteration.num_nodes(gid);
 
 				/* get operations for each nodes of each graph */
 				for (unsigned int node = 0; node < num_nodes_; ++node)
 					current_iteration.set_operation(gid, node, rule.operation(current_iteration, gid, node));
 			}
+
+			#pragma omp barrier
 
 			#pragma omp single
 			{
@@ -775,9 +784,10 @@ private:
 			 !!!!!!!!!!!!!!!! */
 
 			/* get the number of child for each graph */
-			#pragma omp for schedule(static)
-			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid)
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid)
 				current_iteration.num_childs[gid + 1] = rule.num_childs(current_iteration, gid);
+
+			#pragma omp barrier
 
 			#pragma omp single
 			{
@@ -789,6 +799,7 @@ private:
 
 				/* partial sum of number of graph */
 				current_iteration.num_childs[0] = 0;
+
 				__gnu_parallel::partial_sum(current_iteration.num_childs.begin() + 1,
 					current_iteration.num_childs.begin() + current_iteration.num_graphs + 1,
 					current_iteration.num_childs.begin() + 1);
@@ -798,8 +809,7 @@ private:
 				resize_symbolic_num_graphs(symbolic_num_graphs);
 			}
 
-			#pragma omp for schedule(static)
-			for (unsigned int gid = 0; gid < current_iteration.num_graphs; ++gid) {
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				/* assign parent ids and child ids for each child */
 				std::fill(parent_gid.begin() + current_iteration.num_childs[gid],
 					parent_gid.begin() + current_iteration.num_childs[gid + 1],
@@ -808,6 +818,8 @@ private:
 					child_id.begin() + current_iteration.num_childs[gid + 1],
 					0);
 			}
+
+			#pragma omp barrier
 
 			#pragma omp single
 			{
@@ -843,21 +855,20 @@ private:
 					{
 						/* share work according to hash */
 						unsigned int count[256] = {0};
-						parallel_radix_indexed_sort_0(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
-							next_gid_buffer.begin(),
+						parallel_radix_count_indexed_0(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
 							next_hash.begin(),
 							count);
 
 						/* share work according to count */
-						work_sharing_begin[0] = 0;
-						work_sharing_begin[num_threads] = symbolic_num_graphs;
-						for (unsigned int i = 1; i < num_threads; ++i) {
-							unsigned int idx = (i * 256) / num_threads;
-							work_sharing_begin[i] = count[idx];
-						}
-					}
+						indexed_load_balancing_from_prefix_sum(count, count + 256, work_sharing_begin.begin(), work_sharing_begin.end());
 
-					unsigned int thread_id = omp_get_thread_num();
+						/* finish radix sort */
+						radix_secon_loop_indexed_offset(next_gid.begin(), next_gid_buffer.begin(),
+							symbolic_num_graphs,
+							(unsigned char*)next_hash.begin(),
+							count,
+							7);
+					}
 				
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
 						/* sort all graphs */
@@ -866,6 +877,10 @@ private:
 							next_gid.begin() + work_sharing_begin[thread_id],
 							next_hash.begin());
 
+						/*for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
+							next_gid[gid] = next_gid_buffer[gid];
+						std::sort(next_gid.begin() + work_sharing_begin[thread_id], next_gid.begin() + work_sharing_begin[thread_id + 1]);*/
+						
 						/* set is_last_index of the last graph */
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
 
@@ -991,20 +1006,25 @@ private:
 				next_iteration.resize_num_nodes(next_iteration.node_begin[next_iteration.num_graphs]);
 				next_iteration.resize_num_sub_nodes(next_iteration.sub_node_begin[next_iteration.num_graphs]);
 
-
 				MID_STEP_FUNCTION(7)
 
 				/* !!!!!!!!!!!!!!!!
 				step (8) 
 				 !!!!!!!!!!!!!!!! */
+
+				/* load sharing according to number of nodes */
+				load_balancing_from_prefix_sum(next_iteration.node_begin.begin() + 1,
+					next_iteration.node_begin.begin() + next_iteration.num_graphs + 1,
+					work_sharing_begin.begin(), work_sharing_begin.end());
 			}
 
-			#pragma omp for schedule(static)
-			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				auto id = next_gid[gid];
 				/* populate graphs */
 				rule.populate_new_graph(current_iteration, next_iteration, gid, parent_gid[id], child_id[id]);
 			}
+
+			#pragma omp barrier
 
 			#pragma omp single
 			{
@@ -1327,6 +1347,9 @@ void print(state_t &s) {
 		PROBA_TYPE imag = precision::abs(s.current_iteration.imag[gid]) < tolerance ? 0 : s.current_iteration.imag[gid];
 
 		std::cout << real << (imag >= 0 ? "+" : "") << imag << "i   ";
+
+		if (verbose >= PRINT_DEBUG_LEVEL_2 && s.symbolic_num_graphs > 0)
+			std::cout << "	" << s.next_hash[s.next_gid[gid]] << "	";
 
 		unsigned int num_nodes_ = s.current_iteration.num_nodes(gid);
 		for (unsigned short int node = 0; node < num_nodes_; ++node) {

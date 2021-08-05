@@ -1,8 +1,7 @@
 #include <algorithm>
 
 // parallel radix sort for the first byte of indexed values
-void inline parallel_radix_indexed_sort_0(unsigned int *begin, unsigned int *end,
-	unsigned int *outBegin,
+void inline parallel_radix_count_indexed_0(unsigned int *begin, unsigned int *end,
 	size_t *valueBegin,
 	unsigned int *count) {
 
@@ -20,13 +19,6 @@ void inline parallel_radix_indexed_sort_0(unsigned int *begin, unsigned int *end
 
 	// accumulating occurences to get indexes
 	__gnu_parallel::partial_sum(count, count + 256, count);
-
-	// mooving indexes
-	size_t size = std::distance(begin, end);
-	for (int i = size - 1; i >= 0; --i) {
-		unsigned int idx = --count[char_valueBegin[8*begin[i] + 7]];
-		outBegin[idx] = begin[i];
-	}
 }
 
 // second loop of the radix algorithm
