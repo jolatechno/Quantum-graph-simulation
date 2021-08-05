@@ -8,7 +8,14 @@ void inline load_balancing_from_prefix_sum(UnsignedIntIterator1 prefixSumLoadBeg
 	workSharingIndexesBegin[0] = 0;
 	workSharingIndexesBegin[num_segments - 1] = num_elements;
 
-	unsigned int total_sum = prefixSumLoadBegin[num_elements - 1];
+	/* !!!!!!
+	TODO:
+		Fix load balancing
+	 !!!!!! */
+	for (unsigned int segment = 1; segment < num_segments - 1; ++segment)
+		workSharingIndexesBegin[segment] = (segment * num_elements) / (num_segments - 1);
+
+	/*unsigned int total_sum = prefixSumLoadBegin[num_elements - 1];
 
 	unsigned int i = 0;
 	for (unsigned int segment = 1; segment < num_segments - 1; ++segment) {
@@ -28,7 +35,7 @@ void inline load_balancing_from_prefix_sum(UnsignedIntIterator1 prefixSumLoadBeg
 
 		if (i >= num_elements)
 			workSharingIndexesBegin[segment] = num_elements;
-	}
+	}*/
 		
 }
 

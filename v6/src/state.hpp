@@ -862,6 +862,10 @@ private:
 						/* share work according to count */
 						indexed_load_balancing_from_prefix_sum(count, count + 256, work_sharing_begin.begin(), work_sharing_begin.end());
 
+						for (auto i = 1; i <= num_threads; ++i)
+							std::cout << work_sharing_begin[i] - work_sharing_begin[i - 1] << ",";
+						std::cout << "\n";
+
 						/* finish radix sort */
 						radix_secon_loop_indexed_offset(next_gid.begin(), next_gid_buffer.begin(),
 							symbolic_num_graphs,
