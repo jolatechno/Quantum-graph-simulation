@@ -876,10 +876,6 @@ private:
 							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1],
 							next_gid.begin() + work_sharing_begin[thread_id],
 							next_hash.begin());
-
-						/*for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
-							next_gid[gid] = next_gid_buffer[gid];
-						std::sort(next_gid.begin() + work_sharing_begin[thread_id], next_gid.begin() + work_sharing_begin[thread_id + 1]);*/
 						
 						/* set is_last_index of the last graph */
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
@@ -1035,25 +1031,25 @@ private:
 			step (9) 
 			 !!!!!!!!!!!!!!!! */
 			
-			#ifdef USE_MPRF
-				#pragma omp single
-			#else
-				#pragma omp for schedule(static) reduction(+ : total_proba)
-			#endif
-			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+			PROBA_TYPE private_total_proba = 0;
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				/* compute total proba */
 				PROBA_TYPE r = next_iteration.real[gid];
 				PROBA_TYPE i = next_iteration.imag[gid];
 
-				total_proba += r*r + i*i;
+				private_total_proba += r*r + i*i;
 			}
+
+			#pragma omp atomic
+			total_proba += private_total_proba;
+
+			#pragma omp barrier
 
 			#pragma omp single
 			total_proba = precision::sqrt(total_proba);
 			
 			/* normalize by divinding magnitudes by the square root of the total probability */
-			#pragma omp for schedule(static)
-			for (unsigned int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+			for (unsigned int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				next_iteration.real[gid] /= total_proba;
 				next_iteration.imag[gid] /= total_proba;
 			}
