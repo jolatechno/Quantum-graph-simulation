@@ -56,7 +56,7 @@ for i, n_thread in enumerate(n_threads):
 	n_thread = int(n_thread) if not multi_threading or i < len(n_threads) - 1 else int(n_threads[-2])
 	if not multi_threading or i < len(n_threads) - 2:
 		x_points.append([end, total_end])
-		y_points.append([n_thread, n_thread])"""
+		y_points.append([n_thread, n_thread])
 
 	x_points[0].append(begin)
 	y_points[0].append(n_thread)

@@ -7,23 +7,23 @@
 
 std::tuple<state_t,
     state_t::rule_t*, state_t::rule_t*, 
-    unsigned int, int, unsigned int> iteration_parser(
+    unsigned long int, int, unsigned long int> iteration_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
-        ("n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("1"))
+        ("n-graph", "number of random graphs to start with", cxxopts::value<unsigned long int>()->default_value("1"))
 
-        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
-        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
+        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned long int>()->default_value("0"))
+        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned long int>()->default_value("0"))
 
-        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned long int>()->default_value("3"))
 
         ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned long int>()->default_value("128"))
 
         ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
@@ -33,13 +33,13 @@ std::tuple<state_t,
         ("theta2", "theta for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("phi2", "phi for the second rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
-        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
-        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
+        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned long int>()->default_value("1"))
+        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned long int>()->default_value("1"))
 
         ("no-move-1", "remove the move after the first rule (and set niter-1 to 1)")
         ("no-move-2", "remove the move after the second rule (and set niter-2 to 1)")
 
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+        ("s,size", "starting size", cxxopts::value<unsigned long int>()->default_value("8"))
 
         ("seed", "random engine seed", cxxopts::value<unsigned>())
         ("z,zero", "start with and empty state");
@@ -63,13 +63,13 @@ std::tuple<state_t,
     // ------------------------------------------
     // set precision
 
-    SET_PRECISION(result["precision"].as<unsigned int>())
+    SET_PRECISION(result["precision"].as<unsigned long int>())
     safety_margin = result["safety-margin"].as<float>();
 
     // ------------------------------------------
     // parameters
 
-    unsigned int n_iter = result["n-iter"].as<unsigned int>();
+    unsigned long int n_iter = result["n-iter"].as<unsigned long int>();
 
     // ------------------------------------------
     // global variables
@@ -79,8 +79,8 @@ std::tuple<state_t,
     // ------------------------------------------
     // initialize state
 
-    unsigned int size = result["size"].as<unsigned int>();
-    unsigned int num_graph = result["n-graph"].as<unsigned int>();
+    unsigned long int size = result["size"].as<unsigned long int>();
+    unsigned long int num_graph = result["n-graph"].as<unsigned long int>();
     state_t state(size, num_graph);
 
     if (!result.count("zero"))
@@ -113,7 +113,7 @@ std::tuple<state_t,
         throw;
 
     rule->move = !result.count("no-move-1");
-    rule->n_iter = rule->move ? result["niter-1"].as<unsigned int>() : 1;
+    rule->n_iter = rule->move ? result["niter-1"].as<unsigned long int>() : 1;
 
     // ------------------------------------------
     // read second rule
@@ -133,29 +133,29 @@ std::tuple<state_t,
             throw;
 
         rule2->move = !result.count("no-move-2");
-        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned int>() : 1;
+        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned long int>() : 1;
     }
 
     return {state,
         rule, rule2, 
-        n_iter, result["start-serializing"].as<unsigned int>(), result["n-fast"].as<unsigned int>()};
+        n_iter, result["start-serializing"].as<unsigned long int>(), result["n-fast"].as<unsigned long int>()};
 }
 
 std::tuple<state_t,
     state_t::rule_t*, state_t::rule_t*, 
-    unsigned int, int> probabilist_parser(
+    unsigned long int, int> probabilist_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
         ("r,rule", "dynamic's rule", cxxopts::value<std::string>()->default_value("erase_create"))
         ("rule2", "dynamic's rule", cxxopts::value<std::string>()->default_value(""))
 
-        ("N,n-graph", "number of random graphs to start with", cxxopts::value<unsigned int>()->default_value("3"))
-        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned int>()->default_value("0"))
+        ("N,n-graph", "number of random graphs to start with", cxxopts::value<unsigned long int>()->default_value("3"))
+        ("start-serializing", "iteration for which to start serializing", cxxopts::value<unsigned long int>()->default_value("0"))
 
-        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned long int>()->default_value("3"))
         
-        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned long int>()->default_value("128"))
 
         ("q", "q for the rule (useless for \"coin\" rule)", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
         ("p", "p for the rule", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
@@ -165,13 +165,13 @@ std::tuple<state_t,
         ("q2", "q for the second rule  (useless for \"coin\" rule)", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
         ("p2", "p for the second rule", cxxopts::value<PROBA_TYPE>()->default_value("0.5"))
 
-        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
-        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned int>()->default_value("1"))
+        ("niter-1", "number of application of the first rule per iteration", cxxopts::value<unsigned long int>()->default_value("1"))
+        ("niter-2", "number of application of the second rule per iteration", cxxopts::value<unsigned long int>()->default_value("1"))
 
         ("no-move-1", "remove the move after the first rule (and set niter-1 to 1)")
         ("no-move-2", "remove the move after the second rule (and set niter-2 to 1)")
 
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+        ("s,size", "starting size", cxxopts::value<unsigned long int>()->default_value("8"))
 
         ("seed", "random engine seed", cxxopts::value<unsigned>())
         ("z,zero", "start with and empty state");
@@ -195,18 +195,18 @@ std::tuple<state_t,
     // ------------------------------------------
     // set precision
 
-    SET_PRECISION(result["precision"].as<unsigned int>())
+    SET_PRECISION(result["precision"].as<unsigned long int>())
 
     // ------------------------------------------
     // parameters
 
-    unsigned int n_iter = result["n-iter"].as<unsigned int>();
+    unsigned long int n_iter = result["n-iter"].as<unsigned long int>();
 
     // ------------------------------------------
     // initialize state
 
-    unsigned int size = result["size"].as<unsigned int>();
-    unsigned int num_graph = result["n-graph"].as<unsigned int>();
+    unsigned long int size = result["size"].as<unsigned long int>();
+    unsigned long int num_graph = result["n-graph"].as<unsigned long int>();
     state_t state(size, num_graph);
 
     if (!result.count("zero"))
@@ -239,7 +239,7 @@ std::tuple<state_t,
         throw;
 
     rule->move = !result.count("no-move-1");
-    rule->n_iter = rule->move ? result["niter-1"].as<unsigned int>() : 1;
+    rule->n_iter = rule->move ? result["niter-1"].as<unsigned long int>() : 1;
 
     // ------------------------------------------
     // read second rule
@@ -259,15 +259,15 @@ std::tuple<state_t,
             throw;
 
         rule2->move = !result.count("no-move-2");
-        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned int>() : 1;
+        rule2->n_iter = rule2->move ? result["niter-2"].as<unsigned long int>() : 1;
     }
 
     return {state,
         rule, rule2, 
-        n_iter, result["start-serializing"].as<unsigned int>()};
+        n_iter, result["start-serializing"].as<unsigned long int>()};
 }
 
-std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsigned int> test_parser(
+std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned long int, int, unsigned long int> test_parser(
     cxxopts::Options &options, int argc, char* argv[]) {
 
     options.add_options() ("h,help", "Print help")
@@ -277,22 +277,22 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsig
 
         ("i,injectivity", "revrse iteration after normal iterations for injectivity test")
 
-        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned int>()->default_value("0"))
+        ("n-fast", "number of fast iteration in-between normal iterations", cxxopts::value<unsigned long int>()->default_value("0"))
 
         ("v,verbose", "debuging level (float)", cxxopts::value<float>()->default_value("0"))
 
-        ("n,n-iter", "number of iteration", cxxopts::value<unsigned int>()->default_value("3"))
-        ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned int>()->default_value("0"))
+        ("n,n-iter", "number of iteration", cxxopts::value<unsigned long int>()->default_value("3"))
+        ("R,n-reversed-iter", "number of reversed iteration", cxxopts::value<unsigned long int>()->default_value("0"))
 
         ("safety-margin", "safety margin on the maximum number of graphs", cxxopts::value<float>()->default_value("0.2"))
         ("T,tol", "probability tolerance", cxxopts::value<PROBA_TYPE>()->default_value("0"))
-        ("P,precision", "number of bits of precision", cxxopts::value<unsigned int>()->default_value("128"))
+        ("P,precision", "number of bits of precision", cxxopts::value<unsigned long int>()->default_value("128"))
 
         ("t,theta", "theta for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0.25"))
         ("p,phi", "phi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
         ("x,xi", "xi for the rule (as a multiple of pi)", cxxopts::value<PROBA_TYPE>()->default_value("0"))
 
-        ("s,size", "starting size", cxxopts::value<unsigned int>()->default_value("8"))
+        ("s,size", "starting size", cxxopts::value<unsigned long int>()->default_value("8"))
 
         ("seed", "random engine seed", cxxopts::value<unsigned>())
         ("z,zero", "start with and empty state");
@@ -316,14 +316,14 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsig
     // ------------------------------------------
     // set precision
 
-    SET_PRECISION(result["precision"].as<unsigned int>())
+    SET_PRECISION(result["precision"].as<unsigned long int>())
     safety_margin = result["safety-margin"].as<float>();
 
     // ------------------------------------------
     // parameters
 
-    unsigned int n_iter = result["n-iter"].as<unsigned int>();
-    unsigned int n_reversed_iteration = result["n-reversed-iter"].as<unsigned int>();
+    unsigned long int n_iter = result["n-iter"].as<unsigned long int>();
+    unsigned long int n_reversed_iteration = result["n-reversed-iter"].as<unsigned long int>();
     if (result.count("injectivity"))
         n_reversed_iteration = n_iter;
 
@@ -337,7 +337,7 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsig
     // ------------------------------------------
     // initialize state
 
-    unsigned int size = result["size"].as<unsigned int>();
+    unsigned long int size = result["size"].as<unsigned long int>();
     state_t state(size);
 
     if (!result.count("zero"))
@@ -364,5 +364,5 @@ std::tuple<state_t, state_t::rule_t*, state_t::rule_t*, unsigned int, int, unsig
         reversed_rule = new coin_rule(theta_pi, phi_pi, -xi_pi);
     } else
         throw;
-    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result["n-fast"].as<unsigned int>()};
+    return {state, rule, reversed_rule, n_iter, n_reversed_iteration, result["n-fast"].as<unsigned long int>()};
 }
