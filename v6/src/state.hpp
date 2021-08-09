@@ -690,14 +690,13 @@ Non-virtual member functions are:
 			) * upsize_policy; // time the "upsize_policy" since it adds an memory inneficiency
 
 		// ponderation of different factor :
-		static const float current_it_ng_factor = iteartion_discrimination_factor * (2 - memory_discrimination_factor);
-		static const float next_it_ng_factor = (2 - iteartion_discrimination_factor) * (2 - memory_discrimination_factor);
+		static const float next_it_ng_factor = 2 - iteartion_discrimination_factor;
 
 		// get the total number of graphs that can fit in memory,
 		// by adding the number of graphs that can fit in the "mem_difference" to the number of graphs in both iterations
 		// then divided it by two since we need to have two iteartions at the same time.
-		long long int max_num_graph = (next_iteration.num_graphs*current_it_ng_factor + 
-			current_iteration.num_graphs*next_it_ng_factor +
+		long long int max_num_graph = (next_iteration.num_graphs*next_it_ng_factor + 
+			current_iteration.num_graphs*iteartion_discrimination_factor +
 			mem_difference/mem_usage_per_graph*memory_discrimination_factor) / 2;
 
 		if (max_num_graph <= 0)
