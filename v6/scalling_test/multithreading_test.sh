@@ -42,6 +42,8 @@ echo "{"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"
 
+echo "" > ${errfile}
+
 while [ $n_thread -ge 1 ]
 do
 	separator=""

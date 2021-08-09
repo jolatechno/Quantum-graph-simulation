@@ -64,14 +64,24 @@
 /* default variables preprocessor definition:
 	- "SAFETY_MARGIN" correpsponds to "safety_margin" (described in the definition of "get_max_num_graphs()").
 	- "TOLERANCE" (default is different if MPFR is used or not) is the minimum probability a graph can have before being automaticly ignored.
+	- "ITEARTION_DISCRIMINATION_FACTOR" is a factor discriminating the "previous iteration" against the "current iteration" when computing the max number of graphs.
+	- "MEMORY_DISCRIMINATION_FACTOR" is a factor discriminating the impact of the amount of free memory against the one of iterations when computing the max number of graphs.
 */
 #ifndef SAFETY_MARGIN
 	#define SAFETY_MARGIN 0.2
+#endif
+	#ifndef ITEARTION_DISCRIMINATION_FACTOR
+	#define ITEARTION_DISCRIMINATION_FACTOR 1.3
+#endif
+#ifndef MEMORY_DISCRIMINATION_FACTOR
+	#define MEMORY_DISCRIMINATION_FACTOR 0.8
 #endif
 
 // global variable definition
 PROBA_TYPE tolerance = TOLERANCE;
 float safety_margin = SAFETY_MARGIN;
+float iteartion_discrimination_factor = ITEARTION_DISCRIMINATION_FACTOR;
+float memory_discrimination_factor = MEMORY_DISCRIMINATION_FACTOR;
 
 /*
 defining openmp function's return values if openmp isn't installed or loaded
@@ -198,7 +208,7 @@ public:
 	*/
 
 	/* total proba befor normalization */
-	PROBA_TYPE total_proba;
+	PROBA_TYPE total_proba = 1;
 
 	typedef struct iteration {
 		size_t num_graphs = 0;
@@ -679,13 +689,19 @@ Non-virtual member functions are:
 			/ current_iteration.num_graphs // divided by the number of graphs at the last step to obtain per-graph memory usage
 			) * upsize_policy; // time the "upsize_policy" since it adds an memory inneficiency
 
+		// ponderation of different factor :
+		static const float current_it_ng_factor = iteartion_discrimination_factor * (1 - memory_discrimination_factor);
+		static const float next_it_ng_factor = (1 - iteartion_discrimination_factor) * (1 - memory_discrimination_factor);
+
 		// get the total number of graphs that can fit in memory,
 		// by adding the number of graphs that can fit in the "mem_difference" to the number of graphs in both iterations
 		// then divided it by two since we need to have two iteartions at the same time.
-		long long int max_num_graph = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+		long long int max_num_graph = (next_iteration.num_graphs*current_it_ng_factor + 
+			current_iteration.num_graphs*next_it_ng_factor +
+			mem_difference/mem_usage_per_graph*memory_discrimination_factor) / 2;
 
 		if (max_num_graph <= 0)
-			max_num_graph = current_iteration.num_graphs;
+			max_num_graph = min_vector_size;
 
 		return std::max(max_num_graph, (long long int)min_vector_size);
 	}
