@@ -19,7 +19,7 @@ public:
 	}
 
 	/* rule implementation */
-	op_type_t operation(state_t::iteration_t const &s, unsigned long int gid, unsigned short int node) const override {
+	op_type_t operation(state_t::iteration_t const &s, unsigned long long int gid, unsigned short int node) const override {
 		if (s.left(gid, node) && s.right(gid, node))
 			return write_operation(split_t);
 
@@ -30,8 +30,8 @@ public:
 		return none_t;
 	}
 
-	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned long int &num_nodes, unsigned long int &num_sub_node,
-		state_t::iteration_t const &s, unsigned long int parent_id, unsigned short int child_id) const override {
+	void child_properties(size_t &hash_, PROBA_TYPE &real, PROBA_TYPE &imag, unsigned long long int &num_nodes, unsigned long long int &num_sub_node,
+		state_t::iteration_t const &s, unsigned long long int parent_id, unsigned short int child_id) const override {
 
 		real = s.real[parent_id];
 		imag = s.imag[parent_id];
@@ -40,7 +40,7 @@ public:
 		num_sub_node = s.num_sub_node(parent_id);
 
 		/* start dicreasing num_sub_node */
-		for (unsigned long int node = 0; node < num_sub_node; ++node)
+		for (unsigned long long int node = 0; node < num_sub_node; ++node)
 			num_sub_node -= s.is_trash(parent_id, node);
 
 		hash_ = 0;
@@ -222,11 +222,11 @@ public:
 		num_sub_node = std::max(num_sub_node, s.num_sub_node(parent_id));
 	}
 
-	void populate_new_graph(state_t::iteration_t const &s, state_t::iteration_t &new_state, unsigned long int gid, unsigned long int parent_id, unsigned short int child_id) const override {
+	void populate_new_graph(state_t::iteration_t const &s, state_t::iteration_t &new_state, unsigned long long int gid, unsigned long long int parent_id, unsigned short int child_id) const override {
 		/* copy nodes */
-		unsigned long int sub_node_begin = s.sub_node_begin[parent_id];
-		unsigned long int sub_node_end = s.sub_node_begin[parent_id + 1];
-		unsigned long int new_sub_node_begin = new_state.sub_node_begin[gid];
+		unsigned long long int sub_node_begin = s.sub_node_begin[parent_id];
+		unsigned long long int sub_node_end = s.sub_node_begin[parent_id + 1];
+		unsigned long long int new_sub_node_begin = new_state.sub_node_begin[gid];
 
 		/* copy nodes */
 		std::copy(s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_begin, s.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + sub_node_end, new_state.left_idx__or_element__and_has_most_left_zero__or_is_trash_.begin() + new_sub_node_begin);

@@ -85,7 +85,7 @@ public:
     		value_type* new_ptr = (value_type*)(new char[n*sizeof(value_type)]);
 
 			#pragma omp parallel for schedule(static)
-			for (unsigned long int i = 0; i < n; ++i)
+			for (unsigned long long int i = 0; i < n; ++i)
 				new_ptr[i] = i < size_ ? ptr[i] : zero;
 
 			if (ptr != 0)
@@ -107,7 +107,7 @@ public:
     		value_type* new_ptr = (value_type*)(new char[n*sizeof(value_type)]);
 
 			#pragma omp parallel for schedule(static)
-			for (unsigned long int i = 0; i < n; ++i)
+			for (unsigned long long int i = 0; i < n; ++i)
 				new_ptr[i] = i;
 
 			if (ptr != 0)
@@ -118,7 +118,7 @@ public:
     	} else
     		// iota anyway
     		#pragma omp parallel for schedule(static)
-			for (unsigned long int i = 0; i < size_; ++i)
+			for (unsigned long long int i = 0; i < size_; ++i)
 				ptr[i] = i;
     }
  

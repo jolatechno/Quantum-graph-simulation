@@ -1,16 +1,16 @@
 #include <algorithm>
 
 // parallel radix sort for the first byte of indexed values
-void inline parallel_radix_count_indexed_0(unsigned long int *begin, unsigned long int *end,
+void inline parallel_radix_count_indexed_0(unsigned long long int *begin, unsigned long long int *end,
 	size_t *valueBegin,
-	unsigned long int *count) {
+	unsigned long long int *count) {
 
 	// cast value to char
 	unsigned char *char_valueBegin = (unsigned char*)valueBegin;
 
 	// counting occurences of each key
 	#pragma omp parallel for schedule(static)
-	for (unsigned long int *it = begin; it != end; ++it) {
+	for (unsigned long long int *it = begin; it != end; ++it) {
 		unsigned char key = char_valueBegin[8*(*it) + 7];
 
 		#pragma omp atomic
@@ -22,38 +22,38 @@ void inline parallel_radix_count_indexed_0(unsigned long int *begin, unsigned lo
 }
 
 // second loop of the radix algorithm
-void inline radix_secon_loop_indexed_offset(unsigned long int *begin, unsigned long int *outBegin,
+void inline radix_secon_loop_indexed_offset(unsigned long long int *begin, unsigned long long int *outBegin,
 	size_t size,
 	unsigned char *char_valueBegin,
-	unsigned long int *count,
+	unsigned long long int *count,
 	int offset) {
 	
 	// mooving indexes
 	for (int i = size - 1; i >= 0; --i) {
-		unsigned long int idx = --count[char_valueBegin[8*begin[i] + offset]];
+		unsigned long long int idx = --count[char_valueBegin[8*begin[i] + offset]];
 		outBegin[idx] = begin[i];
 	}
 }
 
 // sequential contracted radix sort for byte 7 to 1 for indexed values
-void inline radix_indexed_sort_1_7(unsigned long int *begin, unsigned long int *end,
-	unsigned long int *outBegin,
+void inline radix_indexed_sort_1_7(unsigned long long int *begin, unsigned long long int *end,
+	unsigned long long int *outBegin,
 	size_t *valueBegin) {
 
 	// declaration of the count variable
-	unsigned long int count1[256] = {0};
-	unsigned long int count2[256] = {0};
-	unsigned long int count3[256] = {0};
-	unsigned long int count4[256] = {0};
-	unsigned long int count5[256] = {0};
-	unsigned long int count6[256] = {0};
-	unsigned long int count7[256] = {0};
+	unsigned long long int count1[256] = {0};
+	unsigned long long int count2[256] = {0};
+	unsigned long long int count3[256] = {0};
+	unsigned long long int count4[256] = {0};
+	unsigned long long int count5[256] = {0};
+	unsigned long long int count6[256] = {0};
+	unsigned long long int count7[256] = {0};
 
 	// cast value to char
 	unsigned char* char_valueBegin = (unsigned char*)valueBegin;
 
 	// counting occurences of each key
-	for (unsigned long int *it = begin; it != end; ++it) {
+	for (unsigned long long int *it = begin; it != end; ++it) {
 		unsigned char* keys = char_valueBegin + 8*(*it);
 
 		++count1[keys[6]];

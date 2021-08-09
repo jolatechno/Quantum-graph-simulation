@@ -20,6 +20,8 @@ rule="split_merge"
 n_thread=$(nproc --all)
 args=""
 
+errfile="err.txt"
+
 while getopts 'n:r:s:m:a:ht:' flag; do
   case "$flag" in
   	h) print_usage
@@ -35,7 +37,7 @@ while getopts 'n:r:s:m:a:ht:' flag; do
   esac
 done
 
-command="./state_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
+command="./state_test.out -v 1 -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 echo "{"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"
@@ -49,7 +51,10 @@ do
 	
 	#cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
 	#echo "		\"${n_thread}\" :	$(numactl --physcpubind="${cpu_cores}" ${command})${separator}"
-	echo "		\"${n_thread}\" :	$(OMP_NUM_THREADS="${n_thread}" ${command})${separator}"
+	echo "${n_thread}:" >> ${errfile}
+	echo "		\"${n_thread}\" :	$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile})${separator}"
+	echo "" >> ${errfile}
+
 	n_thread=$(( $n_thread / 2))
 done
 

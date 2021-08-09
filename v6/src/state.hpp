@@ -110,13 +110,13 @@ It can be used to insert timming or debuging code in the step function:
 #define MID_STEP_FUNCTION_WITH_DEBUG(n) \
 	MID_STEP_FUNCTION(n) \
 	if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
-			std::cerr << "step "#n"\n";
+		std::cerr << "step "#n"\n";
 
 /*
 number of threads
 */
 
-const unsigned long int num_threads = []() {
+const unsigned long long int num_threads = []() {
 	int num_threads;
 	#pragma omp parallel
 	#pragma omp single
@@ -208,8 +208,8 @@ public:
 		numa_vector<PROBA_TYPE> imag; /* of size (a) */
 
 		// begin for each size
-		numa_vector<unsigned long int> node_begin; /* of size (a + 1), refers to vector of size (b) */
-		numa_vector<unsigned long int> sub_node_begin; /* of size (a + 1), refers to vectors of size (c) */
+		numa_vector<unsigned long long int> node_begin; /* of size (a + 1), refers to vector of size (b) */
+		numa_vector<unsigned long long int> sub_node_begin; /* of size (a + 1), refers to vectors of size (c) */
 
 		// node properties
 		/* !!!
@@ -246,7 +246,7 @@ public:
 		numa_vector<op_type_t> operations; /* of size (b) */
 
 		// number of sub-graph for each parent
-		numa_vector<unsigned long int> num_childs; /* of size (a) + 1 */
+		numa_vector<unsigned long long int> num_childs; /* of size (a) + 1 */
 
 		/* resize operators */
 		// resize size (a)
@@ -278,9 +278,9 @@ public:
 		this functions is used to compute hash values without generating nodes at the symbolic iteration 
 			("by_value" means from node properties and not from node index, since the node doesn't exist in memory).
 		*/
-		size_t inline hash_node_by_value(unsigned long int gid, short int left_idx__or_element__and_has_most_left_zero, short int right_idx__or_type) const {
+		size_t inline hash_node_by_value(unsigned long long int gid, short int left_idx__or_element__and_has_most_left_zero, short int right_idx__or_type) const {
 			size_t hash_ = 0;
-			unsigned long int left_idx_or_element = std::abs(left_idx__or_element__and_has_most_left_zero) - 1; // left_idx_or_element from left_idx__or_element__and_has_most_left_zero
+			unsigned long long int left_idx_or_element = std::abs(left_idx__or_element__and_has_most_left_zero) - 1; // left_idx_or_element from left_idx__or_element__and_has_most_left_zero
 
 			if (right_idx__or_type == element_t) {
 				hash_ = left_idx_or_element; // if element
@@ -297,66 +297,66 @@ public:
 		/*
 		this function is used when generating graphs after the symbolic iteration
 		*/
-		void inline hash_node(unsigned long int gid, unsigned short int node) {
-			unsigned long int id = sub_node_begin[gid] + node; // memory location
+		void inline hash_node(unsigned long long int gid, unsigned short int node) {
+			unsigned long long int id = sub_node_begin[gid] + node; // memory location
 			node_hash[id] = hash_node_by_value(gid, left_idx__or_element__and_has_most_left_zero__or_is_trash_[id], right_idx__or_type_[id]); // assign hash to "hash_node_by_value(...)"
 		}
 
 		/* getters */
 		// sizes
-		unsigned long int inline num_nodes(unsigned long int gid) const { return node_begin[gid + 1] - node_begin[gid]; } // num_node is the distance between the begining and the end of its node
-		unsigned long int inline num_sub_node(unsigned long int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; } // num_sub_node is the distance between the begining and the end of its sub-node
+		unsigned long long int inline num_nodes(unsigned long long int gid) const { return node_begin[gid + 1] - node_begin[gid]; } // num_node is the distance between the begining and the end of its node
+		unsigned long long int inline num_sub_node(unsigned long long int gid) const { return sub_node_begin[gid + 1] - sub_node_begin[gid]; } // num_sub_node is the distance between the begining and the end of its sub-node
 
 		// getter for nodes
-		unsigned short int inline node_id(unsigned long int gid, unsigned short int node) const { return node_id_c[node_begin[gid] + node]; }
-		bool inline left(unsigned long int gid, unsigned short int node) const { return left_[node_begin[gid] + node]; }
-		bool inline right(unsigned long int gid, unsigned short int node) const { return right_[node_begin[gid] + node]; }
-		op_type_t inline operation(unsigned long int gid, unsigned short int node) const { return operations[node_begin[gid] + node]; }
+		unsigned short int inline node_id(unsigned long long int gid, unsigned short int node) const { return node_id_c[node_begin[gid] + node]; }
+		bool inline left(unsigned long long int gid, unsigned short int node) const { return left_[node_begin[gid] + node]; }
+		bool inline right(unsigned long long int gid, unsigned short int node) const { return right_[node_begin[gid] + node]; }
+		op_type_t inline operation(unsigned long long int gid, unsigned short int node) const { return operations[node_begin[gid] + node]; }
 
 		// raw getters for sub-nodes
-		size_t hash(unsigned long int gid, unsigned short int node) const { return node_hash[sub_node_begin[gid] + node]; }
-		short int inline right_idx(unsigned long int gid, unsigned short int node) const { return right_idx__or_type_[sub_node_begin[gid] + node]; }
-		short int inline &right_idx(unsigned long int gid, unsigned short int node) { return right_idx__or_type_[sub_node_begin[gid] + node]; }
+		size_t hash(unsigned long long int gid, unsigned short int node) const { return node_hash[sub_node_begin[gid] + node]; }
+		short int inline right_idx(unsigned long long int gid, unsigned short int node) const { return right_idx__or_type_[sub_node_begin[gid] + node]; }
+		short int inline &right_idx(unsigned long long int gid, unsigned short int node) { return right_idx__or_type_[sub_node_begin[gid] + node]; }
 		/*
 		"raw_left_idx" corresponds directly to "left_idx__or_element__and_has_most_left_zero__or_is_trash_" without any computation (which has no meaning, hence "raw").
 		"right_idx" doesn't have a "raw" counterpart since it has a meaning without any computation.
 		*/
-		short int inline raw_left_idx(unsigned long int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
-		short int inline &raw_left_idx(unsigned long int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
+		short int inline raw_left_idx(unsigned long long int gid, unsigned short int node) const { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
+		short int inline &raw_left_idx(unsigned long long int gid, unsigned short int node) { return left_idx__or_element__and_has_most_left_zero__or_is_trash_[sub_node_begin[gid] + node]; }
 		
 		// composits getters for raw_left_idx
 		/*
 		"left_idx" is equivalent to "raw_left_idx" without the sign and shifted index
 		*/
-		unsigned short int inline left_idx(unsigned long int gid, unsigned short int node) const { 
+		unsigned short int inline left_idx(unsigned long long int gid, unsigned short int node) const { 
 			return std::abs(raw_left_idx(gid, node)) - 1; // absolute value minus one to get rid of the sign
 		}
-		unsigned short int inline element(unsigned long int gid, unsigned short int node) const { return left_idx(gid, node); } // alias "to left_idx(...)"
-		bool inline is_trash(unsigned long int gid, unsigned short int node) const { return raw_left_idx(gid, node) == 0; }	// trash if left_idx__or_element__and_has_most_left_zero__or_is_trash_ is zero
-		bool inline has_most_left_zero(unsigned long int gid, unsigned short int node) const {
+		unsigned short int inline element(unsigned long long int gid, unsigned short int node) const { return left_idx(gid, node); } // alias "to left_idx(...)"
+		bool inline is_trash(unsigned long long int gid, unsigned short int node) const { return raw_left_idx(gid, node) == 0; }	// trash if left_idx__or_element__and_has_most_left_zero__or_is_trash_ is zero
+		bool inline has_most_left_zero(unsigned long long int gid, unsigned short int node) const {
 			return raw_left_idx(gid, node) < 0; // true if left_idx__or_element__and_has_most_left_zero__or_is_trash_ < 0
 		}
 
 		// composits getters for raw_right_idx
-		node_type_t inline node_type(unsigned long int gid, unsigned short int node) const {
+		node_type_t inline node_type(unsigned long long int gid, unsigned short int node) const {
 			return std::min((node_type_t)right_idx(gid, node), pair_t); // pair if right_idx__or_type_ >= 0, otherwise the type is dorectly right_idx__or_type_
 		}
 
 		/* setters */
 		// setters for nodes
-		void inline set_node_id(unsigned long int gid, unsigned short int node, unsigned short int value) { node_id_c[node_begin[gid] + node] = value; }
-		void inline set_left(unsigned long int gid, unsigned short int node, bool value) { left_[node_begin[gid] + node] = value; }
-		void inline set_right(unsigned long int gid, unsigned short int node, unsigned short int value) { right_[node_begin[gid] + node] = value; }
-		void inline set_operation(unsigned long int gid, unsigned short int node, op_type_t value) { operations[node_begin[gid] + node] = value; }
+		void inline set_node_id(unsigned long long int gid, unsigned short int node, unsigned short int value) { node_id_c[node_begin[gid] + node] = value; }
+		void inline set_left(unsigned long long int gid, unsigned short int node, bool value) { left_[node_begin[gid] + node] = value; }
+		void inline set_right(unsigned long long int gid, unsigned short int node, unsigned short int value) { right_[node_begin[gid] + node] = value; }
+		void inline set_operation(unsigned long long int gid, unsigned short int node, op_type_t value) { operations[node_begin[gid] + node] = value; }
 
 		// raw setters for sub-nodes
-		void inline set_raw_left(unsigned long int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
+		void inline set_raw_left(unsigned long long int gid, unsigned short int node, short int value) { raw_left_idx(gid, node) = value; }
 		
 		// composite setters for raw_left_idx
-		void inline set_is_trash(unsigned long int gid, unsigned short int node) { set_raw_left(gid, node, 0); } // set to zero
-		void inline set_left_idx(unsigned long int gid, unsigned short int node, unsigned short int value) { set_raw_left(gid, node, value + 1); } // set value, including the index shift
-		void inline set_element(unsigned long int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); } // alias for "set_left_idx(...)"
-		void inline set_has_most_left_zero(unsigned long int gid, unsigned short int node, bool has_most_left_zero_) {
+		void inline set_is_trash(unsigned long long int gid, unsigned short int node) { set_raw_left(gid, node, 0); } // set to zero
+		void inline set_left_idx(unsigned long long int gid, unsigned short int node, unsigned short int value) { set_raw_left(gid, node, value + 1); } // set value, including the index shift
+		void inline set_element(unsigned long long int gid, unsigned short int node, unsigned short int value) { set_left_idx(gid, node, value); } // alias for "set_left_idx(...)"
+		void inline set_has_most_left_zero(unsigned long long int gid, unsigned short int node, bool has_most_left_zero_) {
 			short int &temp = raw_left_idx(gid, node);
 
 			if (has_most_left_zero_ == (temp > 0)) // switch the sign if it doesn't correspond
@@ -364,8 +364,8 @@ public:
 		}
 
 		// composite setters for raw_right_idx
-		void inline set_right_idx(unsigned long int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
-		void inline set_type(unsigned long int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
+		void inline set_right_idx(unsigned long long int gid, unsigned short int node, unsigned short int value) { right_idx(gid, node) = value; }
+		void inline set_type(unsigned long long int gid, unsigned short int node, node_type_t value) { right_idx(gid, node) = value; }
 		
 		/* randomize function */
 		void randomize() {
@@ -383,7 +383,7 @@ public:
 	iteration_t current_iteration, next_iteration;
 
 	/* constructor for multiple graphs of a given size */
-	state(unsigned long int size, unsigned long int n) {
+	state(unsigned long long int size, unsigned long long int n) {
 		current_iteration.num_graphs = n;
 
 		// resize current_iteration
@@ -409,7 +409,7 @@ public:
 			current_iteration.right_.begin() + size*n,
 			false);
 
-		for (unsigned long int gid = 0; gid < n; ++gid) {
+		for (unsigned long long int gid = 0; gid < n; ++gid) {
 			// set the magnitude each graphs
 			current_iteration.real[gid] = current_iteration.real[0]; current_iteration.imag[gid] = 0;
 
@@ -431,17 +431,17 @@ public:
 			current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_[current_iteration.node_begin[gid]] = -1;
 
 			// hash each node
-			for (unsigned long int node = 0; node < size; ++node)
+			for (unsigned long long int node = 0; node < size; ++node)
 				current_iteration.hash_node(gid, node);
 		}
 	}
 
 	/* vector for work sharing */
-	std::vector<unsigned long int> work_sharing_begin = std::vector<unsigned long int>(num_threads + 1);
-	numa_vector<unsigned long int> next_gid_buffer;
+	std::vector<unsigned long long int> work_sharing_begin = std::vector<unsigned long long int>(num_threads + 1);
+	numa_vector<unsigned long long int> next_gid_buffer;
 
 	/* constructor for a single graph of a given size */
-	state(unsigned long int size) : state(size, 1) {}
+	state(unsigned long long int size) : state(size, 1) {}
 
 	/* randomize function */
 	void randomize() { current_iteration.randomize(); }
@@ -460,8 +460,8 @@ public:
 	"is_last_index[gid]" is true if the graph "gid" is the graph which will accumulate the magnitude of the graphs of equal hash
 	*/
 	numa_vector</*bool*/ char> is_last_index; /* of size (a) for the symbolic iteration */
-	numa_vector<unsigned long int> next_gid; /* of size (a) for the symbolic iteration */
-	numa_vector<unsigned long int> parent_gid; /* of size (a) for the symbolic iteration */
+	numa_vector<unsigned long long int> next_gid; /* of size (a) for the symbolic iteration */
+	numa_vector<unsigned long long int> parent_gid; /* of size (a) for the symbolic iteration */
 	numa_vector<unsigned short int> child_id; /* of size (a) for the symbolic iteration */
 
 	// new graph hash
@@ -475,8 +475,8 @@ public:
 	numa_vector<PROBA_TYPE> next_imag; /* of size (a) for the symbolic iteration */
 
 	// size for each size
-	numa_vector<unsigned long int> symbolic_num_nodes; /* of size (a + 1), refers to vector of size (b) */
-	numa_vector<unsigned long int> symbolic_num_sub_nodes; /* of size (a + 1), refers to vectors of size (c) */
+	numa_vector<unsigned long long int> symbolic_num_nodes; /* of size (a + 1), refers to vector of size (b) */
+	numa_vector<unsigned long long int> symbolic_num_sub_nodes; /* of size (a + 1), refers to vectors of size (c) */
 
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
@@ -528,7 +528,7 @@ Non-virtual member functions are:
 		PROBA_TYPE theta, phi, xi;
 		std::string name = "";
 		bool move = true; // wether to move or not after each application of the rule
-		unsigned long int n_iter = 0; // number of application of the rule for each step
+		unsigned long long int n_iter = 0; // number of application of the rule for each step
 
 		/* constructors */
 		// constructors for a unitary matrix
@@ -619,7 +619,7 @@ Non-virtual member functions are:
 
 		/* step (1) */
 		// virtual function to be overloaded
-		virtual op_type_t operation(iteration_t const &s, unsigned long int gid, unsigned short int node) const { return '\0'; }
+		virtual op_type_t operation(iteration_t const &s, unsigned long long int gid, unsigned short int node) const { return '\0'; }
 
 		/* step (2) */
 		/*
@@ -628,15 +628,15 @@ Non-virtual member functions are:
 		quantum:
 			- count the number of operations in the graph (n), and returns 2^n (since each operation can be done or not independantly)
 		*/
-		unsigned short int num_childs(iteration_t const &s, unsigned long int gid) const {
+		unsigned short int num_childs(iteration_t const &s, unsigned long long int gid) const {
 			/* check for "classical case" */
 			if (probabilist || classical || identity)
 				return 1;
 
 			/* count operations */
-			unsigned long int num_op = 0;
-			unsigned long int num_nodes_ = s.num_nodes(gid);
-			for (unsigned long int node = 0; node < num_nodes_; ++node)
+			unsigned long long int num_op = 0;
+			unsigned long long int num_nodes_ = s.num_nodes(gid);
+			for (unsigned long long int node = 0; node < num_nodes_; ++node)
 				num_op += s.operation(gid, node) != 0; // 0 is the "none" operation for all dynamics
 
 			/* 2^n_op childs */
@@ -648,18 +648,18 @@ Non-virtual member functions are:
 		// virtual function to be overloaded
 		virtual void child_properties(size_t& hash_,
 			PROBA_TYPE& real, PROBA_TYPE& imag,
-			unsigned long int& num_nodes, unsigned long int& num_sub_node,
-			iteration_t const &s, unsigned long int parent_id, unsigned short int child_id) const {}
+			unsigned long long int& num_nodes, unsigned long long int& num_sub_node,
+			iteration_t const &s, unsigned long long int parent_id, unsigned short int child_id) const {}
 
 		/* step (8) */
 		/* generating actual graphs */
 		// virtual function to be overloaded
-		virtual void populate_new_graph(iteration_t const &s, iteration_t &next_iteration, unsigned long int next_gid, unsigned long int parent_id, unsigned short int child_id) const {}
+		virtual void populate_new_graph(iteration_t const &s, iteration_t &next_iteration, unsigned long long int next_gid, unsigned long long int parent_id, unsigned short int child_id) const {}
 	} rule_t;
 
 
 	/* compute the maximum number of graph that can fit in memory accross two iterations */
-	long int inline get_max_num_graphs() const {
+	long long int inline get_max_num_graphs() const {
 		// get the free memory and the total amount of memory...
 		auto [total_memory, free_mem] = get_mem_usage_and_free_mem();
 
@@ -667,12 +667,12 @@ Non-virtual member functions are:
 		long int mem_difference = free_mem - total_memory*safety_margin;
 
 		// constant mem usage per vector elements for each size
-		static const long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 3*sizeof(unsigned long int);
-		static const long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
-		static const long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		static const long int symbolic_mem_usage = sizeof(char) + 3*sizeof(unsigned long int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
+		static const long long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 3*sizeof(unsigned long long int);
+		static const long long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
+		static const long long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
+		static const long long int symbolic_mem_usage = sizeof(char) + 3*sizeof(unsigned long long int) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
 
-		long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
+		long long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes
 			sub_node_mem_usage * current_iteration.sub_node_begin[current_iteration.num_graphs] + // usage for a sub-node * total number of sub-nodes
 			symbolic_mem_usage * symbolic_num_graphs / 2) // usage for a graph at the symbolic iteration  * total number of graphs at the symbolic iteration, divided by two since two iteration coexists
@@ -682,12 +682,12 @@ Non-virtual member functions are:
 		// get the total number of graphs that can fit in memory,
 		// by adding the number of graphs that can fit in the "mem_difference" to the number of graphs in both iterations
 		// then divided it by two since we need to have two iteartions at the same time.
-		long int max_num_graph = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
+		long long int max_num_graph = (current_iteration.num_graphs + next_iteration.num_graphs + mem_difference / mem_usage_per_graph) / 2;
 
 		if (max_num_graph <= 0)
 			max_num_graph = current_iteration.num_graphs;
 
-		return std::max(max_num_graph, (long int)min_vector_size);
+		return std::max(max_num_graph, (long long int)min_vector_size);
 	}
 
 	/* step function */
@@ -696,7 +696,7 @@ Non-virtual member functions are:
 	void inline fast_step(rule_t const &rule) { step(rule, 0, true, true); }
 
 private:
-	void step(rule_t const &rule, long int max_num_graphs, bool overwrite_max_num_graphs, bool fast) {
+	void step(rule_t const &rule, long long int max_num_graphs, bool overwrite_max_num_graphs, bool fast) {
 		/* check for calssical cases */
 		if (rule.identity)
 			return;
@@ -706,30 +706,27 @@ private:
 
 		total_proba = 0;
 
+		MID_STEP_FUNCTION_WITH_DEBUG(0)
+
+		/* !!!!!!!!!!!!!!!!
+		step (1) 
+		 !!!!!!!!!!!!!!!! */
+
+		/* load sharing according to number of nodes */
+		load_balancing_from_prefix_sum(current_iteration.node_begin.begin() + 1,
+			current_iteration.node_begin.begin() + current_iteration.num_graphs + 1,
+			work_sharing_begin.begin(), work_sharing_begin.end());
+
 		#pragma omp parallel
 		{
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION_WITH_DEBUG(0)
-
-				/* !!!!!!!!!!!!!!!!
-				step (1) 
-				 !!!!!!!!!!!!!!!! */
-
-				/* load sharing according to number of nodes */
-				load_balancing_from_prefix_sum(current_iteration.node_begin.begin() + 1,
-					current_iteration.node_begin.begin() + current_iteration.num_graphs + 1,
-					work_sharing_begin.begin(), work_sharing_begin.end());
-			}
-
-			unsigned long int thread_id = omp_get_thread_num();
+			unsigned long long int thread_id = omp_get_thread_num();
 
 			/* get operations for each node of each graph */
-			for (unsigned long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+			for (unsigned long long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				auto num_nodes_ = current_iteration.num_nodes(gid);
 
 				/* get operations for each nodes of each graph */
-				for (unsigned long int node = 0; node < num_nodes_; ++node)
+				for (unsigned long long int node = 0; node < num_nodes_; ++node)
 					current_iteration.set_operation(gid, node, rule.operation(current_iteration, gid, node));
 			}
 
@@ -745,7 +742,7 @@ private:
 			 !!!!!!!!!!!!!!!! */
 
 			/* get the number of child for each graph */
-			for (unsigned long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid)
+			for (unsigned long long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid)
 				current_iteration.num_childs[gid + 1] = rule.num_childs(current_iteration, gid);
 
 			#pragma omp barrier
@@ -770,7 +767,7 @@ private:
 				resize_symbolic_num_graphs(symbolic_num_graphs);
 			}
 
-			for (unsigned long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+			for (unsigned long long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				/* assign parent ids and child ids for each child */
 				std::fill(parent_gid.begin() + current_iteration.num_childs[gid],
 					parent_gid.begin() + current_iteration.num_childs[gid + 1],
@@ -794,7 +791,7 @@ private:
 			/* symbolic iteration :
 				compute properties of each possible future graph */ 
 			#pragma omp for schedule(static)
-			for (unsigned long int gid = 0; gid < symbolic_num_graphs; ++gid)
+			for (unsigned long long int gid = 0; gid < symbolic_num_graphs; ++gid)
 				rule.child_properties(next_hash[gid],
 					next_real[gid], next_imag[gid],
 					symbolic_num_nodes[gid], symbolic_num_sub_nodes[gid],
@@ -815,7 +812,7 @@ private:
 					#pragma omp single
 					{
 						/* share work according to hash */
-						unsigned long int count[256] = {0};
+						unsigned long long int count[256] = {0};
 						parallel_radix_count_indexed_0(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
 							next_hash.begin(),
 							count);
@@ -842,14 +839,14 @@ private:
 						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
 
 						/* compute is_last_index */
-						for (unsigned long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
+						for (unsigned long long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
 							is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]];
 
 						/* partial sum over the interval since we know it starts and end at unique graphs */
 						PROBA_TYPE sign;
-						unsigned long int last_id = next_gid[work_sharing_begin[thread_id]];
-						for (unsigned long int gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-							unsigned long int id = next_gid[gid];
+						unsigned long long int last_id = next_gid[work_sharing_begin[thread_id]];
+						for (unsigned long long int gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+							unsigned long long int id = next_gid[gid];
 							sign = !is_last_index[last_id];
 
 							/* add probabilites of graph with equal hashes */
@@ -869,7 +866,7 @@ private:
 					if (!fast)
 						/* get all unique graphs with a non zero probability */
 						partitioned_it = __gnu_parallel::partition(next_gid.begin(), partitioned_it,
-						[&](unsigned long int const &gid) {
+						[&](unsigned long long int const &gid) {
 							/* check if graph is unique */
 							if (!is_last_index[gid])
 								return false;
@@ -901,11 +898,11 @@ private:
 							PROBA_TYPE i = next_imag[*gid_it];
 
 							random_selector[*gid_it] = precision::log( -precision::log(1 - random_generator()) / (r*r + i*i));
-						} 
+						}
 
 						/* select graphs according to random selectors */
 						__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, partitioned_it,
-						[&](unsigned long int const &gid1, unsigned long int const &gid2) {
+						[&](unsigned long long int const &gid1, unsigned long long int const &gid2) {
 							return random_selector[gid1] < random_selector[gid2];
 						});
 
@@ -939,8 +936,8 @@ private:
 
 			/* prepare for partial sum */
 			#pragma omp for schedule(static)
-			for (unsigned long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
-				unsigned long int id = next_gid[gid];
+			for (unsigned long long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+				unsigned long long int id = next_gid[gid];
 
 				next_iteration.node_begin[gid + 1] = symbolic_num_nodes[id];
 				next_iteration.sub_node_begin[gid + 1] = symbolic_num_sub_nodes[id];
@@ -975,7 +972,7 @@ private:
 					work_sharing_begin.begin(), work_sharing_begin.end());
 			}
 
-			for (unsigned long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+			for (unsigned long long int gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
 				auto id = next_gid[gid];
 				/* populate graphs */
 				rule.populate_new_graph(current_iteration, next_iteration, gid, parent_gid[id], child_id[id]);
@@ -997,7 +994,7 @@ private:
 			#else
 				#pragma omp for schedule(static) reduction(+ : total_proba)
 			#endif
-			for (unsigned long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+			for (unsigned long long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				/* compute total proba */
 				PROBA_TYPE r = next_iteration.real[gid];
 				PROBA_TYPE i = next_iteration.imag[gid];
@@ -1010,16 +1007,13 @@ private:
 			
 			/* normalize by divinding magnitudes by the square root of the total probability */
 			#pragma omp for schedule(static)
-			for (unsigned long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
+			for (unsigned long long int gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				next_iteration.real[gid] /= total_proba;
 				next_iteration.imag[gid] /= total_proba;
 			}
-
-			#pragma omp single
-			{
-				MID_STEP_FUNCTION_WITH_DEBUG(9)
-			}
 		}
+
+		MID_STEP_FUNCTION_WITH_DEBUG(9)
 
 		/* !!!!!!!!!!!!!!!!
 		step (10) 
@@ -1040,7 +1034,7 @@ for graphing
 /*
 function to print the header of a json file
 */
-void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, unsigned long int n_iter) {
+void start_json(state_t::rule_t const &rule_1, state_t::rule_t const &rule_2, unsigned long long int n_iter) {
 	// print number of iterations
 	std::cout << "{\n\t\"n_iter\" : " << n_iter << ",";
 
@@ -1092,8 +1086,8 @@ void serialize_state_to_json(state_t const &s, bool last) {
 			reduction(+ : avg_size) reduction(+ : avg_size_squared) \
 			reduction(+ : avg_density) reduction(+ : avg_density_squared)
 	#endif
-	for (unsigned long int gid = 0; gid < s.current_iteration.num_graphs; ++gid) {
-		unsigned long int num_nodes_ = s.current_iteration.num_nodes(gid);
+	for (unsigned long long int gid = 0; gid < s.current_iteration.num_graphs; ++gid) {
+		unsigned long long int num_nodes_ = s.current_iteration.num_nodes(gid);
 
 		PROBA_TYPE size = (PROBA_TYPE)num_nodes_;
 
@@ -1123,8 +1117,8 @@ void serialize_state_to_json(state_t const &s, bool last) {
 	#ifndef USE_MPRF
 		#pragma omp parallel for schedule(static) reduction(+ : avg_size_symbolic)
 	#endif
-	for (unsigned long int i = 0; i < s.symbolic_num_graphs; ++i) {
-		unsigned long int gid = s.next_gid[i];
+	for (unsigned long long int i = 0; i < s.symbolic_num_graphs; ++i) {
+		unsigned long long int gid = s.next_gid[i];
 
 		if (s.is_last_index[gid]) {
 			PROBA_TYPE size = (PROBA_TYPE)s.symbolic_num_nodes[gid];
@@ -1200,7 +1194,7 @@ for debugging
 
 
 void print(state_t &s) {
-	std::function<void(unsigned long int, unsigned short int, bool)> const print_node = [&] (unsigned long int gid, unsigned short int node, bool parenthesis) {
+	std::function<void(unsigned long long int, unsigned short int, bool)> const print_node = [&] (unsigned long long int gid, unsigned short int node, bool parenthesis) {
 		switch (s.current_iteration.node_type(gid, node)) {
 			case state_t::left_t:
 				print_node(gid, s.current_iteration.left_idx(gid, node), true);
@@ -1236,13 +1230,13 @@ void print(state_t &s) {
 		}
 	};
 
-	std::vector<unsigned long int> gids(s.current_iteration.num_graphs);
+	std::vector<unsigned long long int> gids(s.current_iteration.num_graphs);
 	std::iota(gids.begin(), gids.end(), 0);
 
-	unsigned long int num_graphs = max_num_graph_print > 0 ? std::min(s.current_iteration.num_graphs, (size_t)max_num_graph_print) : s.current_iteration.num_graphs;
+	unsigned long long int num_graphs = max_num_graph_print > 0 ? std::min(s.current_iteration.num_graphs, (size_t)max_num_graph_print) : s.current_iteration.num_graphs;
 
 	__gnu_parallel::partial_sort(gids.begin(), gids.begin() + num_graphs, gids.end(),
-	[&](unsigned long int const &gid1, unsigned long int const &gid2) {
+	[&](unsigned long long int const &gid1, unsigned long long int const &gid2) {
 		auto r1 = s.current_iteration.real[gid1];
 		auto i1 = s.current_iteration.imag[gid1];
 
@@ -1253,16 +1247,16 @@ void print(state_t &s) {
 	});
 
 	for (int i = 0; i < num_graphs; ++i) {
-		unsigned long int gid = gids[i];
+		unsigned long long int gid = gids[i];
 
 		if (verbose >= PRINT_DEBUG_LEVEL_3) {
-			printf("\ngid:%ld, n:", gid);
-			for (unsigned long int j = s.current_iteration.node_begin[gid]; j < s.current_iteration.node_begin[gid + 1]; ++j)
+			printf("\ngid:%lld, n:", gid);
+			for (unsigned long long int j = s.current_iteration.node_begin[gid]; j < s.current_iteration.node_begin[gid + 1]; ++j)
 				printf("%d,", s.current_iteration.node_id_c[j]);
 
 			printf("  ");
 
-			for (unsigned long int j = s.current_iteration.sub_node_begin[gid]; j < s.current_iteration.sub_node_begin[gid + 1]; ++j) {
+			for (unsigned long long int j = s.current_iteration.sub_node_begin[gid]; j < s.current_iteration.sub_node_begin[gid + 1]; ++j) {
 				std::string type;
 
 				auto node_type = s.current_iteration.node_type(gid, j - s.current_iteration.sub_node_begin[gid]);
@@ -1292,7 +1286,7 @@ void print(state_t &s) {
 							break;
 					}
 
-				printf("%ld:(l:%d, r:%d, t:%s), ", j - s.current_iteration.sub_node_begin[gid], s.current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
+				printf("%lld:(l:%d, r:%d, t:%s), ", j - s.current_iteration.sub_node_begin[gid], s.current_iteration.left_idx__or_element__and_has_most_left_zero__or_is_trash_[j],
 					s.current_iteration.right_idx__or_type_[j],
 					type.c_str());
 			}
@@ -1308,7 +1302,7 @@ void print(state_t &s) {
 		if (verbose >= PRINT_DEBUG_LEVEL_2 && s.symbolic_num_graphs > 0)
 			std::cout << "	" << s.next_hash[s.next_gid[gid]] << "	";
 
-		unsigned long int num_nodes_ = s.current_iteration.num_nodes(gid);
+		unsigned long long int num_nodes_ = s.current_iteration.num_nodes(gid);
 		for (unsigned short int node = 0; node < num_nodes_; ++node) {
 			std::cout << "-|" << (s.current_iteration.left(gid, node) ? "<" : " ") << "|";
 
