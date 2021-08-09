@@ -28,26 +28,6 @@
 	#define PRINT_DEBUG_LEVEL_3 1.5
 #endif
 
-/* default variables preprocessor definition:
-	- "UPSIZE_POLICY" corresponds to "upsize_policy" (described in iteration_t resize operators).
-	- "DOWNSIZE_POLICY" corresponds to "downsize_policy" (described in iteration_t resize operators).
-	- "SAFETY_MARGIN" correpsponds to "safety_margin" (described in the definition of "get_max_num_graphs()").
-	- "MIN_BATCH_SIZE" correpsponds to "min_batch_size" which is the smallest workload for a thread.
-	- "MIN_STATE_SIZE" corresponds to "min_state_size" which is the smallest size of a vector (described in iteration_t resize operators). 
-*/
-#ifndef UPSIZE_POLICY
-	#define UPSIZE_POLICY 1.1
-#endif
-#ifndef DOWNSIZE_POLICY
-	#define DOWNSIZE_POLICY 0.85
-#endif
-#ifndef SAFETY_MARGIN
-	#define SAFETY_MARGIN 0.2
-#endif
-#ifndef MIN_STATE_SIZE
-	#define MIN_STATE_SIZE 100000
-#endif
-
 #ifdef USE_MPRF
 	// default tolerance
 	#ifndef TOLERANCE
@@ -81,6 +61,21 @@
 	namespace precision = std;
 #endif
 
+/* default variables preprocessor definition:
+	- "SAFETY_MARGIN" correpsponds to "safety_margin" (described in the definition of "get_max_num_graphs()").
+	- "TOLERANCE" (default is different if MPFR is used or not) is the minimum probability a graph can have before being automaticly ignored.
+*/
+#ifndef SAFETY_MARGIN
+	#define SAFETY_MARGIN 0.2
+#endif
+
+// global variable definition
+PROBA_TYPE tolerance = TOLERANCE;
+float safety_margin = SAFETY_MARGIN;
+
+/*
+defining openmp function's return values if openmp isn't installed or loaded
+*/ 
 #ifndef _OPENMP
 	#define omp_set_nested(i)
 	#define omp_get_thread_num() 0
@@ -90,13 +85,6 @@
 // type definition
 typedef class state state_t;
 typedef char op_type_t;
-
-// global variable definition
-PROBA_TYPE tolerance = TOLERANCE;
-float upsize_policy = UPSIZE_POLICY;
-float downsize_policy = DOWNSIZE_POLICY;
-float safety_margin = SAFETY_MARGIN;
-size_t min_state_size = MIN_STATE_SIZE;
 
 // debugging options
 float verbose = 0;
@@ -117,10 +105,12 @@ It can be used to insert timming or debuging code in the step function:
 */
 
 #ifndef MID_STEP_FUNCTION
-	#define MID_STEP_FUNCTION(n) \
-		if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
-					std::cout << "step "#n"\n";
+	#define MID_STEP_FUNCTION(n)
 #endif
+#define MID_STEP_FUNCTION_WITH_DEBUG(n) \
+	MID_STEP_FUNCTION(n) \
+	if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
+			std::cout << "step "#n"\n";
 
 /*
 number of threads
@@ -259,51 +249,28 @@ public:
 		numa_vector<unsigned long int> num_childs; /* of size (a) + 1 */
 
 		/* resize operators */
-		/*
-		"upsize_policy" is a multiplier (>1) that forces any upsize to add a margin to avoid frequent resize.
-
-		"downsize_policy" is a multiplier (<1) that forces a down_size to free memory only if the freed memory exceed the downsize_policy
-			(to allow memory to be freed and given back to another vector).
-
-		"min_state_size" is the minimum size of a vector, to avoid small vectors which are bound to be resized frequently.
-		*/
 		// resize size (a)
 		void resize_num_graphs(size_t size) {
-			size = std::max(min_state_size, size); // minimum size is "min_state_size"
-			if (num_childs.size() < size || // resize if we absolutly need to
-			downsize_policy * num_childs.size() > size * upsize_policy) { // downsize according to the downsize_policy
-
-				real.resize(upsize_policy * size);
-				imag.resize(upsize_policy * size);
-				node_begin.resize(upsize_policy * size + 1);
-				sub_node_begin.resize(upsize_policy * size + 1);
-				num_childs.resize(upsize_policy * size + 1);
-			}
+			real.resize(size);
+			imag.resize(size);
+			node_begin.resize(size + 1);
+			sub_node_begin.resize(size + 1);
+			num_childs.resize(size + 1);
 		}
 
 		// resize size (b)
 		void resize_num_nodes(size_t size) {
-			size = std::max(min_state_size, size); // minimum size is "min_state_size"
-			if (node_id_c.size() < size || // resize if we absolutly need to
-			downsize_policy * node_id_c.size() > size * upsize_policy) { // downsize according to the downsize_policy
-
-				left_.resize(upsize_policy * size);
-				right_.resize(upsize_policy * size);
-				node_id_c.resize(upsize_policy * size);
-				operations.resize(upsize_policy * size);
-			}
+			left_.resize(size);
+			right_.resize(size);
+			node_id_c.resize(size);
+			operations.resize(size);
 		}
 
 		// resize size (c)
 		void resize_num_sub_nodes(size_t size) {
-			size = std::max(min_state_size, size); // minimum size is "min_state_size"
-			if (node_hash.size() < size || // resize if we absolutly need to
-			downsize_policy * node_hash.size() > size * upsize_policy) { // downsize according to the downsize_policy
-
-				left_idx__or_element__and_has_most_left_zero__or_is_trash_.resize(upsize_policy * size);
-				right_idx__or_type_.resize(upsize_policy * size);
-				node_hash.resize(upsize_policy * size);
-			}
+			left_idx__or_element__and_has_most_left_zero__or_is_trash_.resize(size);
+			right_idx__or_type_.resize(size);
+			node_hash.resize(size);
 		}
 
 		/* hashers */
@@ -513,24 +480,18 @@ public:
 
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
-		size = std::max(min_state_size, size); // minimum size is "min_state_size"
-		if (next_gid.size() < size || // resize if we absolutly need to
-		downsize_policy * next_gid.size() > size * upsize_policy) { // downsize according to the downsize_policy
+		next_gid.iota_resize(size);
+		next_gid_buffer.resize(size);
 
-			next_gid.iota_resize(upsize_policy * size);
-			next_gid_buffer.resize(upsize_policy * size);
-
-			parent_gid.resize(upsize_policy * size);
-			child_id.resize(upsize_policy * size);
-			is_last_index.resize(upsize_policy * size);
-			next_hash.resize(upsize_policy * size);
-			next_real.resize(upsize_policy * size);
-			next_imag.resize(upsize_policy * size);
-			symbolic_num_nodes.resize(upsize_policy * size);
-			symbolic_num_sub_nodes.resize(upsize_policy * size);
-			random_selector.resize(upsize_policy * size);
-		} else
-			std::iota(next_gid.begin(), next_gid.begin() + size, 0);
+		parent_gid.resize(size);
+		child_id.resize(size);
+		is_last_index.resize(size);
+		next_hash.resize(size);
+		next_real.resize(size);
+		next_imag.resize(size);
+		symbolic_num_nodes.resize(size);
+		symbolic_num_sub_nodes.resize(size);
+		random_selector.resize(size);
 	}
 
 /* 
@@ -726,7 +687,7 @@ Non-virtual member functions are:
 		if (max_num_graph <= 0)
 			max_num_graph = current_iteration.num_graphs;
 
-		return std::max(max_num_graph, (long int)min_state_size);
+		return std::max(max_num_graph, (long int)min_vector_size);
 	}
 
 	/* step function */
@@ -749,7 +710,7 @@ private:
 		{
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(0)
+				MID_STEP_FUNCTION_WITH_DEBUG(0)
 
 				/* !!!!!!!!!!!!!!!!
 				step (1) 
@@ -776,7 +737,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(1)
+				MID_STEP_FUNCTION_WITH_DEBUG(1)
 			}
 
 			/* !!!!!!!!!!!!!!!!
@@ -791,7 +752,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(2)
+				MID_STEP_FUNCTION_WITH_DEBUG(2)
 
 				/* !!!!!!!!!!!!!!!!
 				step (3) 
@@ -823,7 +784,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(3)
+				MID_STEP_FUNCTION_WITH_DEBUG(3)
 			}
 
 			/* !!!!!!!!!!!!!!!!
@@ -841,7 +802,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(4)
+				MID_STEP_FUNCTION_WITH_DEBUG(4)
 			}
 
 			/* !!!!!!!!!!!!!!!!
@@ -922,7 +883,7 @@ private:
 
 					long int next_num_graphs = std::distance(next_gid.begin(), partitioned_it);
 					
-					MID_STEP_FUNCTION(5)
+					MID_STEP_FUNCTION_WITH_DEBUG(5)
 
 					/* !!!!!!!!!!!!!!!!
 					step (6) 
@@ -953,7 +914,7 @@ private:
 
 					next_iteration.num_graphs = next_num_graphs;
 
-					MID_STEP_FUNCTION(6)
+					MID_STEP_FUNCTION_WITH_DEBUG(6)
 
 					/* !!!!!!!!!!!!!!!!
 					step (7) 
@@ -968,8 +929,8 @@ private:
 			} else
 				#pragma omp single
 				{
-					MID_STEP_FUNCTION(5)
-					MID_STEP_FUNCTION(6)
+					MID_STEP_FUNCTION_WITH_DEBUG(5)
+					MID_STEP_FUNCTION_WITH_DEBUG(6)
 
 					/* same number of graphs for a probabilist simulation */
 					next_iteration.num_graphs = symbolic_num_graphs;
@@ -1002,7 +963,7 @@ private:
 				next_iteration.resize_num_nodes(next_iteration.node_begin[next_iteration.num_graphs]);
 				next_iteration.resize_num_sub_nodes(next_iteration.sub_node_begin[next_iteration.num_graphs]);
 
-				MID_STEP_FUNCTION(7)
+				MID_STEP_FUNCTION_WITH_DEBUG(7)
 
 				/* !!!!!!!!!!!!!!!!
 				step (8) 
@@ -1024,7 +985,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(8)
+				MID_STEP_FUNCTION_WITH_DEBUG(8)
 			}
 
 			/* !!!!!!!!!!!!!!!!
@@ -1056,7 +1017,7 @@ private:
 
 			#pragma omp single
 			{
-				MID_STEP_FUNCTION(9)
+				MID_STEP_FUNCTION_WITH_DEBUG(9)
 			}
 		}
 
