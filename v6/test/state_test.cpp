@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "step...\n";
+			std::cerr << "step...\n";
 		
 		if (n_fast == 0 || i % (n_fast + 1)) {
 			s.step(*rule);
@@ -26,28 +26,28 @@ int main(int argc, char* argv[]) {
 			s.fast_step(*rule);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...steped\nswap...\n";
+			std::cerr << "...steped\nswap...\n";
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...swaped\nmove...\n";
+			std::cerr << "...swaped\nmove...\n";
 		
 		move_all(s);
 
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...moved\n";
+			std::cerr << "...moved\n";
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
-			std::cout << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
+			std::cerr << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
 	}
 
 	for (int i = n_reversed_iteration - 1; i >= 0; --i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "reversed move...\n";
+			std::cerr << "reversed move...\n";
 		
 		reversed_move_all(s);
 
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...revresed moved\nstep...\n";
+			std::cerr << "...revresed moved\nstep...\n";
 		
 		if (n_fast == 0 || i % (n_fast + 1)) {
 			s.step(*reversed_rule);
@@ -55,13 +55,13 @@ int main(int argc, char* argv[]) {
 			s.fast_step(*reversed_rule);
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...steped\nswap...\n";
+			std::cerr << "...steped\nswap...\n";
 		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cout << "...swapped\n";
+			std::cerr << "...swapped\n";
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
-			std::cout << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
+			std::cerr << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
 	}
 
 	print(s);

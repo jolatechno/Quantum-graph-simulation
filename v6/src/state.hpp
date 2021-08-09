@@ -22,10 +22,10 @@
 	#define PRINT_DEBUG_LEVEL_1 0.5
 #endif
 #ifndef PRINT_DEBUG_LEVEL_2
-	#define PRINT_DEBUG_LEVEL_2 0.75
+	#define PRINT_DEBUG_LEVEL_2 1.5
 #endif
 #ifndef PRINT_DEBUG_LEVEL_3
-	#define PRINT_DEBUG_LEVEL_3 1.5
+	#define PRINT_DEBUG_LEVEL_3 2
 #endif
 
 #ifdef USE_MPRF
@@ -110,7 +110,7 @@ It can be used to insert timming or debuging code in the step function:
 #define MID_STEP_FUNCTION_WITH_DEBUG(n) \
 	MID_STEP_FUNCTION(n) \
 	if (n > 0 && verbose >= STEP_DEBUG_LEVEL) \
-			std::cout << "step "#n"\n";
+			std::cerr << "step "#n"\n";
 
 /*
 number of threads
