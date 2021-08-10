@@ -13,9 +13,9 @@ print_usage() {
 "
 }
 
-niter="2"
-size="12"
-safety_margin="0.2"
+niter=2
+size=12
+safety_margin=0.2
 rule="split_merge"
 n_thread=$(nproc --all)
 args=""
