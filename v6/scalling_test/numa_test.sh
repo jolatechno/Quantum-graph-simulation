@@ -17,8 +17,6 @@ rule="split_merge"
 delay=10
 args=""
 
-errfile="err.txt"
-
 while getopts 'r:s:m:a:hd:' flag; do
   case "$flag" in
   	h) print_usage
@@ -35,8 +33,6 @@ done
 
 # command
 command="./state_test.out -n 1000000 -v 1 -r ${rule} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
-
-echo "" > ${errfile}
 
 echo "\"command\" : \"${command}\","
 echo "\"results\" : "
