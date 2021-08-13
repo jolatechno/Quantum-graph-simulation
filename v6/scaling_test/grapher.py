@@ -115,4 +115,4 @@ ax3.set_yscale('log')
 
 # saving fig
 fig.suptitle(fig_title)
-fig.savefig("plots/scalling.png")
+fig.savefig("plots/scaling.png")
