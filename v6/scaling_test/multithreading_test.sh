@@ -41,6 +41,7 @@ done
 
 command="./scaling_test.out -v 1 -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 echo "{"
+echo "$(./memory_test.out 2>> ${errfile} | indent),"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"
 

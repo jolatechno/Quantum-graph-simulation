@@ -79,27 +79,7 @@
 #define TEST_STEP_DEBUG_LEVEL 0.2
 #define GRAPH_SIZE_DEBUG_LEVEL 0.1
 
-#ifndef NUM_ELMENTS
-	#define NUM_ELMENTS 200000000
-#endif
-
 int main(int argc, char* argv[]) {
-	/* meusure max memory bandwidth */
-	unsigned int num_elements = NUM_ELMENTS;
-
-	size_t *in_array = new size_t[num_elements];
-	size_t *out_array = new size_t[num_elements];
-
-	double memory_delay = -get_wall_time();
-	//#pragma omp parallel for schedule(static) num_threads(64)
-	for (unsigned int i = 0; i < num_elements; ++i) out_array[i] = in_array[i];
-	memory_delay += get_wall_time();
-	
-	delete[] in_array;
-	delete[] out_array;
-
-	double memory_speed = num_elements / memory_delay * sizeof(size_t);
-
 	/* test scalability */
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
@@ -140,7 +120,7 @@ int main(int argc, char* argv[]) {
 	}
 	printf(",\n\t\"read_bandwidth\" : [");
 	for (unsigned int i = 0; i < N_STEP; ++i) {
-		printf("%f", total_reads[i] / step_wall_duration[i] / memory_speed);
+		printf("%f", total_reads[i] / step_wall_duration[i] / 1e9);
 		if (i < N_STEP - 1) {
 			printf(", ");
 		} else
@@ -148,12 +128,11 @@ int main(int argc, char* argv[]) {
 	}
 	printf(",\n\t\"write_bandwidth\" : [");
 	for (unsigned int i = 0; i < N_STEP; ++i) {
-		printf("%f", total_writes[i] / step_wall_duration[i] / memory_speed);
+		printf("%f", total_writes[i] / step_wall_duration[i] / 1e9);
 		if (i < N_STEP - 1) {
 			printf(", ");
 		} else
 			printf("]");
 	}
-	std::cout << ",\n\t\"max_memory_bandwidth\" : " << memory_speed;
 	printf("\n}\n");
 }
