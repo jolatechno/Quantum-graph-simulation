@@ -115,4 +115,9 @@ ax3.set_yscale('log')
 
 # saving fig
 fig.suptitle(fig_title)
-fig.savefig("plots/scaling.png")
+fig.savefig("plots/time_scaling/scaling.png")
+
+
+
+# plotting memory bandwidth usage
+# TODO !!!

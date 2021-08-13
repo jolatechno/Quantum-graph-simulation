@@ -12,13 +12,12 @@
 		step_cpu_duration[n - 1] += get_cpu_time(); \
 	} \
 	if (n == N_STEP) { \
-		total_reads[0] += (current_iteration.node_begin[current_iteration.num_graphs] \
-			+ 2*current_iteration.num_graphs) * sizeof(long long int); \
-		total_writes[0] += 2*current_iteration.node_begin[current_iteration.num_graphs] * \
-			sizeof(long long int); \
+		total_reads[0] += 2*current_iteration.node_begin[current_iteration.num_graphs] + \
+			2*current_iteration.num_graphs * sizeof(long long int); \
+		total_writes[0] += 2*current_iteration.node_begin[current_iteration.num_graphs]; \
 \
-		total_reads[1] += current_iteration.node_begin[current_iteration.num_graphs] \
-			+ 2*current_iteration.num_graphs * sizeof(long long int); \
+		total_reads[1] += current_iteration.node_begin[current_iteration.num_graphs] + \
+			2*current_iteration.num_graphs * sizeof(long long int); \
 		total_writes[1] += current_iteration.num_graphs * sizeof(long long int); \
 \
 		total_reads[2] += current_iteration.num_graphs * sizeof(long long int); \
@@ -27,7 +26,8 @@
 \
 		total_reads[3] += symbolic_num_graphs * \
 			current_iteration.node_begin[current_iteration.num_graphs] / \
-			current_iteration.num_graphs * 2 * sizeof(long long int); \
+			current_iteration.num_graphs * 2 + \
+			2*current_iteration.num_graphs * sizeof(long long int); \
 		total_writes[3] += symbolic_num_graphs * \
 			(3*sizeof(long long int) + 2*sizeof(PROBA_TYPE)); \
 \
@@ -80,10 +80,27 @@
 #define GRAPH_SIZE_DEBUG_LEVEL 0.1
 
 #ifndef NUM_ELMENTS
-	#define NUM_ELMENTS 200000
+	#define NUM_ELMENTS 200000000
 #endif
 
 int main(int argc, char* argv[]) {
+	/* meusure max memory bandwidth */
+	unsigned int num_elements = NUM_ELMENTS;
+
+	size_t *in_array = new size_t[num_elements];
+	size_t *out_array = new size_t[num_elements];
+
+	double memory_delay = -get_wall_time();
+	//#pragma omp parallel for schedule(static) num_threads(64)
+	for (unsigned int i = 0; i < num_elements; ++i) out_array[i] = in_array[i];
+	memory_delay += get_wall_time();
+	
+	delete[] in_array;
+	delete[] out_array;
+
+	double memory_speed = num_elements / memory_delay * sizeof(size_t);
+
+	/* test scalability */
 	std::setvbuf(stdout, NULL, _IONBF, 0);
 
 	cxxopts::Options options("file used for multi-threading test (does not run reversed iterations");
@@ -103,18 +120,6 @@ int main(int argc, char* argv[]) {
 
 	total_cpu_time += get_cpu_time();
 	total_wall_time += get_wall_time();
-
-	/* meusure max memory bandwidth */
-	unsigned int num_elements = NUM_ELMENTS;
-
-	size_t in_array[num_elements] = { 1 };
-	size_t out_array[num_elements] = { 0 };
-
-	double memory_delay = -get_wall_time();
-	for (unsigned int i = 0; i < num_elements; ++i) out_array[i] = in_array[i];
-	memory_delay += get_wall_time();
-
-	double memory_speed = num_elements / memory_delay * sizeof(size_t);
 
 	/* print results as json */
 	printf("\t\"wall\" : {\n\t\t\"steps\" : [");
@@ -149,5 +154,6 @@ int main(int argc, char* argv[]) {
 		} else
 			printf("]");
 	}
+	std::cout << ",\n\t\"max_memory_bandwidth\" : " << memory_speed;
 	printf("\n}\n");
 }
