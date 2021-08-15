@@ -12,46 +12,44 @@
 		step_cpu_duration[n - 1] += get_cpu_time(); \
 	} \
 	if (n == N_STEP) { \
-		total_reads[0] += 2*current_iteration.node_begin[current_iteration.num_graphs] + \
-			2*current_iteration.num_graphs * sizeof(long long int); \
-		total_writes[0] += 2*current_iteration.node_begin[current_iteration.num_graphs]; \
+		int n_rule = 0; \
+		if (rule.name == "erase_create") { \
+			n_rule = 2; \
+		} else if (rule.name == "split_merge") { \
+			n_rule = 3; \
+		} else if (rule.name == "coin") { \
+			n_rule = 2; \
+		} \
 \
-		total_reads[1] += current_iteration.node_begin[current_iteration.num_graphs] + \
-			2*current_iteration.num_graphs * sizeof(long long int); \
-		total_writes[1] += current_iteration.num_graphs * sizeof(long long int); \
+		size_t current_num_nodes = current_iteration.node_begin[current_iteration.num_graphs]; \
+		size_t next_num_nodes = next_iteration.node_begin[next_iteration.num_graphs]; \
 \
-		total_reads[2] += current_iteration.num_graphs * sizeof(long long int); \
-		total_writes[2] += (2*current_iteration.num_graphs + 2*symbolic_num_graphs) * \
-			sizeof(long long int); \
+		total_reads[0] += 2*current_iteration.num_graphs*sizeof(size_t) + n_rule*current_num_nodes; \
+		total_writes[0] += current_num_nodes; \
 \
-		total_reads[3] += symbolic_num_graphs * \
-			current_iteration.node_begin[current_iteration.num_graphs] / \
-			current_iteration.num_graphs * 2 + \
-			2*current_iteration.num_graphs * sizeof(long long int); \
-		total_writes[3] += symbolic_num_graphs * \
-			(3*sizeof(long long int) + 2*sizeof(PROBA_TYPE)); \
+		total_reads[1] += 2*current_iteration.num_graphs*sizeof(size_t) + current_num_nodes; \
+		total_writes[1] += current_iteration.num_graphs*sizeof(size_t); \
 \
-		total_reads[4] += symbolic_num_graphs * ( \
-			11 * sizeof(size_t) + 2 + 4 * sizeof(PROBA_TYPE)); \
-		total_writes[4] += symbolic_num_graphs * ( \
-			16 * sizeof(size_t) + 1 + 2 * sizeof(PROBA_TYPE)); \
+		total_reads[2] += 2*current_iteration.num_graphs*sizeof(size_t); \
+		total_writes[2] += symbolic_num_graphs*(sizeof(size_t) + sizeof(unsigned short int)) + 2*current_iteration.num_graphs*sizeof(size_t); \
 \
-		total_reads[5] += symbolic_num_graphs * 2 * sizeof(PROBA_TYPE); \
-		total_writes[5] += symbolic_num_graphs * sizeof(float); \
+		total_reads[3] += symbolic_num_graphs*(6*sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(short)) + 2*next_num_nodes; \
+		total_writes[3] += symbolic_num_graphs*(3*sizeof(size_t) + 2*sizeof(PROBA_TYPE)); \
 \
-		total_reads[6] += std::log(next_iteration.num_graphs) * next_iteration.num_graphs * sizeof(long long int); \
-		total_writes[6] += std::log(next_iteration.num_graphs) * next_iteration.num_graphs * sizeof(long long int); \
+		total_reads[4] += symbolic_num_graphs*(sizeof(size_t)*32 + sizeof(PROBA_TYPE)*4 + 10); \
+		total_writes[4] += symbolic_num_graphs*(sizeof(size_t)*17 + sizeof(PROBA_TYPE)*2 + 1); \
 \
-		total_reads[7] += next_iteration.num_graphs * ( \
-			4 * sizeof(long long int) + 2 * sizeof(PROBA_TYPE)); \
-		total_writes[7] += next_iteration.num_graphs * ( \
-			4 * sizeof(long long int) + 2 * sizeof(PROBA_TYPE)); \
+		total_reads[5] += symbolic_num_graphs_after_interferences*(2*sizeof(PROBA_TYPE) + 2*sizeof(float) + sizeof(size_t)); \
+		total_writes[5] += max_num_graphs*sizeof(size_t) + symbolic_num_graphs_after_interferences*sizeof(float); \
 \
-		total_reads[8] += next_iteration.node_begin[next_iteration.num_graphs] * 3; \
-		total_writes[8] += next_iteration.node_begin[next_iteration.num_graphs] * 2; \
+		total_reads[6] += next_iteration.num_graphs*((6 + std::log2(next_iteration.num_graphs))*sizeof(size_t) + 2*sizeof(PROBA_TYPE)); \
+		total_writes[6] = total_reads[6]; \
 \
-		total_reads[9] += next_iteration.num_graphs * 2 * sizeof(PROBA_TYPE); \
-		total_writes[9] += next_iteration.num_graphs * 2 * sizeof(PROBA_TYPE); \
+		total_reads[7] += n_rule*next_iteration.num_graphs + 3*next_iteration.num_graphs; \
+		total_writes[7] += 2*next_iteration.num_graphs*2; \
+\
+		total_reads[8] += 2*next_iteration.num_graphs*sizeof(PROBA_TYPE); \
+		total_writes[8] = total_reads[8]; \
 	} else { \
 		step_wall_duration[n] -= get_wall_time(); \
 		step_cpu_duration[n] -= get_cpu_time(); \
