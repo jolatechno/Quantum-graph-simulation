@@ -16,11 +16,13 @@ with open(filename) as f:
 	data = json.load(f)
 
 n_threads = list(data["results"].keys())[::-1]
-fig_title = data["command"]
+mem_baseline = data["memory_bandwidth"]
 
 scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
 inverse_scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
 proportions = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
+mem_read_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
+mem_write_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
 
 for i, n_thread in enumerate(n_threads):
 	scaling[i, -1] = data["results"]["1"]["wall"]["total"] / data["results"][n_thread]["wall"]["total"]
@@ -30,6 +32,10 @@ for i, n_thread in enumerate(n_threads):
 		proportions[i, step] = data["results"][n_thread]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["total"]
 		scaling[i, step] = data["results"]["1"]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["steps"][step]
 		inverse_scaling[i, step] = data["results"][n_thread]["cpu"]["steps"][step] / data["results"]["1"]["cpu"]["steps"][step]
+		mem_read_bandwidth[i, step] =  data["results"][n_thread]["read_bandwidth"][step]
+		mem_write_bandwidth[i, step] =  data["results"][n_thread]["write_bandwidth"][step]
+
+
 
 
 
@@ -67,57 +73,91 @@ for i, n_thread in enumerate(n_threads):
 
 
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 13), constrained_layout=True)
 
 # plot wall time scalling
-ax1.set_title("execution time reduction (in wall time) for each step")
-
-ax1.set_xticks(tick_position)
-ax1.set_xticklabels(n_threads)
+fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
+ax.set_title("execution time reduction (in wall time) for each step")
+ax.set_xticks(tick_position)
+ax.set_xticklabels(n_threads)
 
 for step in range(proportions.shape[1]):
-	ax1.bar(bar_starting_position + bar_width*step, scaling[:, step], width=bar_width, label=f'step { step + 1 }')
+	ax.bar(bar_starting_position + bar_width*step, scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-bars = ax1.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
+bars = ax.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
 
-ax1.plot(x_points[0], y_points[0], "k--")
+ax.plot(x_points[0], y_points[0], "k--")
 for i in range(1, len(x_points)):
-	ax1.plot(x_points[i], y_points[i], "--", color="dimgrey")
-ax1.set_yscale('log')
+	ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
+ax.set_yscale('log')
 
-ax1.legend()
+# saving fig
+ax.legend(loc='upper left')
+fig.savefig("plots/wall_scaling/wall_" + data["rule"] + ".png")
+
+
 
 
 
 # plot proportions
-ax2.set_title("proportion of the total execution cpu time taken by each step")
-
-ax2.set_xticks(tick_position_1)
-ax2.set_xticklabels(n_threads)
+fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
+ax.set_title("proportion of the total execution cpu time taken by each step")
+ax.set_xticks(tick_position_1)
+ax.set_xticklabels(n_threads)
 
 for step in range(proportions.shape[1]):
-	ax2.bar(bar_starting_position_1 + bar_width_1*step, proportions[:, step], width=bar_width_1, label=f'step { step + 1 }')
+	ax.bar(bar_starting_position_1 + bar_width_1*step, proportions[:, step], width=bar_width_1, label=f'step { step + 1 }')
+
+# saving fig
+ax.legend(loc='upper left')
+fig.savefig("plots/proportions/proportions_" + data["rule"] + ".png")
+
+
 
 
 
 # plot cpu time scalling
-ax3.set_title("execution time multiplication (in cpu time) for each step")
-
-ax3.set_xticks(tick_position)
-ax3.set_xticklabels(n_threads)
+fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
+ax.set_title("execution time multiplication (in cpu time) for each step")
+ax.set_xticks(tick_position)
+ax.set_xticklabels(n_threads)
 
 for step in range(scaling.shape[1]):
-	ax3.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
+	ax.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-ax3.plot([total_begin, total_end], [1, 1], "k--")
-ax3.set_yscale('log')
-
+ax.plot([total_begin, total_end], [1, 1], "k--")
+ax.set_yscale('log')
 
 # saving fig
-fig.suptitle(fig_title)
-fig.savefig("plots/time_scaling/scaling.png")
+ax.legend(loc='upper left')
+fig.savefig("plots/cpu_scaling/cpu_" + data["rule"] + ".png")
 
 
 
-# plotting memory bandwidth usage
-# TODO !!!
+
+
+# plot memory bandwidth scalling
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10), constrained_layout=True)
+ax1.set_title("memory read bandwidth")
+ax1.set_xticks(tick_position_1)
+ax1.set_xticklabels(n_threads)
+
+for key in mem_baseline:
+	bandwidth = mem_baseline[key]
+	ax1.plot([total_begin, total_end], [bandwidth, bandwidth], "--", label=key)
+for step in range(proportions.shape[1]):
+	ax1.bar(bar_starting_position_1 + bar_width_1*step, mem_read_bandwidth[:, step], width=bar_width_1, label=f'step { step + 1 }')
+
+ax2.set_title("memory write bandwidth")
+ax2.set_xticks(tick_position_1)
+ax2.set_xticklabels(n_threads)
+
+for key in mem_baseline:
+	bandwidth = mem_baseline[key]
+	ax2.plot([total_begin, total_end], [bandwidth, bandwidth], "--", label=key)
+for step in range(proportions.shape[1]):
+	ax2.bar(bar_starting_position_1 + bar_width_1*step, mem_write_bandwidth[:, step], width=bar_width_1, label=f'step { step + 1 }')
+
+# saving fig
+ax1.legend(loc='upper left')
+ax2.legend(loc='upper left')
+fig.savefig("plots/memory_scaling/mem_" + data["rule"] + ".png")
