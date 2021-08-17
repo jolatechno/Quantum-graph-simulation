@@ -44,3 +44,5 @@
 # pycache
 *.pyc
 __pycache__/
+
+!.*

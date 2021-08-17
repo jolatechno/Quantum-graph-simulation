@@ -20,6 +20,7 @@ for filename in filenames:
 	ax.set_xlim([-0.01, 1.01])
 	ax.set_ylim([-0.01, 1.01])
 
-	ax.plot(data[:, 0], data[:, 1], "b+", markersize=5)
+	ax.plot(data[:, 0], data[:, 1], "b+", markersize=10)
+	ax.plot([0, 1], [0, 1], "k--")
 
 	fig.savefig("plots/scalar_product.png")

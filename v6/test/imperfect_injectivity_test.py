@@ -59,8 +59,8 @@ for i, theta in enumerate(thetas):
 			proba = 0 if initial_graph != final_graph else abs(magnitude)**2
 
 
-			print(f"[{ data[1] }, { proba }]", end = '', flush=True)
+			print(f"\n\t\t[{ data[1] }, { proba }]", end = '', flush=True)
 
 # finish json   
-print("]")
+print("\n\t]")
 print("}")
