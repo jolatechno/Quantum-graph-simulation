@@ -140,6 +140,7 @@ fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10), constrained_layout=True)
 ax1.set_title("memory read bandwidth")
 ax1.set_xticks(tick_position_1)
 ax1.set_xticklabels(n_threads)
+ax1.set_ylabel("memory bandwidth (GB/s)")
 
 for key in mem_baseline:
 	bandwidth = mem_baseline[key]
@@ -150,6 +151,7 @@ for step in range(proportions.shape[1]):
 ax2.set_title("memory write bandwidth")
 ax2.set_xticks(tick_position_1)
 ax2.set_xticklabels(n_threads)
+ax2.set_ylabel("memory bandwidth (GB/s)")
 
 for key in mem_baseline:
 	bandwidth = mem_baseline[key]

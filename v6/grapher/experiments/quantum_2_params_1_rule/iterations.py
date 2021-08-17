@@ -14,7 +14,6 @@ import json
 
 
 
-
 parser = argparse.ArgumentParser(description='run quantum iteration for all possible arguments')
 
 parser.add_argument('-n', '--n-iter', type=int, default=10, help='number of iteration for each simulation')
@@ -31,7 +30,7 @@ parser.add_argument('--t1', '--theta-end', type=float, default=.5, help='last th
 parser.add_argument('--p0', '--phi-start', type=float, default=0, help='first phi (as a fraction of pi)')
 parser.add_argument('--p1', '--phi-end', type=float, default=.1, help='last phi (as a fraction of pi)')
 
-parser.add_argument('--args', nargs='+', default=[], help='cli arguments for quantum_iterations (put a space before "-" if you begin with a flag)')
+parser.add_argument('--args', nargs='+', default=[], help='cli arguments for quantum_iterations')
 
 args = parser.parse_args()
 

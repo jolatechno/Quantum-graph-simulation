@@ -1087,6 +1087,9 @@ private:
 				next_iteration.real[gid] /= total_proba;  /* 2 PROBA_TYPE writes per next_iteration.num_graphs */
 				next_iteration.imag[gid] /= total_proba;
 			}
+
+			#pragma omp single
+			total_proba *= total_proba;
 		}
 
 		MID_STEP_FUNCTION_WITH_DEBUG(9)

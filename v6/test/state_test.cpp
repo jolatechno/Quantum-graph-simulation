@@ -14,7 +14,9 @@ int main(int argc, char* argv[]) {
 	cxxopts::Options options("check for quantum injectivity");
 	auto [s, rule, reversed_rule, n_iter, n_reversed_iteration, n_fast] = test_parser(options, argc, argv);
 
-	print(s); std::cout << "\n";
+	print(s);
+
+	PROBA_TYPE total_proba = 1;
 
 	for (int i = 0; i < n_iter; ++i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
@@ -38,7 +40,11 @@ int main(int argc, char* argv[]) {
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
 			std::cerr << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
+
+		total_proba *= s.total_proba;
 	}
+
+	std::cout << total_proba << "\n";
 
 	for (int i = n_reversed_iteration - 1; i >= 0; --i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
