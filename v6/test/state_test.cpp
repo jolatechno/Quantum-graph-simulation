@@ -44,8 +44,6 @@ int main(int argc, char* argv[]) {
 		total_proba *= s.total_proba;
 	}
 
-	std::cout << total_proba << "\n";
-
 	for (int i = n_reversed_iteration - 1; i >= 0; --i) {
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cerr << "reversed move...\n";
@@ -68,7 +66,11 @@ int main(int argc, char* argv[]) {
 
 		if (verbose >= GRAPH_SIZE_DEBUG_LEVEL)
 			std::cerr << s.symbolic_num_graphs << " -> " << s.current_iteration.num_graphs << " graphs\n";
+
+		total_proba *= s.total_proba;
 	}
+
+	std::cout << total_proba << "\n";
 
 	print(s);
 }
