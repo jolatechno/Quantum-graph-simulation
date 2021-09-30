@@ -47,7 +47,7 @@ for i, theta in enumerate(thetas):
 	for j, seed in enumerate(seeds):
 		for k, size in enumerate(sizes):
 			if i != 0 or j != 0 or k != 0:
-				print(', ', end = '')
+				print(',', end = '')
 
 			stream = os.popen(make_cmd(args, theta, size, seed))
 			data = stream.read().split("\n")

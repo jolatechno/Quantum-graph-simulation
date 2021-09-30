@@ -1,4 +1,5 @@
-#include <algorithm>
+#include <parallel/algorithm>
+#include <parallel/numeric>
 
 // parallel radix sort for the first byte of indexed values
 void inline parallel_radix_count_indexed_0(size_t *begin, size_t *end,

@@ -13,7 +13,7 @@ for filename in filenames:
 	with open(filename) as f:
 	  data = np.array(json.load(f)["points"])
 
-	fig, ax = plt.subplots(1, 1, figsize=(10, 10), constrained_layout=True)
+	fig, ax = plt.subplots(1, 1, figsize=(10, 7), constrained_layout=True)
 	ax.set_ylabel("<S0|S1>")
 	ax.set_xlabel("P")
 
@@ -23,7 +23,7 @@ for filename in filenames:
 	X = np.linspace(0, 1, 1000)
 
 	ax.plot(data[:, 0], data[:, 1], "b+", markersize=10)
-	ax.plot(X, np.sqrt(X), "r--", label="Y=P^2")
+	ax.plot(X, np.sqrt(X), "r--", label="Y=√P")
 
 	ax.legend()
 	fig.savefig("plots/scalar_product.png")
