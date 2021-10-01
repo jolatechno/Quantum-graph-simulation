@@ -15,6 +15,7 @@ The different programs are at:
 -   [/v6/test/imperfect_injectivity_test.py][]: imperfect injectivity test, similar to [/v6/test/injectivity_test.sh][] but for simulations where deleting graphs is necessary.
 -   [/v6/scaling_test/multithreading_test.sh][]: Test multithreading scaling.
 -   [/v6/scaling_test/numa_test.sh][]: Test numa-aware allocation.
+-   [/validation/selection/selector_benchmark.cpp][]: Compare the perfomences of different methodes of duplicate elimination.
 
 All of the above programs have help ("-h") sections that gives precision
 on the parameters.
@@ -24,26 +25,27 @@ shown here :
 
 -   [/v6/grapher/grapher.py][]: grapher for json file (default is res.json) obtained from [quantum_iterations.cpp] or [probabilist_iterations.cpp]. Output directories are inside [/v6/grapher/plots/].
 -   [/v6/scaling_test/grapher.py][]: grapher for json file (default is res.json) obtained from [multithreading_test.sh]. Output directories are inside [/v6/scaling_test/plots].
--   [/validation/repartition.py] is also a grapher responsible for creating the random selection plots, and outputs to [/validation/plots/].
+-   [/validation/random_selector/repartition.py] is also a grapher responsible for creating the random selection plots, and outputs to [/validation/random_selector/plots/].
 -   [/v6/test/grapher.py][]: grapher for [/v6/test/imperfect_injectivity_test.py]. Outputs to [/v6/test/plots/].
 
-  [/v6/grapher/grapher.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/grapher.py
-  [quantum_iterations.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/quantum_iterations.cpp
-  [probabilist_iterations.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/probabilist_iterations.cpp
-  [/v6/grapher/plots/]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/plots/
-  [/v6/scaling_test/grapher.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/grapher.py
-  [multithreading_test.sh]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/multithreading_test.sh
-  [/v6/scaling_test/plots]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/plots/
-  [/validation/repartition.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/validation/repartition.py
-  [/validation/plots/]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/validation/plots/
-  [/v6/test/grapher.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/grapher.py
-  [/v6/test/imperfect_injectivity_test.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/imperfect_injectivity_test.py
-  [/v6/test/plots/]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/plots/
-  [/v6/grapher/quantum_iterations.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/quantum_iterations.cpp
-  [/v6/grapher/probabilist_iterations.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/grapher/probabilist_iterations.cpp
-  [/v6/test/state_test.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/state_test.cpp
-  [/v6/scaling_test/scaling_test.cpp]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/scaling_test.cpp
-  [/v6/test/injectivity_test.sh]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/injectivity_test.sh
-  [/v6/test/imperfect_injectivity_test.py]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/test/imperfect_injectivity_test.py
-  [/v6/scaling_test/multithreading_test.sh]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/multithreading_test.sh
-  [/v6/scaling_test/numa_test.sh]: http://github.com/jolatechno/Quantum-graph-simulation/tree/main/v6/scaling_test/numa_test.sh
+  [/v6/grapher/grapher.py]: ./v6/grapher/grapher.py
+  [quantum_iterations.cpp]: ./v6/grapher/quantum_iterations.cpp
+  [probabilist_iterations.cpp]: ./v6/grapher/probabilist_iterations.cpp
+  [/v6/grapher/plots/]: ./v6/grapher/plots/
+  [/v6/scaling_test/grapher.py]: ./v6/scaling_test/grapher.py
+  [multithreading_test.sh]: ./v6/scaling_test/multithreading_test.sh
+  [/v6/scaling_test/plots]: ./v6/scaling_test/plots/
+  [/validation/random_selector/repartition.py]: ./validation/repartition.py
+  [/validation/random_selector/plots/]: ./validation/random_selector/plots/
+  [/v6/test/grapher.py]: ./v6/test/grapher.py
+  [/v6/test/imperfect_injectivity_test.py]: ./v6/test/imperfect_injectivity_test.py
+  [/v6/test/plots/]: ./v6/test/plots/
+  [/v6/grapher/quantum_iterations.cpp]: ./v6/grapher/quantum_iterations.cpp
+  [/v6/grapher/probabilist_iterations.cpp]: ./v6/grapher/probabilist_iterations.cpp
+  [/v6/test/state_test.cpp]: ./v6/test/state_test.cpp
+  [/v6/scaling_test/scaling_test.cpp]: ./v6/scaling_test/scaling_test.cpp
+  [/v6/test/injectivity_test.sh]: ./v6/test/injectivity_test.sh
+  [/v6/test/imperfect_injectivity_test.py]: ./v6/test/imperfect_injectivity_test.py
+  [/v6/scaling_test/multithreading_test.sh]: ./v6/scaling_test/multithreading_test.sh
+  [/v6/scaling_test/numa_test.sh]: ./v6/scaling_test/numa_test.sh
+  [/validation/selection/selector_benchmark.cpp]: ./validation/selection/selector_benchmark.cpp
