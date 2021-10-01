@@ -32,7 +32,7 @@ while getopts 'r:s:m:a:hd:' flag; do
 done
 
 # command
-command="./scaling_test.out -n 1000000 -v 1 -r ${rule} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
+command="OMP_PROC_BIND=true ./scaling_test.out -n 1000000 -v 1 -r ${rule} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 
 echo "\"command\" : \"${command}\","
 echo "\"results\" : "

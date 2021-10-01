@@ -35,7 +35,7 @@ shown here :
   [/v6/scaling_test/grapher.py]: ./v6/scaling_test/grapher.py
   [multithreading_test.sh]: ./v6/scaling_test/multithreading_test.sh
   [/v6/scaling_test/plots]: ./v6/scaling_test/plots/
-  [/validation/random_selector/repartition.py]: ./validation/repartition.py
+  [/validation/random_selector/repartition.py]: ./validation/random_selector/repartition.py
   [/validation/random_selector/plots/]: ./validation/random_selector/plots/
   [/v6/test/grapher.py]: ./v6/test/grapher.py
   [/v6/test/imperfect_injectivity_test.py]: ./v6/test/imperfect_injectivity_test.py

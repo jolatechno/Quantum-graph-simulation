@@ -39,7 +39,7 @@ while getopts 'n:r:s:m:a:ht:' flag; do
   esac
 done
 
-command="./scaling_test.out -v 1 -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
+command="./scaling_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${safety_margin} --seed 0 ${args}"
 echo "{"
 echo "	\"rule\" : \"${rule}\","
 echo "	\"command\" : \"${command}\","
@@ -54,13 +54,15 @@ do
 	if [ $n_thread -gt 1 ]; then
 		separator=","
 	fi
-	
-	#cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
-	#echo "		\"${n_thread}\" :	$(numactl --physcpubind="${cpu_cores}" ${command})${separator}"
 
 	echo "${n_thread}:" >> ${errfile}
 	echo "		\"${n_thread}\" : {"
-	echo "$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
+	
+	cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
+	echo "$(OMP_PROC_BIND=true  numactl --physcpubind="${cpu_cores}" ${command} | indent | indent)${separator}"
+
+	#echo "$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
+	
 	echo "" >> ${errfile}
 
 	n_thread=$(( $n_thread / 2))
