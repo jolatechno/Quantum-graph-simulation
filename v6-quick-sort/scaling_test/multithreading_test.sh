@@ -9,7 +9,7 @@ print_usage() {
 	-m: safety margin (default = 0.2)
 	-a: additional arguments
 
-	-t: starting num thread (as a power of 2)
+	-t: list of number of threads to test (ex: 1,2,5, default:number_of_available_thread)
 "
 }
 
@@ -19,7 +19,7 @@ niter=2
 size=12
 safety_margin=0.2
 rule="split_merge"
-n_thread=$(nproc --all)
+n_threads=$(nproc --all)
 args=""
 
 errfile="err.txt"
@@ -33,7 +33,7 @@ while getopts 'n:r:s:m:a:ht:' flag; do
     s) size="${OPTARG}" ;;
 		m) safety_margin="${OPTARG}" ;;
 		a) args="${OPTARG}" ;;
-		t) n_thread="${OPTARG}" ;;
+		t) n_threads="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
   esac
@@ -48,7 +48,7 @@ echo "	\"results\" : {"
 
 echo "" > ${errfile}
 
-while [ $n_thread -ge 1 ]
+for n_thread in ${n_threads//,/ }
 do
 	separator=""
 	if [ $n_thread -gt 1 ]; then
@@ -64,8 +64,6 @@ do
 	#echo "$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
 	
 	echo "" >> ${errfile}
-
-	n_thread=$(( $n_thread / 2))
 done
 
 echo "	}"
