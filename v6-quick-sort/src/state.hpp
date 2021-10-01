@@ -878,8 +878,6 @@ private:
 					for (size_t gid = 0; gid < symbolic_num_graphs - 1; ++gid)
 						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
 
-					#pragma omp barrier
-
 					work_sharing_begin[thread_id] = (thread_id * symbolic_num_graphs) / num_threads;
 					if (work_sharing_begin[thread_id] != 0)
 						while (!is_last_index[next_gid[work_sharing_begin[thread_id] - 1]])

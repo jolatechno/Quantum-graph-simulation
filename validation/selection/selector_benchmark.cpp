@@ -19,6 +19,10 @@
 	#define END_SIZE 20000000
 #endif
 
+#ifndef PROPORTION
+	#define PROPORTION 0.3
+#endif
+
 const size_t num_threads = []() {
 	int num_threads;
 	#pragma omp parallel
@@ -33,7 +37,7 @@ void random_list_generator(long unsigned int *arr, size_t size) {
 	fread(arr, 1, 8*size, fp);
 	fclose(fp);
 
-	for (int i = 0; i < 0.2*size; ++i) {
+	for (int i = 0; i < PROPORTION*size/2; ++i) {
 		size_t idx = arr[i] % size;
 		arr[idx] = arr[i];
 	}
@@ -102,6 +106,105 @@ void radix_sort_elimination(long unsigned int *next_hash, long unsigned int *nex
 				[&](size_t const &gid) { return is_last_index[gid]; });
 		}
 	}
+}
+
+void radix_quick_sort_elimination(long unsigned int *next_hash, long unsigned int *next_gid, long unsigned int *next_gid_buffer, bool *is_last_index, double *values, size_t size) {
+	std::vector<size_t> work_sharing_begin = std::vector<size_t>(num_threads + 1);
+	
+	#pragma omp parallel
+	{
+		size_t thread_id = omp_get_thread_num();
+
+		#pragma omp single
+		{
+			/* share work according to hash */
+			size_t count[256] = {0};
+			parallel_radix_count_indexed_0(next_gid, next_gid + size, /* 1 size_t write and 1 (index) + 2 size_t and 1 char reads per symbolic graph */
+				next_hash,	/* + 1 size_t read and 1 size_t write per symbolic graphs */
+				count);
+
+			/* share work according to count */
+			indexed_load_balancing_from_prefix_sum(count, count + 256, work_sharing_begin.begin(), work_sharing_begin.end());
+
+			/* finish radix sort */
+			radix_secon_loop_indexed_offset(next_gid, next_gid_buffer,
+				size,
+				(unsigned char*)next_hash,
+				count,
+				7);
+		}
+					
+		if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
+			/* sort all graphs */
+			std::sort(next_gid_buffer + work_sharing_begin[thread_id], next_gid_buffer + work_sharing_begin[thread_id + 1],
+				[&](long unsigned int gid1, long unsigned int gid2){
+					return next_hash[gid1] < next_hash[gid2];
+				});
+							
+			/* set is_last_index of the last graph */
+			is_last_index[next_gid_buffer[work_sharing_begin[thread_id + 1] - 1]] = true;
+
+			/* compute is_last_index */
+			for (size_t gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
+				is_last_index[next_gid_buffer[gid]] = next_hash[next_gid_buffer[gid]] != next_hash[next_gid_buffer[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
+
+			/* partial sum over the interval since we know it starts and end at unique graphs */
+			double sign;
+			size_t last_id = next_gid_buffer[work_sharing_begin[thread_id]];
+			for (size_t gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+				size_t id = next_gid_buffer[gid]; /* 1 size_t read per symbolic graphs */
+				sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
+
+				/* add probabilites of graph with equal hashes */
+				values[id] += sign*values[last_id];
+				last_id = id;
+			}
+		}
+
+		#pragma omp barrier
+
+		#pragma omp single
+		{
+			auto partitioned_it = next_gid_buffer + size;
+			/* get all unique graphs with a non zero probability */
+			partitioned_it = __gnu_parallel::partition(next_gid_buffer, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+				[&](size_t const &gid) { return is_last_index[gid]; });
+		}
+	}
+}
+
+void single_threaded_radix_sort_elimination(long unsigned int *next_hash, long unsigned int *next_gid, long unsigned int *next_gid_buffer, bool *is_last_index, double *values, size_t size) {
+	size_t count[256] = {0};
+		parallel_radix_count_indexed_0(next_gid, next_gid + size, /* 1 size_t write and 1 (index) + 2 size_t and 1 char reads per symbolic graph */
+		next_hash,	/* + 1 size_t read and 1 size_t write per symbolic graphs */
+		count);
+
+	radix_indexed_sort_1_7(next_gid_buffer, /* 7 size_t write and 1 (index) + 7*2 size_t and 7 char reads per symbolic graph */
+		next_gid_buffer + size, /* + 7 size_t read and 7 size_t write per symbolic graphs */
+		next_gid,
+		next_hash);
+
+	is_last_index[next_gid[size - 1]] = true;
+
+	/* compute is_last_index */
+	for (size_t gid = 0; gid < size - 1; ++gid)
+		is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
+
+	double sign;
+	size_t last_id = next_gid[0];
+	for (size_t gid = 1; gid < size; ++gid) {
+		size_t id = next_gid[gid]; /* 1 size_t read per symbolic graphs */
+		sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
+
+		/* add probabilites of graph with equal hashes */
+		values[id] += sign*values[last_id];
+		last_id = id;
+	}
+
+	auto partitioned_it = next_gid + size;
+	/* get all unique graphs with a non zero probability */
+	partitioned_it = std::partition(next_gid, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+		[&](size_t const &gid) { return is_last_index[gid]; });
 }
 
 void quick_sort_elimination(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
@@ -236,8 +339,8 @@ int main() {
 		bool *is_first = (bool*)malloc(size);
 		double *values = (double*)malloc(size*sizeof(double));
 
-		std::iota(idxs, idxs + size, 0);
 
+		std::iota(idxs, idxs + size, 0);
 
 		auto start = std::chrono::high_resolution_clock::now();
 		radix_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
@@ -245,6 +348,26 @@ int main() {
 		auto duration = duration_cast<std::chrono::microseconds>(stop - start);
 
 		std::cout << "\t\t\"radix\" : " << (float)(duration.count()) * 1e-6 << ",\n";
+
+
+		std::iota(idxs, idxs + size, 0);
+
+		start = std::chrono::high_resolution_clock::now();
+		single_threaded_radix_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = duration_cast<std::chrono::microseconds>(stop - start);
+
+		std::cout << "\t\t\"single_threaded_radix\" : " << (float)(duration.count()) * 1e-6 << ",\n";
+
+
+		std::iota(idxs, idxs + size, 0);
+
+		start = std::chrono::high_resolution_clock::now();
+		radix_quick_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = duration_cast<std::chrono::microseconds>(stop - start);
+
+		std::cout << "\t\t\"hybrid_radix_quick\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
 
 		std::iota(idxs, idxs + size, 0);
