@@ -7,6 +7,18 @@
 #include <mutex>
 #include <unordered_map>
 
+#ifndef N
+	#define N 5
+#endif
+
+#ifndef FIRST_SIZE
+	#define FIRST_SIZE 2000
+#endif
+
+#ifndef END_SIZE
+	#define END_SIZE 20000000
+#endif
+
 const size_t num_threads = []() {
 	int num_threads;
 	#pragma omp parallel
@@ -147,6 +159,35 @@ void quick_sort_elimination(long unsigned int *next_hash, long unsigned int *nex
 	}
 }
 
+void single_threaded_quick_sort_elimination(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
+	std::sort(next_gid, next_gid + size,
+		[&](long unsigned int gid1, long unsigned int gid2){
+			return next_hash[gid1] < next_hash[gid2];
+		});
+
+	is_last_index[next_gid[size - 1]] = true;
+
+	/* compute is_last_index */
+	for (size_t gid = 0; gid < size - 1; ++gid)
+		is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
+
+	double sign;
+	size_t last_id = next_gid[0];
+	for (size_t gid = 1; gid < size; ++gid) {
+		size_t id = next_gid[gid]; /* 1 size_t read per symbolic graphs */
+		sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
+
+		/* add probabilites of graph with equal hashes */
+		values[id] += sign*values[last_id];
+		last_id = id;
+	}
+
+	auto partitioned_it = next_gid + size;
+	/* get all unique graphs with a non zero probability */
+	partitioned_it = std::partition(next_gid, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+		[&](size_t const &gid) { return is_last_index[gid]; });
+}
+
 void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
 	/*std::vector<std::mutex> mutex_lock = std::vector<std::mutex>(num_threads);
 	std::vector<std::unordered_multimap<size_t, size_t>> maps = std::vector<std::unordered_multimap<size_t, size_t>>(num_threads); */
@@ -174,9 +215,9 @@ int main() {
 	/* allow nested parallism for __gnu_parallel inside omp single */
 	omp_set_nested(3);
 
-	unsigned int n = 5;
-	size_t first_size = 2000;
-	size_t end_size = 20000000;
+	unsigned int n = N;
+	size_t first_size = FIRST_SIZE;
+	size_t end_size = END_SIZE;
 
 	float r = (float)end_size / (float)first_size;
 	r = std::pow(r, 1/(float)(n - 1)); 
@@ -214,6 +255,16 @@ int main() {
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
 		std::cout << "\t\t\"quick_sort\" : " << (float)(duration.count()) * 1e-6 << ",\n";
+
+
+		std::iota(idxs, idxs + size, 0);
+
+		start = std::chrono::high_resolution_clock::now();
+		single_threaded_quick_sort_elimination(arr, idxs, is_first, values, size);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = duration_cast<std::chrono::microseconds>(stop - start);
+
+		std::cout << "\t\t\"single_threaded_quick_sort\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
 
 		std::iota(idxs, idxs + size, 0);
