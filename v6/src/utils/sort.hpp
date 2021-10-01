@@ -9,13 +9,30 @@ void inline parallel_radix_count_indexed_0(size_t *begin, size_t *end,
 	// cast value to char
 	unsigned char *char_valueBegin = (unsigned char*)valueBegin;
 
-	// counting occurences of each key
-	#pragma omp parallel for schedule(static)
-	for (size_t *it = begin; it != end; ++it) {
-		unsigned char key = char_valueBegin[8*(*it) + 7];
+	#pragma omp parallel
+	{
+		// omp varible
+		int thread_id = omp_get_thread_num();
+		int num_thread = omp_get_num_threads();
 
-		#pragma omp atomic
-		++count[key];
+		// work sharing
+		size_t * local_begin = begin + (end - begin) * thread_id / num_thread;
+		size_t * local_end = begin + (end - begin) * (thread_id + 1) / num_thread;
+
+		// local count
+		size_t local_count[256] = {0};
+
+		// counting occurences of each key
+		for (size_t *it = local_begin; it != local_end; ++it) {
+			unsigned char key = char_valueBegin[8*(*it) + 7];
+
+			++local_count[key];
+		}
+
+		// accumulating the local counts
+		for (int i = 0; i < 256; ++i)
+			#pragma omp atomic
+			count[i] += local_count[i];
 	}
 
 	// accumulating occurences to get indexes
