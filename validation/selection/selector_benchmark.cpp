@@ -322,10 +322,10 @@ void single_threaded_hashmap_elimination(long unsigned int *next_hash, long unsi
 }
 
 #ifdef USETBB
-void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
+void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
 	tbb::concurrent_hash_map<size_t, size_t> map;
 
-	#pragma omp for
+	#pragma omp parallel for
 	for (unsigned int i = 0; i < size; ++i) {
 		size_t gid = next_gid[i];
 		size_t hash = next_hash[gid];
@@ -333,15 +333,18 @@ void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_g
 		tbb::concurrent_hash_map<size_t, size_t>::const_accessor it;
 		if (map.find(it, hash)) {
 			values[it->second] += values[gid];
+			is_last_index[gid] = false;
 		} else {
 			map.insert({hash, gid});
+			is_last_index[gid] = true;
 		}
 		it.release();
 	}
 
-	int i = 0;
-	for (auto it = map.begin(); it != map.end(); ++it, ++i)
-		next_gid[i] = it->second;
+	auto partitioned_it = next_gid + size;
+	/* get all unique graphs with a non zero probability */
+	partitioned_it = __gnu_parallel::partition(next_gid, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+		[&](size_t const &gid) { return is_last_index[gid]; });
 }
 #endif
 
@@ -367,7 +370,7 @@ int main() {
 
 		long unsigned int *idxs = (long unsigned int*)malloc(size*8);
 		long unsigned int *idxs_buffer = (long unsigned int*)malloc(size*8);
-		bool *is_first = (bool*)malloc(size);
+		bool *is_last = (bool*)malloc(size);
 		double *values = (double*)malloc(size*sizeof(double));
 
 /* ------------------------------------------ */
@@ -375,7 +378,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		auto start = std::chrono::high_resolution_clock::now();
-		radix_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
+		radix_sort_elimination(arr, idxs, idxs_buffer, is_last, values, size);
 		auto stop = std::chrono::high_resolution_clock::now();
 		auto duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -386,7 +389,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		single_threaded_radix_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
+		single_threaded_radix_sort_elimination(arr, idxs, idxs_buffer, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -397,7 +400,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		radix_quick_sort_elimination(arr, idxs, idxs_buffer, is_first, values, size);
+		radix_quick_sort_elimination(arr, idxs, idxs_buffer, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -408,7 +411,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		quick_sort_elimination(arr, idxs, is_first, values, size);
+		quick_sort_elimination(arr, idxs, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -419,7 +422,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		single_threaded_quick_sort_elimination(arr, idxs, is_first, values, size);
+		single_threaded_quick_sort_elimination(arr, idxs, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -442,7 +445,7 @@ int main() {
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		hashmap_elimination(arr, idxs, values, size);
+		hashmap_elimination(arr, idxs, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
@@ -455,7 +458,7 @@ int main() {
 
 		free(idxs);
 		free(idxs_buffer);
-		free(is_first);
+		free(is_last);
 		free(values);
 	}
 	std::cout << "}\n";
