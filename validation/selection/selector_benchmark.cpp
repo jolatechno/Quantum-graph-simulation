@@ -7,6 +7,10 @@
 #include <mutex>
 #include <unordered_map>
 
+#ifdef USETBB
+	#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
+#endif
+
 #ifndef N
 	#define N 5
 #endif
@@ -298,10 +302,7 @@ void single_threaded_quick_sort_elimination(long unsigned int *next_hash, long u
 		[&](size_t const &gid) { return is_last_index[gid]; });
 }
 
-void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
-	/*std::vector<std::mutex> mutex_lock = std::vector<std::mutex>(num_threads);
-	std::vector<std::unordered_multimap<size_t, size_t>> maps = std::vector<std::unordered_multimap<size_t, size_t>>(num_threads); */
-
+void single_threaded_hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
 	std::unordered_map<size_t, size_t> map;
 	for (unsigned int i = 0; i < size; ++i) {
 		size_t gid = next_gid[i];
@@ -315,11 +316,34 @@ void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_g
 		}
 	}
 
+	int i = 0;
+	for (auto it = map.begin(); it != map.end(); ++it, ++i)
+		next_gid[i] = it->second;
+}
+
+#ifdef USETBB
+void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
+	tbb::concurrent_hash_map<size_t, size_t> map;
+
+	#pragma omp for
+	for (unsigned int i = 0; i < size; ++i) {
+		size_t gid = next_gid[i];
+		size_t hash = next_hash[gid];
+
+		tbb::concurrent_hash_map<size_t, size_t>::const_accessor it;
+		if (map.find(it, hash)) {
+			values[it->second] += values[gid];
+		} else {
+			map.insert({hash, gid});
+		}
+		it.release();
+	}
 
 	int i = 0;
 	for (auto it = map.begin(); it != map.end(); ++it, ++i)
-		next_gid[i] = it->first;
+		next_gid[i] = it->second;
 }
+#endif
 
 int main() {
 	/* allow nested parallism for __gnu_parallel inside omp single */
@@ -346,6 +370,7 @@ int main() {
 		bool *is_first = (bool*)malloc(size);
 		double *values = (double*)malloc(size*sizeof(double));
 
+/* ------------------------------------------ */
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -356,6 +381,7 @@ int main() {
 
 		std::cout << "\t\t\"radix\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
+/* ------------------------------------------ */
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -366,6 +392,7 @@ int main() {
 
 		std::cout << "\t\t\"single_threaded_radix\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
+/* ------------------------------------------ */
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -376,6 +403,7 @@ int main() {
 
 		std::cout << "\t\t\"hybrid_radix_quick\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
+/* ------------------------------------------ */
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -386,6 +414,7 @@ int main() {
 
 		std::cout << "\t\t\"quick_sort\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
+/* ------------------------------------------ */
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -396,6 +425,19 @@ int main() {
 
 		std::cout << "\t\t\"single_threaded_quick_sort\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
+/* ------------------------------------------ */
+
+		std::iota(idxs, idxs + size, 0);
+
+		start = std::chrono::high_resolution_clock::now();
+		single_threaded_hashmap_elimination(arr, idxs, values, size);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = duration_cast<std::chrono::microseconds>(stop - start);
+
+		std::cout << "\t\t\"single_threaded_hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
+
+/* ------------------------------------------ */
+#ifdef USETBB
 
 		std::iota(idxs, idxs + size, 0);
 
@@ -404,7 +446,11 @@ int main() {
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
-		std::cout << "\t\t\"hash_map\" : " << (float)(duration.count()) * 1e-6 << "\n";
+		std::cout << "\t\t\"hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
+
+#endif
+/* ------------------------------------------ */
+
 		std::cout << "\t}" << (i == n - 1 ? "" : ",") << "\n";
 
 		free(idxs);
