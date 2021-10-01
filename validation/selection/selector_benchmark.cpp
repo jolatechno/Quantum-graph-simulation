@@ -32,12 +32,19 @@ const size_t num_threads = []() {
 	return num_threads;
 }();
 
-void random_list_generator(long unsigned int *arr, size_t size) {
-	FILE *fp = fopen("/dev/urandom", "r");
-	fread(arr, 1, 8*size, fp);
-	fclose(fp);
+int g_seed = 0;
+inline int fastrand() { 
+  g_seed = (214013*g_seed+2531011); 
+  return (g_seed>>16)&0x7FFF; 
+} 
 
-	for (int i = 0; i < PROPORTION*size/2; ++i) {
+void random_list_generator(long unsigned int *arr, size_t size) {
+	char *char_arr = (char*)arr;
+
+	for (size_t i = 0; i < 8*size; ++i)
+		char_arr[i] = fastrand();
+
+	for (size_t i = 0; i < PROPORTION*size/2; ++i) {
 		size_t idx = arr[i] % size;
 		arr[idx] = arr[i];
 	}
