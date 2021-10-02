@@ -462,7 +462,9 @@ public:
 
 	/* vector for work sharing */
 	std::vector<size_t> work_sharing_begin = std::vector<size_t>(num_threads + 1);
+#ifndef USE_QUICK_SORT
 	numa_vector<size_t> next_gid_buffer;
+#endif
 
 	/* constructor for a single graph of a given size */
 	state(size_t size) : state(size, 1) {}
@@ -506,7 +508,9 @@ public:
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
 		next_gid.iota_resize(size);
+#ifndef USE_QUICK_SORT
 		next_gid_buffer.resize(size);
+#endif
 
 		parent_gid.resize(size);
 		child_id.resize(size);
@@ -864,7 +868,7 @@ private:
 			if (!rule.probabilist) {
 				if (!fast) {
 
-#ifdef USE_QUICKSORT
+#ifdef USE_QUICK_SORT
 					#pragma omp single
 					{
 						/* sort according to hashes */
