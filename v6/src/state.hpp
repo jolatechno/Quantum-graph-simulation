@@ -863,6 +863,49 @@ private:
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
 				if (!fast) {
+
+#ifdef USE_QUICKSORT
+					#pragma omp single
+					{
+						/* sort according to hashes */
+						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
+								[&](long unsigned int gid1, long unsigned int gid2){
+									return next_hash[gid1] < next_hash[gid2];
+								});
+
+						/* set is_last_index of the last graph */
+						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
+						work_sharing_begin[num_threads] = symbolic_num_graphs;
+					}
+
+					/* compute is_last_index */
+					#pragma omp for
+					for (size_t gid = 0; gid < symbolic_num_graphs - 1; ++gid)
+						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
+
+					work_sharing_begin[thread_id] = (thread_id * symbolic_num_graphs) / num_threads;
+					if (work_sharing_begin[thread_id] != 0)
+						while (!is_last_index[next_gid[work_sharing_begin[thread_id] - 1]])
+							++work_sharing_begin[thread_id];
+
+					#pragma omp barrier
+
+					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
+						/* partial sum over the interval since we know it starts and end at unique graphs */
+						PROBA_TYPE sign;
+						size_t last_id = next_gid[work_sharing_begin[thread_id]];
+						for (size_t gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
+							size_t id = next_gid[gid]; /* 1 size_t read per symbolic graphs */
+							sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
+
+							/* add probabilites of graph with equal hashes */
+							next_real[id] += sign*next_real[last_id]; /* 2 PROBA_TYPE reads and 2 PROBA_TYPE writes per symbolic graph */
+							next_imag[id] += sign*next_imag[last_id];
+
+							last_id = id;
+						}
+					}
+#else
 					#pragma omp single
 					{
 						/* share work according to hash */
@@ -910,6 +953,7 @@ private:
 							last_id = id;
 						}
 					}	
+#endif
 				}
 
 				#pragma omp barrier
