@@ -304,6 +304,7 @@ void single_threaded_quick_sort_elimination(long unsigned int *next_hash, long u
 
 void single_threaded_hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, double *values, size_t size) {
 	std::unordered_map<size_t, size_t> map;
+
 	for (unsigned int i = 0; i < size; ++i) {
 		size_t gid = next_gid[i];
 		size_t hash = next_hash[gid];
@@ -330,12 +331,12 @@ void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_g
 		size_t gid = next_gid[i];
 		size_t hash = next_hash[gid];
 
-		tbb::concurrent_hash_map<size_t, size_t>::const_accessor it;
-		if (map.find(it, hash)) {
+		tbb::concurrent_hash_map<size_t, size_t>::accessor it;
+		if (map.insert(it, hash)) {
 			values[it->second] += values[gid];
 			is_last_index[gid] = false;
 		} else {
-			map.insert({hash, gid});
+			it->second = gid;
 			is_last_index[gid] = true;
 		}
 		it.release();

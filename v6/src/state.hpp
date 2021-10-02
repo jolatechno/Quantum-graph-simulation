@@ -28,6 +28,10 @@
 	#define PRINT_DEBUG_LEVEL_3 2
 #endif
 
+#ifdef USE_HASHMAP
+	#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
+#endif
+
 #ifdef USE_MPRF
 	// default tolerance
 	#ifndef TOLERANCE
@@ -287,7 +291,7 @@ public:
 			left_.resize(size);
 			right_.resize(size);
 			node_id_c.resize(size);
-			operations.resize(size);
+			operations.zero_resize(size);
 		}
 
 		// resize size (c)
@@ -462,8 +466,12 @@ public:
 
 	/* vector for work sharing */
 	std::vector<size_t> work_sharing_begin = std::vector<size_t>(num_threads + 1);
+#ifdef USE_HASHMAP
+	tbb::concurrent_hash_map<size_t, size_t> elimination_map;
+#else
 #ifndef USE_QUICK_SORT
 	numa_vector<size_t> next_gid_buffer;
+#endif
 #endif
 
 	/* constructor for a single graph of a given size */
@@ -508,19 +516,19 @@ public:
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
 		next_gid.iota_resize(size);
-#ifndef USE_QUICK_SORT
-		next_gid_buffer.resize(size);
+#if !defined(USE_HASHMAP) && !defined(USE_QUICK_SORT)
+		next_gid_buffer.zero_resize(size);
 #endif
 
-		parent_gid.resize(size);
-		child_id.resize(size);
-		is_last_index.resize(size);
-		next_hash.resize(size);
-		next_real.resize(size);
-		next_imag.resize(size);
-		symbolic_num_nodes.resize(size);
-		symbolic_num_sub_nodes.resize(size);
-		random_selector.resize(size);
+		parent_gid.zero_resize(size);
+		child_id.zero_resize(size);
+		is_last_index.zero_resize(size);
+		next_hash.zero_resize(size);
+		next_real.zero_resize(size);
+		next_imag.zero_resize(size);
+		symbolic_num_nodes.zero_resize(size);
+		symbolic_num_sub_nodes.zero_resize(size);
+		random_selector.zero_resize(size);
 	}
 
 /* 
@@ -699,7 +707,14 @@ Non-virtual member functions are:
 		static const long long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 3*sizeof(size_t);
 		static const long long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 		static const long long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		static const long long int symbolic_mem_usage = sizeof(char) + 3*sizeof(size_t) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
+		static const long long int symbolic_mem_usage = sizeof(char) + 3*sizeof(size_t) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double)
+#ifdef USE_QUICK_SORT
+		- sizeof(size_t)
+#endif
+#ifdef USE_HASHMAP
+		+ sizeof(size_t)
+#endif
+;
 
 		long long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes
@@ -739,6 +754,9 @@ private:
 		omp_set_nested(3);
 
 		total_proba = 0;
+#ifdef USE_HASHMAP
+		elimination_map.clear();
+#endif
 
 		MID_STEP_FUNCTION_WITH_DEBUG(0)
 
@@ -867,7 +885,33 @@ private:
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
 				if (!fast) {
+#ifdef USE_HASHMAP
+					#pragma omp barrier
 
+					#pragma omp for schedule(static)
+					for (unsigned int gid = 0; gid < symbolic_num_graphs; ++gid) { //size_t gid = next_gid[i];
+						size_t hash = next_hash[gid];
+
+						/* accessing key */
+						tbb::concurrent_hash_map<size_t, size_t>::accessor it;
+						if (elimination_map.insert(it, hash)) {
+							/* if it doesn't exist add it */
+							it->second = gid;
+
+							/* keep this graph */
+							is_last_index[gid] = true;
+						} else {
+							/* if it exist add the probabilities */
+							next_real[it->second] += next_real[gid];
+							next_imag[it->second] += next_imag[gid];
+
+							/* discard this graph */
+							is_last_index[gid] = false;
+						}
+						it.release();
+					}
+				}
+#else
 #ifdef USE_QUICK_SORT
 					#pragma omp single
 					{
@@ -895,20 +939,6 @@ private:
 					#pragma omp barrier
 
 					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-						/* partial sum over the interval since we know it starts and end at unique graphs */
-						PROBA_TYPE sign;
-						size_t last_id = next_gid[work_sharing_begin[thread_id]];
-						for (size_t gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-							size_t id = next_gid[gid]; /* 1 size_t read per symbolic graphs */
-							sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
-
-							/* add probabilites of graph with equal hashes */
-							next_real[id] += sign*next_real[last_id]; /* 2 PROBA_TYPE reads and 2 PROBA_TYPE writes per symbolic graph */
-							next_imag[id] += sign*next_imag[last_id];
-
-							last_id = id;
-						}
-					}
 #else
 					#pragma omp single
 					{
@@ -942,7 +972,7 @@ private:
 						/* compute is_last_index */
 						for (size_t gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
 							is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
-
+#endif
 						/* partial sum over the interval since we know it starts and end at unique graphs */
 						PROBA_TYPE sign;
 						size_t last_id = next_gid[work_sharing_begin[thread_id]];
@@ -957,11 +987,10 @@ private:
 							last_id = id;
 						}
 					}	
-#endif
 				}
 
 				#pragma omp barrier
-
+#endif
 				#pragma omp single
 				{
 					auto partitioned_it = next_gid.begin() + symbolic_num_graphs;
@@ -1003,7 +1032,8 @@ private:
 							PROBA_TYPE r = next_real[*gid_it]; /* 2 PROBA_TYPE reads per symbolic_num_graphs_after_interferences */
 							PROBA_TYPE i = next_imag[*gid_it];
 
-							random_selector[*gid_it] = precision::log( -precision::log(1 - random_generator()) / (r*r + i*i)); /* 1 float write per symbolic_num_graphs_after_interferences */
+							double random_number = unfiorm_from_hash(next_hash[*gid_it]); //random_generator();
+							random_selector[*gid_it] = precision::log( -precision::log(1 - unfiorm_from_hash(next_hash[*gid_it])) / (r*r + i*i)); /* 1 float write per symbolic_num_graphs_after_interferences */
 						}
 
 						/* select graphs according to random selectors */

@@ -121,6 +121,34 @@ public:
 			for (size_t i = 0; i < size_; ++i)
 				ptr[i] = i;
     }
+
+    void zero_resize(size_t n) {
+    	static value_type zero;
+
+    	n = std::max(min_vector_size, n); // never resize under min_vector_size
+
+    	if (size_ < n || // resize if we absolutely have to because the state won't fit
+    		n*upsize_policy < size_*downsize_policy) { // resize if the size we resize to is small enough (to free memory)
+
+    		n *= upsize_policy; // resize with a margin so we don't resize too often
+
+    		value_type* new_ptr = (value_type*)(new char[n*sizeof(value_type)]);
+
+			#pragma omp parallel for schedule(static)
+			for (size_t i = 0; i < n; ++i)
+				new_ptr[i] = zero;
+
+			if (ptr != 0)
+				free(ptr);
+
+			ptr = new_ptr;
+			size_ = n;
+    	} else
+    		// iota anyway
+    		#pragma omp parallel for schedule(static)
+			for (size_t i = 0; i < size_; ++i)
+				ptr[i] = i;
+    }
  
     // Begin iterator
     inline value_type* begin() const {
