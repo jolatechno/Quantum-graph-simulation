@@ -7,12 +7,12 @@
 #include <mutex>
 #include <unordered_map>
 
-#ifdef USETBB
+#ifdef USE_TBB
 	#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
 #endif
 
-#ifndef N
-	#define N 5
+#ifndef N_STEP
+	#define N_STEP 5
 #endif
 
 #ifndef FIRST_SIZE
@@ -322,7 +322,7 @@ void single_threaded_hashmap_elimination(long unsigned int *next_hash, long unsi
 		next_gid[i] = it->second;
 }
 
-#ifdef USETBB
+#ifdef USE_TBB
 void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
 	tbb::concurrent_hash_map<size_t, size_t> map;
 
@@ -353,7 +353,7 @@ int main() {
 	/* allow nested parallism for __gnu_parallel inside omp single */
 	omp_set_nested(3);
 
-	unsigned int n = N;
+	unsigned int n = N_STEP;
 	size_t first_size = FIRST_SIZE;
 	size_t end_size = END_SIZE;
 
@@ -441,7 +441,7 @@ int main() {
 		std::cout << "\t\t\"single_threaded_hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
 
 /* ------------------------------------------ */
-#ifdef USETBB
+#ifdef USE_TBB
 
 		std::iota(idxs, idxs + size, 0);
 
