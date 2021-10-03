@@ -46,3 +46,6 @@
 __pycache__/
 
 !.*
+
+# oneTBB installation directory
+oneTBB/
