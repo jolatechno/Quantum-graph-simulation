@@ -84,7 +84,7 @@ for filename in filenames:
 	for step in range(proportions.shape[1]):
 		ax.bar(bar_starting_position + bar_width*step, scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
-	bars = ax.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
+	ax.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
 
 	ax.plot(x_points[0], y_points[0], "k--")
 	for i in range(1, len(x_points)):
@@ -122,9 +122,11 @@ for filename in filenames:
 	ax.set_xticks(tick_position)
 	ax.set_xticklabels(n_threads)
 
-	for step in range(scaling.shape[1]):
+	for step in range(proportions.shape[1]):
 		ax.bar(bar_starting_position + bar_width*step, inverse_scaling[:, step], width=bar_width, label=f'step { step + 1 }')
 
+	ax.bar(bar_starting_position + bar_width*proportions.shape[1], inverse_scaling[:, -1], width=bar_width, label='total')
+	
 	ax.plot([total_begin, total_end], [1, 1], "k--")
 	ax.set_yscale('log')
 

@@ -754,9 +754,6 @@ private:
 		omp_set_nested(3);
 
 		total_proba = 0;
-#ifdef USE_HASHMAP
-		elimination_map.clear();
-#endif
 
 		MID_STEP_FUNCTION_WITH_DEBUG(0)
 
@@ -911,6 +908,9 @@ private:
 						it.release();
 					}
 				}
+
+				#pragma omp single
+				elimination_map.clear();
 #else
 #ifdef USE_QUICK_SORT
 					#pragma omp single

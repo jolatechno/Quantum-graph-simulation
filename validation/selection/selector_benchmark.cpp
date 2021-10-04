@@ -347,6 +347,33 @@ void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_g
 	partitioned_it = __gnu_parallel::partition(next_gid, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
 		[&](size_t const &gid) { return is_last_index[gid]; });
 }
+
+void hashmap_elimination_clear(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
+	tbb::concurrent_hash_map<size_t, size_t> map;
+
+	#pragma omp parallel for
+	for (unsigned int i = 0; i < size; ++i) {
+		size_t gid = next_gid[i];
+		size_t hash = next_hash[gid];
+
+		tbb::concurrent_hash_map<size_t, size_t>::accessor it;
+		if (map.insert(it, hash)) {
+			values[it->second] += values[gid];
+			is_last_index[gid] = false;
+		} else {
+			it->second = gid;
+			is_last_index[gid] = true;
+		}
+		it.release();
+	}
+
+	map.clear();
+
+	auto partitioned_it = next_gid + size;
+	/* get all unique graphs with a non zero probability */
+	partitioned_it = __gnu_parallel::partition(next_gid, partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+		[&](size_t const &gid) { return is_last_index[gid]; });
+}
 #endif
 
 int main() {
@@ -451,6 +478,17 @@ int main() {
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
 		std::cout << "\t\t\"hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
+
+/* ------------------------------------------ */
+
+		std::iota(idxs, idxs + size, 0);
+
+		start = std::chrono::high_resolution_clock::now();
+		hashmap_elimination_clear(arr, idxs, is_last, values, size);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = duration_cast<std::chrono::microseconds>(stop - start);
+
+		std::cout << "\t\t\"hashmap_elimination_clear\" : " << (float)(duration.count()) * 1e-6 << "\n";
 
 #endif
 /* ------------------------------------------ */
