@@ -8,6 +8,7 @@ print_usage() {
 	-s: initial state size (default = 12)
 	-m: safety margin (default = 0.2)
 	-a: additional arguments
+	-o: use OMP_NUM_THREADS rather than numactl
 
 	-t: list of number of threads to test (ex: 1,2,5, default:number_of_available_thread)
 "
@@ -21,10 +22,11 @@ safety_margin=0.2
 rule="split_merge"
 n_threads=$(nproc --all)
 args=""
+use_omp=false
 
 errfile="err.txt"
 
-while getopts 'n:r:s:m:a:ht:' flag; do
+while getopts 'n:r:s:m:a:oht:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -33,6 +35,7 @@ while getopts 'n:r:s:m:a:ht:' flag; do
     s) size="${OPTARG}" ;;
 		m) safety_margin="${OPTARG}" ;;
 		a) args="${OPTARG}" ;;
+		o) use_omp=true;;
 		t) n_threads="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
@@ -58,10 +61,12 @@ do
 	echo "${n_thread}:" >> ${errfile}
 	echo "		\"${n_thread}\" : {"
 	
-	cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
-	echo "$(OMP_PROC_BIND=true  numactl --physcpubind="${cpu_cores}" ${command} | indent | indent)${separator}"
-
-	#echo "$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
+	if ${use_omp}; then
+		echo "$(OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
+	else
+		cpu_cores="$(seq -s ',' 0 $(($n_thread - 1)))"
+		echo "$(OMP_PROC_BIND=true  numactl --physcpubind="${cpu_cores}" ${command} | indent | indent)${separator}"
+	fi
 	
 	echo "" >> ${errfile}
 done
