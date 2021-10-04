@@ -910,7 +910,8 @@ private:
 				}
 
 				#pragma omp single
-				elimination_map.clear();
+				{
+					elimination_map.clear();
 #else
 #ifdef USE_QUICK_SORT
 					#pragma omp single
@@ -990,9 +991,10 @@ private:
 				}
 
 				#pragma omp barrier
-#endif
+
 				#pragma omp single
 				{
+#endif
 					auto partitioned_it = next_gid.begin() + symbolic_num_graphs;
 					if (!fast)
 						/* get all unique graphs with a non zero probability */

@@ -465,7 +465,7 @@ int main() {
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
-		std::cout << "\t\t\"single_threaded_hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
+		std::cout << "\t\t\"single_threaded_hashmap_elimination\" : " << (float)(duration.count()) * 1e-6;
 
 /* ------------------------------------------ */
 #ifdef USE_TBB
@@ -477,7 +477,7 @@ int main() {
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
-		std::cout << "\t\t\"hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << "\n";
+		std::cout << ",\n\t\t\"hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
 /* ------------------------------------------ */
 
@@ -488,12 +488,11 @@ int main() {
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 
-		std::cout << "\t\t\"hashmap_elimination_clear\" : " << (float)(duration.count()) * 1e-6 << "\n";
-
+		std::cout << "\t\t\"hashmap_elimination_clear\" : " << (float)(duration.count()) * 1e-6;
 #endif
 /* ------------------------------------------ */
 
-		std::cout << "\t}" << (i == n - 1 ? "" : ",") << "\n";
+		std::cout << "\n\t}" << (i == n - 1 ? "" : ",") << "\n";
 
 		free(idxs);
 		free(idxs_buffer);
