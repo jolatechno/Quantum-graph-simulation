@@ -758,10 +758,12 @@ Non-virtual member functions are:
 	}
 
 	/* step function */
+	void inline step(rule_t const &rule) { step(rule, 0, true, false); }
 	void inline step(rule_t const &rule, long int max_num_graphs) { step(rule, max_num_graphs, false, false); }
 	void inline fast_step(rule_t const &rule) { step(rule, 0, true, true); }
-	void step(rule_t const &rule, long long int max_num_graphs = -1, bool overwrite_max_num_graphs = true, bool fast = false) {
-		/* check for calssical cases */
+
+private:
+	void step(rule_t const &rule, long long int max_num_graphs, bool overwrite_max_num_graphs, bool fast) {
 		if (rule.identity)
 			return;
 
@@ -927,7 +929,8 @@ Non-virtual member functions are:
 					}
 
 					/* check if we should continue */
-					fast = test_size - elimination_map.size() > test_size*collision_test_proportion;
+					fast = test_size - elimination_map.size() < test_size*collision_test_proportion;
+					//if (fast && thread_id == 0) std::cout << test_size - elimination_map.size() << ", " << test_size*collision_test_proportion << ", skipped !\n";
 				}
 
 				#pragma omp barrier
