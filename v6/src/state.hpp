@@ -810,6 +810,7 @@ private:
 					current_iteration.num_childs.begin() + current_iteration.num_graphs + 1,
 					current_iteration.num_childs.begin() + 1); /* 2 (1 in sequential but 2 in parallel) size_t reads and writes per loop (for current_iteration.num_graphs loops) */
 				symbolic_num_graphs = current_iteration.num_childs[current_iteration.num_graphs];
+				symbolic_num_graphs_after_interferences = symbolic_num_graphs;
 
 				/* resize variables with the right_ number of elements */
 				resize_symbolic_num_graphs(symbolic_num_graphs);
@@ -894,9 +895,33 @@ private:
 						it.release();
 					}
 
-					/* check if we should continue */
-					fast = test_size - elimination_map.size() < test_size*collision_test_proportion;
-					//if (fast && thread_id == 0) std::cout << test_size - elimination_map.size() << ", " << test_size*collision_test_proportion << ", skipped !\n";
+					#pragma omp barrier
+
+					#pragma omp single
+					{
+						fast = test_size - elimination_map.size() < test_size*collision_test_proportion;
+
+						/* check if we should continue */
+						if (fast) {
+							/* get all unique graphs with a non zero probability */
+							auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + test_size, /* 1 size_t read and 1 size_t write per symbolic graph */
+							[&](size_t const &gid) {
+								/* check if graph is unique */
+								if (!is_last_index[gid]) /* 1 char read per symbolic graph */
+									return false;
+
+								/* check for zero probability */
+								PROBA_TYPE r = next_real[gid]; /* 2 PROBA_TYPE reads per symbolic graph */
+								PROBA_TYPE i = next_imag[gid];
+
+								return r*r + i*i > tolerance;
+							});
+
+							partitioned_it = std::rotate(partitioned_it, next_gid.begin() + test_size, next_gid.begin() + symbolic_num_graphs);
+
+							symbolic_num_graphs_after_interferences = std::distance(next_gid.begin(), partitioned_it);
+						}
+					}
 				}
 
 				#pragma omp barrier
@@ -1012,7 +1037,7 @@ private:
 				#pragma omp single
 				{
 #endif
-					auto partitioned_it = next_gid.begin() + symbolic_num_graphs;
+					auto partitioned_it = next_gid.begin() + symbolic_num_graphs_after_interferences;
 					if (!fast)
 						/* get all unique graphs with a non zero probability */
 						partitioned_it = __gnu_parallel::partition(next_gid.begin(), partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
@@ -1088,7 +1113,6 @@ private:
 					MID_STEP_FUNCTION_WITH_DEBUG(5)
 
 					/* same number of graphs for a probabilist simulation */
-					symbolic_num_graphs_after_interferences = symbolic_num_graphs;
 					next_iteration.num_graphs = symbolic_num_graphs;
 					next_iteration.resize_num_graphs(next_iteration.num_graphs);
 				}
