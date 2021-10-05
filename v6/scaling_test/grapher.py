@@ -11,8 +11,14 @@ width = 0.7
 multi_threading = False
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
+if filenames == ["--mt"]:
+	filenames.append("res.json")
 
 for filename in filenames:
+	if filename == "--mt":
+		multi_threading = True
+		continue
+
 	with open(filename) as f:
 		data = json.load(f)
 

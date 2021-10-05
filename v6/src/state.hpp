@@ -30,6 +30,16 @@
 
 #ifdef USE_HASHMAP
 	#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
+	
+	// proportion of the graph tested for collisions
+	#ifndef COLLISION_TEST_PROPORTION
+		#define COLLISION_TEST_PROPORTION 0.1
+	#endif
+	
+	// minimum amount of collision for interaction
+	#ifndef COLLISION_TOLERANCE
+		#define COLLISION_TOLERANCE 0.05
+	#endif
 #endif
 
 #ifdef USE_MPRF
@@ -86,6 +96,8 @@ PROBA_TYPE tolerance = TOLERANCE;
 float safety_margin = SAFETY_MARGIN;
 float iteartion_discrimination_factor = ITEARTION_DISCRIMINATION_FACTOR;
 float memory_discrimination_factor = MEMORY_DISCRIMINATION_FACTOR;
+float collision_test_proportion = COLLISION_TEST_PROPORTION;
+float collision_tolerance = COLLISION_TOLERANCE;
 
 /*
 defining openmp function's return values if openmp isn't installed or loaded
@@ -740,12 +752,9 @@ Non-virtual member functions are:
 	}
 
 	/* step function */
-	void inline step(rule_t const &rule) { step(rule, 0, true, false); }
 	void inline step(rule_t const &rule, long int max_num_graphs) { step(rule, max_num_graphs, false, false); }
 	void inline fast_step(rule_t const &rule) { step(rule, 0, true, true); }
-
-private:
-	void step(rule_t const &rule, long long int max_num_graphs, bool overwrite_max_num_graphs, bool fast) {
+	void step(rule_t const &rule, long long int max_num_graphs = -1, bool overwrite_max_num_graphs = true, bool fast = false) {
 		/* check for calssical cases */
 		if (rule.identity)
 			return;
@@ -881,12 +890,14 @@ private:
 
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
-				if (!fast) {
 #ifdef USE_HASHMAP
-					#pragma omp barrier
+				#pragma omp barrier
 
+				size_t test_size = symbolic_num_graphs >= min_vector_size ? symbolic_num_graphs*collision_test_proportion : 0;
+
+				if (!fast && test_size > 0) {
 					#pragma omp for schedule(static)
-					for (unsigned int gid = 0; gid < symbolic_num_graphs; ++gid) { //size_t gid = next_gid[i];
+					for (unsigned int gid = 0; gid < test_size; ++gid) { //size_t gid = next_gid[i];
 						size_t hash = next_hash[gid];
 
 						/* accessing key */
@@ -907,12 +918,42 @@ private:
 						}
 						it.release();
 					}
+
+					/* check if we should continue */
+					fast = test_size - elimination_map.size() > test_size*collision_test_proportion;
 				}
+
+				#pragma omp barrier
+
+				if (!fast)
+					#pragma omp for schedule(static)
+					for (unsigned int gid = test_size; gid < symbolic_num_graphs; ++gid) { //size_t gid = next_gid[i];
+						size_t hash = next_hash[gid];
+
+						/* accessing key */
+						tbb::concurrent_hash_map<size_t, size_t>::accessor it;
+						if (elimination_map.insert(it, hash)) {
+							/* if it doesn't exist add it */
+							it->second = gid;
+
+							/* keep this graph */
+							is_last_index[gid] = true;
+						} else {
+							/* if it exist add the probabilities */
+							next_real[it->second] += next_real[gid];
+							next_imag[it->second] += next_imag[gid];
+
+							/* discard this graph */
+							is_last_index[gid] = false;
+						}
+						it.release();
+					}
 
 				#pragma omp single
 				{
 					elimination_map.clear();
 #else
+				if (!fast) {
 #ifdef USE_QUICK_SORT
 					#pragma omp single
 					{

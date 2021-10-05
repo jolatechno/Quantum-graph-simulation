@@ -348,8 +348,7 @@ void hashmap_elimination(long unsigned int *next_hash, long unsigned int *next_g
 		[&](size_t const &gid) { return is_last_index[gid]; });
 }
 
-void hashmap_elimination_clear(long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
-	tbb::concurrent_hash_map<size_t, size_t> map;
+void hashmap_elimination_clear(tbb::concurrent_hash_map<size_t, size_t> map, long unsigned int *next_hash, long unsigned int *next_gid, bool *is_last_index, double *values, size_t size) {
 
 	#pragma omp parallel for
 	for (unsigned int i = 0; i < size; ++i) {
@@ -480,11 +479,12 @@ int main() {
 		std::cout << ",\n\t\t\"hashmap_elimination\" : " << (float)(duration.count()) * 1e-6 << ",\n";
 
 /* ------------------------------------------ */
+		tbb::concurrent_hash_map<size_t, size_t> map;
 
 		std::iota(idxs, idxs + size, 0);
 
 		start = std::chrono::high_resolution_clock::now();
-		hashmap_elimination_clear(arr, idxs, is_last, values, size);
+		hashmap_elimination_clear(map, arr, idxs, is_last, values, size);
 		stop = std::chrono::high_resolution_clock::now();
 		duration = duration_cast<std::chrono::microseconds>(stop - start);
 

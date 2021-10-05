@@ -45,13 +45,20 @@ int main(int argc, char* argv[]) {
 	}
 
 	for (int i = n_reversed_iteration - 1; i >= 0; --i) {
+#ifdef USE_HASHMAP
+		if (i == 0) {
+			collision_test_proportion = 0;
+			collision_tolerance = 0;
+		}
+#endif
+		
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
 			std::cerr << "reversed move...\n";
 		
 		reversed_move_all(s);
 
 		if (verbose >= TEST_STEP_DEBUG_LEVEL)
-			std::cerr << "...revresed moved\nstep...\n";
+			std::cerr << "...reversed moved\nstep...\n";
 		
 		if (n_fast == 0 || i % (n_fast + 1)) {
 			s.step(*reversed_rule);
