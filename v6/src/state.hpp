@@ -40,6 +40,11 @@
 	#ifndef COLLISION_TOLERANCE
 		#define COLLISION_TOLERANCE 0.05
 	#endif
+
+	// maximum amount of probability gain for interaction
+	#ifndef COLLISION_PROBABILITY_TOLERANCE
+		#define COLLISION_PROBABILITY_TOLERANCE 0.15
+	#endif
 #endif
 
 #ifdef USE_MPRF
@@ -98,6 +103,7 @@ float iteartion_discrimination_factor = ITEARTION_DISCRIMINATION_FACTOR;
 float memory_discrimination_factor = MEMORY_DISCRIMINATION_FACTOR;
 float collision_test_proportion = COLLISION_TEST_PROPORTION;
 float collision_tolerance = COLLISION_TOLERANCE;
+float collision_probability_tolerance = COLLISION_PROBABILITY_TOLERANCE;
 
 /*
 defining openmp function's return values if openmp isn't installed or loaded
@@ -893,7 +899,8 @@ Non-virtual member functions are:
 #ifdef USE_HASHMAP
 				#pragma omp barrier
 
-				size_t test_size = symbolic_num_graphs >= min_vector_size ? symbolic_num_graphs*collision_test_proportion : 0;
+				bool skip_test = symbolic_num_graphs < min_vector_size || total_proba - 1 > collision_probability_tolerance;
+				size_t test_size = skip_test ? 0 : symbolic_num_graphs*collision_test_proportion;
 
 				if (!fast && test_size > 0) {
 					#pragma omp for schedule(static)
