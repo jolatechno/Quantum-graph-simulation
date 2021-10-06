@@ -23,24 +23,24 @@ for filename in filenames:
 		data = json.load(f)
 
 	n_threads = list(data["results"].keys())[::-1]
-	mem_baseline = data["memory_bandwidth"]
+	#mem_baseline = data["memory_bandwidth"]
 
-	scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
-	inverse_scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
-	proportions = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
-	mem_read_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
-	mem_write_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
+	scaling = np.zeros((len(n_threads), len(data["results"]["1"]["steps"]) + 1))
+	proportions = np.zeros((len(n_threads), len(data["results"]["1"]["steps"])))
+	#inverse_scaling = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"]) + 1))
+	#mem_read_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
+	#mem_write_bandwidth = np.zeros((len(n_threads), len(data["results"]["1"]["wall"]["steps"])))
 
 	for i, n_thread in enumerate(n_threads):
-		scaling[i, -1] = data["results"]["1"]["wall"]["total"] / data["results"][n_thread]["wall"]["total"]
-		inverse_scaling[i, -1] = data["results"][n_thread]["cpu"]["total"] / data["results"]["1"]["cpu"]["total"]
+		scaling[i, -1] = data["results"]["1"]["total"] / data["results"][n_thread]["total"]
+		#inverse_scaling[i, -1] = data["results"][n_thread]["cpu"]["total"] / data["results"]["1"]["cpu"]["total"]
 
 		for step in range(proportions.shape[1]):
-			proportions[i, step] = data["results"][n_thread]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["total"]
-			scaling[i, step] = data["results"]["1"]["wall"]["steps"][step] / data["results"][n_thread]["wall"]["steps"][step]
-			inverse_scaling[i, step] = data["results"][n_thread]["cpu"]["steps"][step] / data["results"]["1"]["cpu"]["steps"][step]
-			mem_read_bandwidth[i, step] =  data["results"][n_thread]["read_bandwidth"][step]
-			mem_write_bandwidth[i, step] =  data["results"][n_thread]["write_bandwidth"][step]
+			proportions[i, step] = data["results"][n_thread]["steps"][step] / data["results"][n_thread]["total"]
+			scaling[i, step] = data["results"]["1"]["steps"][step] / data["results"][n_thread]["steps"][step]
+			#inverse_scaling[i, step] = data["results"][n_thread]["cpu"]["steps"][step] / data["results"]["1"]["cpu"]["steps"][step]
+			#mem_read_bandwidth[i, step] =  data["results"][n_thread]["read_bandwidth"][step]
+			#mem_write_bandwidth[i, step] =  data["results"][n_thread]["write_bandwidth"][step]
 
 
 
@@ -83,7 +83,7 @@ for filename in filenames:
 
 	# plot wall time scalling
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-	ax.set_title("execution time reduction (in wall time) for each step")
+	ax.set_title("execution time scaling for each step")
 	ax.set_xticks(tick_position)
 	ax.set_xticklabels(n_threads)
 
@@ -99,7 +99,7 @@ for filename in filenames:
 
 	# saving fig
 	ax.legend(loc='upper left')
-	fig.savefig("plots/wall_scaling/wall_" + data["rule"] + ".png")
+	fig.savefig("plots/scaling/scaling_" + data["rule"] + ".png")
 
 
 
@@ -107,7 +107,7 @@ for filename in filenames:
 
 	# plot proportions
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-	ax.set_title("proportion of the total execution cpu time taken by each step")
+	ax.set_title("proportion of the total execution time taken by each step")
 	ax.set_xticks(tick_position_1)
 	ax.set_xticklabels(n_threads)
 
@@ -122,7 +122,7 @@ for filename in filenames:
 
 
 
-	# plot cpu time scalling
+	"""# plot cpu time scalling
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("execution time multiplication (in cpu time) for each step")
 	ax.set_xticks(tick_position)
@@ -171,4 +171,4 @@ for filename in filenames:
 	# saving fig
 	ax1.legend(loc='upper left')
 	ax2.legend(loc='upper left')
-	fig.savefig("plots/memory_scaling/mem_" + data["rule"] + ".png")
+	fig.savefig("plots/memory_scaling/mem_" + data["rule"] + ".png")"""

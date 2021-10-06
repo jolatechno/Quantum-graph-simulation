@@ -46,7 +46,7 @@ command="./scaling_test.out -r ${rule} -n ${niter} -s ${size} --safety-margin ${
 echo "{"
 echo "	\"rule\" : \"${rule}\","
 echo "	\"command\" : \"${command}\","
-echo "	\"memory_bandwidth\" : $(./memory_test.out 2>> ${errfile} | indent),"
+#echo "	\"memory_bandwidth\" : $(./memory_test.out 2>> ${errfile} | indent),"
 echo "	\"results\" : {"
 
 echo "" > ${errfile}
