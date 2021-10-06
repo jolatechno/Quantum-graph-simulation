@@ -16,7 +16,7 @@
 	if (n > 0) { \
 		time_point stop = std::chrono::high_resolution_clock::now(); \
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
-		step_duration[n - 1] = duration.count() * 1e-6; \
+		step_duration[n - 1] += duration.count() * 1e-6; \
 	} \
 	if (n < N_STEP) { \
 		step_start[n] = std::chrono::high_resolution_clock::now(); \
