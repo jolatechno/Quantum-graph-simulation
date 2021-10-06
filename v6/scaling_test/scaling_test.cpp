@@ -1,24 +1,26 @@
 #include <time.h>
 #include <vector>
-#include <sys/time.h>
+#include <chrono>
+
+/* number of step */
+#define N_STEP 8
 
 /* global vector to accumulate */
 #define STATE_GLOBAL_HEADER \
-	double get_time() { \
-	    struct timeval time; \
-	    gettimeofday(&time,NULL); \
-	    return (double)time.tv_sec + (double)time.tv_usec * .000001; \
-	} \
-	std::vector<double> step_duration(N_STEP, 0.0);
+	typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point; \
+	std::vector<double> step_duration(N_STEP, 0.0); \
+	std::vector<time_point> step_start(N_STEP);
 
 /* define a custom "MID_STEP_FUNCTION(n)" that accumulate the time taken in each step */
 #define MID_STEP_FUNCTION(n) \
 	if (n > 0) { \
-		step_duration[n - 1] += get_time(); \
+		time_point stop = std::chrono::high_resolution_clock::now(); \
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
+		step_duration[n - 1] = duration.count() * 1e-6; \
+	} \
+	if (n < N_STEP) { \
+		step_start[n] = std::chrono::high_resolution_clock::now(); \
 	}
-
-/* number of step */
-#define N_STEP 8
 
 #include "../src/rules.hpp"
 #include "../src/utils/parser.hpp"
@@ -33,18 +35,22 @@ int main(int argc, char* argv[]) {
 
 	cxxopts::Options options("file used for multi-threading test (does not run reversed iterations");
 	auto [s, rule, _, n_iter, __, n_fast] = test_parser(options, argc, argv);
-	double total_time = -get_time();
 
-	for (int i = 0; i < n_iter; ++i) {
-		if (n_fast == 0 || i % (n_fast + 1) == 0) {
-			s.step(*rule);
-		} else
-			s.fast_step(*rule);
-		
-		move_all(s);
-	}
+	auto static runner = [&]() {
+		for (int i = 0; i < n_iter; ++i) {
+			if (n_fast == 0 || i % (n_fast + 1) == 0) {
+				s.step(*rule);
+			} else
+				s.fast_step(*rule);
+				
+			move_all(s);
+		}
+	};
 
-	total_time += get_time();
+	auto start = std::chrono::high_resolution_clock::now();
+	runner();
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 	/* print results as json */
 	printf("\t\"steps\" : [");
@@ -53,6 +59,6 @@ int main(int argc, char* argv[]) {
 		if (i < N_STEP - 1) {
 			printf(", ");
 		} else
-			printf("],\n\t\"total\" : %f\n}", total_time);
+			printf("],\n\t\"total\" : %f\n}", duration.count() * 1e-6);
 	}
 }

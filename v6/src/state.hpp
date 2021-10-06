@@ -6,6 +6,7 @@
 #include "utils/libs/boost_hash.hpp" //<boost/functional/hash.hpp>
 #include <random>
 #include <iostream>
+#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
 
 #include "utils/load_balancing.hpp"
 #include "utils/sort.hpp"
@@ -26,25 +27,6 @@
 #endif
 #ifndef PRINT_DEBUG_LEVEL_3
 	#define PRINT_DEBUG_LEVEL_3 2
-#endif
-
-#ifdef USE_HASHMAP
-	#include <tbb/concurrent_hash_map.h> // For concurrent hash map.
-	
-	// proportion of the graph tested for collisions
-	#ifndef COLLISION_TEST_PROPORTION
-		#define COLLISION_TEST_PROPORTION 0.1
-	#endif
-	
-	// minimum amount of collision for interaction
-	#ifndef COLLISION_TOLERANCE
-		#define COLLISION_TOLERANCE 0.05
-	#endif
-
-	// maximum amount of probability gain for interaction
-	#ifndef COLLISION_PROBABILITY_TOLERANCE
-		#define COLLISION_PROBABILITY_TOLERANCE 0.15
-	#endif
 #endif
 
 #ifdef USE_MPRF
@@ -85,6 +67,9 @@
 	- "TOLERANCE" (default is different if MPFR is used or not) is the minimum probability a graph can have before being automaticly ignored.
 	- "ITEARTION_DISCRIMINATION_FACTOR" is a factor discriminating the "previous iteration" against the "current iteration" when computing the max number of graphs.
 	- "MEMORY_DISCRIMINATION_FACTOR" is a factor discriminating the impact of the amount of free memory against the one of iterations when computing the max number of graphs.
+	- "COLLISION_TEST_PROPORTION" is the proportion of the graph tested for collisions.
+	- "COLLISION_TOLERANCE" is the minimum amount of collision for interaction.
+	- "COLLISION_PROBABILITY_TOLERANCE" is the maximum amount of probability gain for interaction.
 */
 #ifndef SAFETY_MARGIN
 	#define SAFETY_MARGIN 0.2
@@ -95,17 +80,24 @@
 #ifndef MEMORY_DISCRIMINATION_FACTOR
 	#define MEMORY_DISCRIMINATION_FACTOR 0.65
 #endif
+#ifndef COLLISION_TEST_PROPORTION
+	#define COLLISION_TEST_PROPORTION 0.1
+#endif
+#ifndef COLLISION_TOLERANCE
+	#define COLLISION_TOLERANCE 0.05
+#endif
+#ifndef COLLISION_PROBABILITY_TOLERANCE
+	#define COLLISION_PROBABILITY_TOLERANCE 0.15
+#endif
 
 // global variable definition
 PROBA_TYPE tolerance = TOLERANCE;
 float safety_margin = SAFETY_MARGIN;
 float iteartion_discrimination_factor = ITEARTION_DISCRIMINATION_FACTOR;
 float memory_discrimination_factor = MEMORY_DISCRIMINATION_FACTOR;
-#ifdef USE_HASHMAP
 float collision_test_proportion = COLLISION_TEST_PROPORTION;
 float collision_tolerance = COLLISION_TOLERANCE;
 float collision_probability_tolerance = COLLISION_PROBABILITY_TOLERANCE;
-#endif
 
 /*
 defining openmp function's return values if openmp isn't installed or loaded
@@ -484,13 +476,7 @@ public:
 
 	/* vector for work sharing */
 	std::vector<size_t> work_sharing_begin = std::vector<size_t>(num_threads + 1);
-#ifdef USE_HASHMAP
 	tbb::concurrent_hash_map<size_t, size_t> elimination_map;
-#else
-#ifndef USE_QUICK_SORT
-	numa_vector<size_t> next_gid_buffer;
-#endif
-#endif
 
 	/* constructor for a single graph of a given size */
 	state(size_t size) : state(size, 1) {}
@@ -534,9 +520,6 @@ public:
 	// resize operator
 	void resize_symbolic_num_graphs(size_t size) {
 		next_gid.iota_resize(size);
-#if !defined(USE_HASHMAP) && !defined(USE_QUICK_SORT)
-		next_gid_buffer.zero_resize(size);
-#endif
 
 		parent_gid.zero_resize(size);
 		child_id.zero_resize(size);
@@ -703,14 +686,7 @@ Non-virtual member functions are:
 		static const long long int graph_mem_usage = 2*sizeof(PROBA_TYPE) + 3*sizeof(size_t);
 		static const long long int node_mem_usage = 2*sizeof(char) + sizeof(unsigned short int) + sizeof(op_type_t);
 		static const long long int sub_node_mem_usage = 2*sizeof(short int) + sizeof(size_t);
-		static const long long int symbolic_mem_usage = sizeof(char) + 3*sizeof(size_t) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double)
-#ifdef USE_QUICK_SORT
-		- sizeof(size_t)
-#endif
-#ifdef USE_HASHMAP
-		+ sizeof(size_t)
-#endif
-;
+		static const long long int symbolic_mem_usage = sizeof(char) + 4*sizeof(size_t) + sizeof(unsigned short int) + sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(double);
 
 		long long int mem_usage_per_graph = (graph_mem_usage + // usage for a single graph
 			(node_mem_usage * current_iteration.node_begin[current_iteration.num_graphs] + // usage for a node * total number of nodes
@@ -758,10 +734,6 @@ private:
 			- next_num_nodes = next_iteration.node_begin[next_iteration.num_graphs]
 
 		step (1) 
-		
-		reads: 2*current_iteration.num_graphs*sizeof(size_t) + n(rule)*current_num_nodes
-		writes: current_num_nodes
-
 		 !!!!!!!!!!!!!!!! */
 
 		/* load sharing according to number of nodes */
@@ -775,13 +747,13 @@ private:
 
 			/* get operations for each node of each graph */
 			for (size_t gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-				auto num_nodes_ = current_iteration.num_nodes(gid); /* 2 size_t reads per loop */
+				auto num_nodes_ = current_iteration.num_nodes(gid);
 				auto num_ops = 0;
 
 				/* get operations for each nodes of each graph */
 				for (auto node = 0; node < num_nodes_; ++node) {
 					op_type_t operation = rule.operation(current_iteration, gid, node);
-					current_iteration.set_operation(gid, node, operation); /* n(rule) char reads, 1 char write per node */
+					current_iteration.set_operation(gid, node, operation);
 
 					num_ops += operation != 0;
 				}
@@ -797,10 +769,6 @@ private:
 
 				/* !!!!!!!!!!!!!!!!
 				step (2)
-
-				reads: 2*current_iteration.num_graphs*sizeof(size_t)
-				writes: symbolic_num_graphs*(sizeof(size_t) + sizeof(unsigned short int)) + 2*current_iteration.num_graphs*sizeof(size_t)
-
 				 !!!!!!!!!!!!!!!! */
 
 				/* partial sum of number of graph */
@@ -808,7 +776,7 @@ private:
 
 				__gnu_parallel::partial_sum(current_iteration.num_childs.begin() + 1,
 					current_iteration.num_childs.begin() + current_iteration.num_graphs + 1,
-					current_iteration.num_childs.begin() + 1); /* 2 (1 in sequential but 2 in parallel) size_t reads and writes per loop (for current_iteration.num_graphs loops) */
+					current_iteration.num_childs.begin() + 1);
 				symbolic_num_graphs = current_iteration.num_childs[current_iteration.num_graphs];
 				symbolic_num_graphs_after_interferences = symbolic_num_graphs;
 
@@ -820,10 +788,10 @@ private:
 				/* assign parent ids and child ids for each child */
 				std::fill(parent_gid.begin() + current_iteration.num_childs[gid],
 					parent_gid.begin() + current_iteration.num_childs[gid + 1],
-					gid); /* 1 size_t write per symbolic graph */ 
+					gid);
 				std::iota(child_id.begin() + current_iteration.num_childs[gid],
 					child_id.begin() + current_iteration.num_childs[gid + 1],
-					0);  /* 1 unsigned short int write per symbolic graph */ 
+					0); 
 			}
 
 			#pragma omp barrier
@@ -835,20 +803,16 @@ private:
 
 			/* !!!!!!!!!!!!!!!!
 			step (3)
-
-			reads: symbolic_num_graphs*(6*sizeof(size_t) + 2*sizeof(PROBA_TYPE) + sizeof(short)) + 2*next_num_nodes
-			writes: symbolic_num_graphs*(3*sizeof(size_t) + 2*sizeof(PROBA_TYPE))
-
 			 !!!!!!!!!!!!!!!! */
 
 			/* symbolic iteration :
 				compute properties of each possible future graph */ 
 			#pragma omp for schedule(static)
 			for (size_t gid = 0; gid < symbolic_num_graphs; ++gid)
-				rule.child_properties(next_hash[gid], /* 2 + 2*2 (sizes) size_t reads and 3 size_t write per symbolic graph */
-					next_real[gid], next_imag[gid], /* 2 PROBA_TYPE reads and writes per symbolic graph */ 
-					symbolic_num_nodes[gid], symbolic_num_sub_nodes[gid], /* 1 unsigned short int read per symbolic graph */
-					current_iteration, parent_gid[gid], child_id[gid]); /* ~2 char reads per node of child */
+				rule.child_properties(next_hash[gid],
+					next_real[gid], next_imag[gid],
+					symbolic_num_nodes[gid], symbolic_num_sub_nodes[gid],
+					current_iteration, parent_gid[gid], child_id[gid]);
 
 			#pragma omp single
 			{
@@ -857,15 +821,10 @@ private:
 
 			/* !!!!!!!!!!!!!!!!
 			step (4)
-
-			reads: symbolic_num_graphs*(sizeof(size_t)*32 + sizeof(PROBA_TYPE)*4 + 10)
-			writes: symbolic_num_graphs*(sizeof(size_t)*17 + sizeof(PROBA_TYPE)*2 + 1)
-
 			 !!!!!!!!!!!!!!!! */
 
 			/* no need to compute interference if we are in the probabilist case */
 			if (!rule.probabilist) {
-#ifdef USE_HASHMAP
 				#pragma omp barrier
 
 				bool skip_test = symbolic_num_graphs < min_vector_size || total_proba - 1 > collision_probability_tolerance;
@@ -904,14 +863,14 @@ private:
 						/* check if we should continue */
 						if (fast) {
 							/* get all unique graphs with a non zero probability */
-							auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + test_size, /* 1 size_t read and 1 size_t write per symbolic graph */
+							auto partitioned_it = __gnu_parallel::partition(next_gid.begin(), next_gid.begin() + test_size,
 							[&](size_t const &gid) {
 								/* check if graph is unique */
-								if (!is_last_index[gid]) /* 1 char read per symbolic graph */
+								if (!is_last_index[gid])
 									return false;
 
 								/* check for zero probability */
-								PROBA_TYPE r = next_real[gid]; /* 2 PROBA_TYPE reads per symbolic graph */
+								PROBA_TYPE r = next_real[gid];
 								PROBA_TYPE i = next_imag[gid];
 
 								return r*r + i*i > tolerance;
@@ -953,101 +912,18 @@ private:
 				#pragma omp single
 				{
 					elimination_map.clear();
-#else
-				if (!fast) {
-#ifdef USE_QUICK_SORT
-					#pragma omp single
-					{
-						/* sort according to hashes */
-						__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + symbolic_num_graphs,
-								[&](long unsigned int gid1, long unsigned int gid2){
-									return next_hash[gid1] < next_hash[gid2];
-								});
 
-						/* set is_last_index of the last graph */
-						is_last_index[next_gid[symbolic_num_graphs - 1]] = true;
-						work_sharing_begin[num_threads] = symbolic_num_graphs;
-					}
-
-					/* compute is_last_index */
-					#pragma omp for
-					for (size_t gid = 0; gid < symbolic_num_graphs - 1; ++gid)
-						is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
-
-					work_sharing_begin[thread_id] = (thread_id * symbolic_num_graphs) / num_threads;
-					if (work_sharing_begin[thread_id] != 0)
-						while (!is_last_index[next_gid[work_sharing_begin[thread_id] - 1]])
-							++work_sharing_begin[thread_id];
-
-					#pragma omp barrier
-
-					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-#else
-					#pragma omp single
-					{
-						/* share work according to hash */
-						size_t count[256] = {0};
-						parallel_radix_count_indexed_0(next_gid.begin(), next_gid.begin() + symbolic_num_graphs, /* 1 size_t write and 1 (index) + 2 size_t and 1 char reads per symbolic graph */
-							next_hash.begin(),	/* + 1 size_t read and 1 size_t write per symbolic graphs */
-							count);
-
-						/* share work according to count */
-						indexed_load_balancing_from_prefix_sum(count, count + 256, work_sharing_begin.begin(), work_sharing_begin.end());
-
-						/* finish radix sort */
-						radix_secon_loop_indexed_offset(next_gid.begin(), next_gid_buffer.begin(),
-							symbolic_num_graphs,
-							(unsigned char*)next_hash.begin(),
-							count,
-							7);
-					}
-				
-					if (work_sharing_begin[thread_id] < work_sharing_begin[thread_id + 1]) {
-						/* sort all graphs */
-						radix_indexed_sort_1_7(next_gid_buffer.begin() + work_sharing_begin[thread_id], /* 7 size_t write and 1 (index) + 7*2 size_t and 7 char reads per symbolic graph */
-							next_gid_buffer.begin() + work_sharing_begin[thread_id + 1], /* + 7 size_t read and 7 size_t write per symbolic graphs */
-							next_gid.begin() + work_sharing_begin[thread_id],
-							next_hash.begin());
-						
-						/* set is_last_index of the last graph */
-						is_last_index[next_gid[work_sharing_begin[thread_id + 1] - 1]] = true;
-
-						/* compute is_last_index */
-						for (size_t gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1] - 1; ++gid)
-							is_last_index[next_gid[gid]] = next_hash[next_gid[gid]] != next_hash[next_gid[gid + 1]]; /* 1 char write and 4 size_t reads per symbolic graph */
-#endif
-						/* partial sum over the interval since we know it starts and end at unique graphs */
-						PROBA_TYPE sign;
-						size_t last_id = next_gid[work_sharing_begin[thread_id]];
-						for (size_t gid = work_sharing_begin[thread_id] + 1; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-							size_t id = next_gid[gid]; /* 1 size_t read per symbolic graphs */
-							sign = !is_last_index[last_id]; /* 1 char read per symbolic graph */
-
-							/* add probabilites of graph with equal hashes */
-							next_real[id] += sign*next_real[last_id]; /* 2 PROBA_TYPE reads and 2 PROBA_TYPE writes per symbolic graph */
-							next_imag[id] += sign*next_imag[last_id];
-
-							last_id = id;
-						}
-					}	
-				}
-
-				#pragma omp barrier
-
-				#pragma omp single
-				{
-#endif
 					auto partitioned_it = next_gid.begin() + symbolic_num_graphs_after_interferences;
 					if (!fast)
 						/* get all unique graphs with a non zero probability */
-						partitioned_it = __gnu_parallel::partition(next_gid.begin(), partitioned_it, /* 1 size_t read and 1 size_t write per symbolic graph */
+						partitioned_it = __gnu_parallel::partition(next_gid.begin(), partitioned_it,
 						[&](size_t const &gid) {
 							/* check if graph is unique */
-							if (!is_last_index[gid]) /* 1 char read per symbolic graph */
+							if (!is_last_index[gid])
 								return false;
 
 							/* check for zero probability */
-							PROBA_TYPE r = next_real[gid]; /* 2 PROBA_TYPE reads per symbolic graph */
+							PROBA_TYPE r = next_real[gid];
 							PROBA_TYPE i = next_imag[gid];
 
 							return r*r + i*i > tolerance; 
@@ -1059,10 +935,6 @@ private:
 
 					/* !!!!!!!!!!!!!!!!
 					step (5)
-
-					reads: symbolic_num_graphs_after_interferences*(2*sizeof(PROBA_TYPE) + 2*sizeof(float) + sizeof(size_t))
-					writes: max_num_graphs*sizeof(size_t) + symbolic_num_graphs_after_interferences*sizeof(float)
-
 					 !!!!!!!!!!!!!!!! */
 
 					if (overwrite_max_num_graphs)
@@ -1073,17 +945,17 @@ private:
 						/* generate random selectors */
 						#pragma omp parallel for schedule(static)
 						for (auto gid_it = next_gid.begin(); gid_it != partitioned_it; ++gid_it)  {
-							PROBA_TYPE r = next_real[*gid_it]; /* 2 PROBA_TYPE reads per symbolic_num_graphs_after_interferences */
+							PROBA_TYPE r = next_real[*gid_it];
 							PROBA_TYPE i = next_imag[*gid_it];
 
 							double random_number = unfiorm_from_hash(next_hash[*gid_it]); //random_generator();
-							random_selector[*gid_it] = precision::log( -precision::log(1 - unfiorm_from_hash(next_hash[*gid_it])) / (r*r + i*i)); /* 1 float write per symbolic_num_graphs_after_interferences */
+							random_selector[*gid_it] = precision::log( -precision::log(1 - unfiorm_from_hash(next_hash[*gid_it])) / (r*r + i*i));
 						}
 
 						/* select graphs according to random selectors */
-						__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, partitioned_it, /* 1 size_t read per symbolic_num_graphs_after_interferences */
-						[&](size_t const &gid1, size_t const &gid2) { /* 1 size_t write per max_num_graphs */
-							return random_selector[gid1] < random_selector[gid2]; /* 2 float reads per symbolic_num_graphs_after_interferences */
+						__gnu_parallel::nth_element(next_gid.begin(), next_gid.begin() + max_num_graphs, partitioned_it,
+						[&](size_t const &gid1, size_t const &gid2) {
+							return random_selector[gid1] < random_selector[gid2];
 						});
 
 						next_iteration.num_graphs = max_num_graphs;
@@ -1094,14 +966,10 @@ private:
 
 					/* !!!!!!!!!!!!!!!!
 					step (6)
-
-					reads: next_iteration.num_graphs*((6 + std::log2(next_iteration.num_graphs)*sizeof(size_t) + 2*sizeof(PROBA_TYPE))
-					writes: next_iteration.num_graphs*((6 + std::log2(next_iteration.num_graphs)*sizeof(size_t) + 2*sizeof(PROBA_TYPE))
-
 					 !!!!!!!!!!!!!!!! */
 
 					/* sort to make memory access more continuous */
-					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + next_iteration.num_graphs); /* 1 size_t read and write per next_iteration.num_graphs*log2(next_iteration.num_graphs) 
+					__gnu_parallel::sort(next_gid.begin(), next_gid.begin() + next_iteration.num_graphs);
 
 					/* resize new step variables */
 					next_iteration.resize_num_graphs(next_iteration.num_graphs);
@@ -1122,11 +990,11 @@ private:
 			for (size_t gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				size_t id = next_gid[gid];
 
-				next_iteration.node_begin[gid + 1] = symbolic_num_nodes[id]; /* 1 size_t read and write per next_iteration.num_graphs */
-				next_iteration.sub_node_begin[gid + 1] = symbolic_num_sub_nodes[id]; /* 1 size_t read and write per next_iteration.num_graphs */
+				next_iteration.node_begin[gid + 1] = symbolic_num_nodes[id];
+				next_iteration.sub_node_begin[gid + 1] = symbolic_num_sub_nodes[id];
 
 				/* assign magnitude */
-				next_iteration.real[gid] = next_real[id]; /* 2 PROBA_TYPE read and write per next_iteration.num_graphs */
+				next_iteration.real[gid] = next_real[id];
 				next_iteration.imag[gid] = next_imag[id];
 			}
 
@@ -1134,12 +1002,12 @@ private:
 			{
 				/* compute the partial sums to get new node_begin and sub_node_begin */
 				next_iteration.node_begin[0] = 0;
-				__gnu_parallel::partial_sum(next_iteration.node_begin.begin() + 1, /* 2 size_t read and write per next_iteration.num_graphs */
+				__gnu_parallel::partial_sum(next_iteration.node_begin.begin() + 1,
 					next_iteration.node_begin.begin() + next_iteration.num_graphs + 1,
 					next_iteration.node_begin.begin() + 1);
 
 				next_iteration.sub_node_begin[0] = 0;
-				__gnu_parallel::partial_sum(next_iteration.sub_node_begin.begin() + 1, /* 2 size_t read and write per next_iteration.num_graphs */
+				__gnu_parallel::partial_sum(next_iteration.sub_node_begin.begin() + 1,
 					next_iteration.sub_node_begin.begin() + next_iteration.num_graphs + 1, 
 					next_iteration.sub_node_begin.begin() + 1);
 
@@ -1151,10 +1019,6 @@ private:
 
 				/* !!!!!!!!!!!!!!!!
 				step (7)
-
-				reads: n(rule)*next_iteration.num_graphs + 3*next_iteration.num_graphs
-				writes: 2*next_iteration.num_graphs
-
 				 !!!!!!!!!!!!!!!! */
 
 				/* load sharing according to number of nodes */
@@ -1164,11 +1028,11 @@ private:
 			}
 
 			for (size_t gid = work_sharing_begin[thread_id]; gid < work_sharing_begin[thread_id + 1]; ++gid) {
-				auto id = next_gid[gid]; /* 1 size_t read per next_iteration.num_graphs */
+				auto id = next_gid[gid];
 				/* populate graphs */
-				rule.populate_new_graph(current_iteration, next_iteration, /* 2 char writes per next_num_nodes */
-					gid, /* ~n_rule char reads per next_num_nodes */
-					parent_gid[id], child_id[id]); /* 2 size_t read per next_iteration.num_graphs */
+				rule.populate_new_graph(current_iteration, next_iteration,
+					gid,
+					parent_gid[id], child_id[id]);
 			}
 
 			#pragma omp barrier
@@ -1180,10 +1044,6 @@ private:
 
 			/* !!!!!!!!!!!!!!!!
 			step (8)
-
-			reads: 2*next_iteration.num_graphs*sizeof(PROBA_TYPE)
-			writes: 2*next_iteration.num_graphs*sizeof(PROBA_TYPE)
-
 			 !!!!!!!!!!!!!!!! */
 			
 			#ifdef USE_MPRF
@@ -1193,7 +1053,7 @@ private:
 			#endif
 			for (size_t gid = 0; gid < next_iteration.num_graphs; ++gid) {
 				/* compute total proba */
-				PROBA_TYPE r = next_iteration.real[gid]; /* 2 PROBA_TYPE reads per next_iteration.num_graphs */
+				PROBA_TYPE r = next_iteration.real[gid];
 				PROBA_TYPE i = next_iteration.imag[gid];
 
 				total_proba += r*r + i*i;
@@ -1205,7 +1065,7 @@ private:
 			/* normalize by divinding magnitudes by the square root of the total probability */
 			#pragma omp for schedule(static)
 			for (size_t gid = 0; gid < next_iteration.num_graphs; ++gid) {
-				next_iteration.real[gid] /= total_proba;  /* 2 PROBA_TYPE writes per next_iteration.num_graphs */
+				next_iteration.real[gid] /= total_proba;
 				next_iteration.imag[gid] /= total_proba;
 			}
 

@@ -3,4 +3,4 @@ TBB_INSTALL_DIR="${CURRENT_PATH}/oneTBB"
 TBB_INCLUDE="${TBB_INSTALL_DIR}/include"
 TBB_LIBRARY_RELEASE=${TBB_INSTALL_DIR}/build/*_release/
 
-echo -I${TBB_INCLUDE} -Wl,-rpath,$(echo ${TBB_LIBRARY_RELEASE}) -L$(echo ${TBB_LIBRARY_RELEASE}) -ltbb
+echo -I${TBB_INCLUDE} -Wl,-rpath,$(echo ${TBB_LIBRARY_RELEASE}) -L$(echo ${TBB_LIBRARY_RELEASE})
