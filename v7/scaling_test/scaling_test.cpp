@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 	std::vector<time_point> step_start(num_step);
 
 	auto const mid_step_function = [&](int n) {
-		std::cout << "step (" << n << ")\n";
+		//std::cout << "step (" << n << ")\n";
 		if (n > 0) {
 			time_point stop = std::chrono::high_resolution_clock::now(); \
 			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
