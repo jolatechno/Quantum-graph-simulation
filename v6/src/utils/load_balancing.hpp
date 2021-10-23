@@ -1,3 +1,5 @@
+#include <iterator>
+
 template <class UnsignedIntIterator1, class UnsignedIntIterator2>
 void inline load_balancing_from_prefix_sum(UnsignedIntIterator1 prefixSumLoadBegin, UnsignedIntIterator1 prefixSumLoadEnd,
 	UnsignedIntIterator2 workSharingIndexesBegin, UnsignedIntIterator2 workSharingIndexesEnd) {

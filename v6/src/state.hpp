@@ -949,7 +949,7 @@ private:
 							PROBA_TYPE i = next_imag[*gid_it];
 
 							double random_number = unfiorm_from_hash(next_hash[*gid_it]); //random_generator();
-							random_selector[*gid_it] = precision::log( -precision::log(1 - unfiorm_from_hash(next_hash[*gid_it])) / (r*r + i*i));
+							random_selector[*gid_it] = precision::log( -precision::log(1 - random_number) / (r*r + i*i));
 						}
 
 						/* select graphs according to random selectors */

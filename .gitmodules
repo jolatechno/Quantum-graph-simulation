@@ -1,0 +1,3 @@
+[submodule "v7/IQS"]
+	path = v7/IQS
+	url = https://github.com/jolatechno/IQS.git
