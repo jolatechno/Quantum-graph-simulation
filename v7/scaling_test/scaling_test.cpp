@@ -1,7 +1,7 @@
 #include <vector>
 #include <chrono>
 
-#include "../IQS/src/lib/iqs.hpp"
+#include "../IQS/src/iqs.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 		}
 	};
 
-	auto [n_iter, state, rule] = iqs::rules::qcgd::flags::parse_simulation(argv[1], iqs::utils::default_hasher, mid_step_function);
+	auto [n_iter, state, rule] = iqs::rules::qcgd::flags::parse_simulation(argv[1], mid_step_function);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i) {
