@@ -47,9 +47,9 @@ while getopts 's:S:n:r:R:hvmec' flag; do
 
 	v) verbose=true ;;
 	
-	m) rule_+=" step\;split_merge"; overwriten_rule=true;;
-	e) rule_+=" step\;erase_create"; overwriten_rule=true;;
-	c) rule_+=" step\;coin"; overwriten_rule=true;;
+	m) rule_+=" split_merge"; overwriten_rule=true;;
+	e) rule_+=" erase_create"; overwriten_rule=true;;
+	c) rule_+=" coin"; overwriten_rule=true;;
 
     *) print_usage
        exit 1 ;;
@@ -70,7 +70,7 @@ for rule in $rule; do
 		fi
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
-			command="./ping_pong_test.out ${n_iter},seed=${seed}\|${size}\|${rule},theta=0.25,phi=0.125,xi=-0.125 2> /dev/null"
+			command="./ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125 2> /dev/null"
 			res=$(eval $command)
 
 			n_line=$(echo "${res}"  | wc -l)
