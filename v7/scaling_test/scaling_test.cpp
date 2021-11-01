@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 		}
 	};
 
-	auto [n_iter, state, rule, _] = iqs::rules::qcgd::flags::parse_simulation(argv[1], mid_step_function);
+	auto [n_iter, _, state, rule, __] = iqs::rules::qcgd::flags::parse_simulation(argv[1], mid_step_function);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i)
