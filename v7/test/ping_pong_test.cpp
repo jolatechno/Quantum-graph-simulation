@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "../IQS/src/iqs.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
