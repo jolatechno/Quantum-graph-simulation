@@ -59,8 +59,6 @@ int main(int argc, char* argv[]) {
 	mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD, true);
 
 	for (int i = 0; i < n_iter; ++i) {
-		if (i == 1) state.distribute_objects(MPI_COMM_WORLD);
-
 		iqs::simulate(state, iqs::rules::qcgd::step);
 		iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD);
 
