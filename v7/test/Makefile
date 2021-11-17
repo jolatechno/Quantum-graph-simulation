@@ -10,7 +10,8 @@ clean:
 	rm *.out
 
 MAKE_TBB:
-	$(shell cd ../../ && ./tbb-install.sh -p "${path}" -c ${TBB_FLAGS} &> /dev/null)
+	cd ../../; \
+	./tbb-install.sh -p "${path}" -c ${TBB_FLAGS}
 
 USE_TBB:
 	$(eval U_CFLAGS+= $(shell ../../get-tbb-cflags.sh -p "${path}"))
