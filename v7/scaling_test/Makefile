@@ -11,7 +11,7 @@ clean:
 
 MAKE_TBB:
 	cd ../../; \
-	./tbb-install.sh -p "${path}" -c ${TBB_FLAGS}
+	./tbb-install.sh -p "${path}" -c "${TBB_FLAGS}"
 
 USE_TBB:
 	$(eval U_CFLAGS+= $(shell cd ../../ && ./get-tbb-cflags.sh -p "${path}"))
