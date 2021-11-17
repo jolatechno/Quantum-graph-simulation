@@ -17,7 +17,7 @@ while getopts 'c:p:h' flag; do
   	h) print_usage
        exit 1 ;;
     c) CFLAGS="${OPTARG}" ;;
-	p) path="${OPTARG}" ;;
+		p) path="${OPTARG}" ;;
   esac
 done
 

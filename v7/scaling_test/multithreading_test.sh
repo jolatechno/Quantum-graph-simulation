@@ -3,6 +3,7 @@
 print_usage() {
   printf "Usage: ./multithreading_test.sh ops...
 	-h: this help menu
+	-f: file to execute (default=\"scaling_test.out\")
 	-a: arguments for scaling_test.cpp
 	-o: use OMP_NUM_THREADS rather than numactl
 
@@ -15,22 +16,24 @@ indent() { sed 's/^/	/'; }
 n_threads=$(nproc --all)
 args=""
 use_omp=false
+file="scaling_test.out"
 
 errfile="err.txt"
 
-while getopts 'a:oht:' flag; do
+while getopts 'f:a:oht:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
+    f) file="${OPTARG}" ;;
     a) args="${OPTARG}" ;;
-	o) use_omp=true;;
-	t) n_threads="${OPTARG}" ;;
+		o) use_omp=true;;
+		t) n_threads="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
   esac
 done
 
-command="./scaling_test.out ${args}"
+command="./${file} ${args}"
 echo "{"
 #echo "	\"rule\" : \"${rule}\","
 echo "	\"command\" : \"${command}\","

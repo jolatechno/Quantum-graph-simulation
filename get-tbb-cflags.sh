@@ -12,7 +12,7 @@ while getopts 'p:h' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
-	p) path="${OPTARG}" ;;
+    p) path="${OPTARG}" ;;
   esac
 done
 
