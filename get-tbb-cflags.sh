@@ -19,5 +19,6 @@ done
 CURRENT_PATH=$(pwd)
 TBB_INSTALL_DIR="${CURRENT_PATH}/oneTBB"
 TBB_INCLUDE="${TBB_INSTALL_DIR}/include"
+TBB_LIBRARY_RELEASE="$(echo ${TBB_INSTALL_DIR}/${path}build/*_release/)"
 
-echo -I${TBB_INCLUDE} -Wl,-rpath,${TBB_INSTALL_DIR}/${path}build/*_release/ -L${TBB_INSTALL_DIR}/${path}build/*_release/
+echo -I${TBB_INCLUDE} -Wl,-rpath,$(echo ${TBB_LIBRARY_RELEASE}) -L$(echo ${TBB_LIBRARY_RELEASE})
