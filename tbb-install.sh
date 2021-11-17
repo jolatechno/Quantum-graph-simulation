@@ -30,7 +30,7 @@ echo -e "compiling..."
 
 if [ "$CFLAGS" != "" ]; then
 	(cd oneTBB && \
-	make clean -j all CXXFLAGS=${CFLAGS})
+	make clean -j all CXXFLAGS="${CFLAGS}")
 else
 	(cd oneTBB && \
 	make clean -j all)
