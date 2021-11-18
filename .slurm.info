@@ -1,0 +1,5 @@
+srun --exclusive -C diablo --pty bash -i
+
+module load compiler/gcc/11.2.0
+export OMP_PROC_BIND=true
+export GOMP_CPU_AFFINITY=0-63
