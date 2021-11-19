@@ -1,6 +1,8 @@
 #include <vector>
 #include <chrono>
 
+#include <iostream>
+
 #include "../IQS/src/iqs.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
@@ -10,7 +12,7 @@ int main(int argc, char* argv[]) {
 	iqs::it_t buffer;
 	iqs::sy_it_t sy_it;
 
-	const int num_step = 8 + 3;
+	const int num_step = 8;
 	std::vector<double> step_duration(num_step, 0.0);
 	std::vector<time_point> step_start(num_step);
 
