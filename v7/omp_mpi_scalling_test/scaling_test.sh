@@ -53,9 +53,12 @@ for i in "${!n_threads[@]}"; do
 	echo "${n_thread},${n_node}:" >> ${errfile}
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	
-		echo "$(mpirun --oversubscribe --cpus-per-proc ${n_thread}  -n ${n_node} -x OMP_NUM_THREADS=${n_thread} ${command} 2>> ${errfile} | indent | indent)${separator}"
-	
+		if [ ${n_node} == 1 ]; then
+			echo "$(OMP_NUM_THREADS=${n_thread} ./${command} 2>> ${errfile} | indent | indent)${separator}"
+		else
+			echo "$(mpirun --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} -x OMP_NUM_THREADS=${n_thread} ${command} 2>> ${errfile} | indent | indent)${separator}"
+		fi
+
 	echo "" >> ${errfile}
 done
 

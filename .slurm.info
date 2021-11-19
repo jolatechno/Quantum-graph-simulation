@@ -1,6 +1,6 @@
 srun --exclusive -C diablo --pty bash -i
 
 module load compiler/gcc/11.2.0
-export OMP_PROC_BIND=spread
+export OMP_PROC_BIND=false
 export GOMP_CPU_AFFINITY=0-63
 module load mpi/openmpi/4.1.1
