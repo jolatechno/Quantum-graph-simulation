@@ -54,7 +54,7 @@ for i in "${!n_threads[@]}"; do
 	echo "		\"${n_thread},${n_node}\" : {"
 	
 	
-		echo "$(mpirun -n ${n_node} -x OMP_NUM_THREADS="${n_thread}" ${command} 2>> ${errfile} | indent | indent)${separator}"
+		echo "$(mpirun --oversubscribe --cpus-per-proc ${n_thread}  -n ${n_node} -x OMP_NUM_THREADS=${n_thread} ${command} 2>> ${errfile} | indent | indent)${separator}"
 	
 	echo "" >> ${errfile}
 done
