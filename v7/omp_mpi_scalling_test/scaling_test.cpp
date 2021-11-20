@@ -9,9 +9,8 @@
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 int main(int argc, char* argv[]) {
-	int size, rank;
+	int rank;
 	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	iqs::mpi::mpi_it_t state, buffer;
@@ -50,7 +49,7 @@ int main(int argc, char* argv[]) {
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i) {
 		iqs::simulate(state, iqs::rules::qcgd::step);
-		iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, size, mid_step_function);
+		iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, 0, mid_step_function);
 	}
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
