@@ -8,6 +8,7 @@ print_usage() {
 
 	-t: list of number of threads to test (ex: 1,2,5, default:number_of_available_thread)
 	-n: corresponding list of number of mpi nodes (deafult:1)
+	-m: enable multithreading (default: false, important for mpirun)
 "
 }
 
@@ -18,10 +19,11 @@ n_nodes=1
 args=""
 use_omp=false
 file="scaling_test.out"
+multithreading=0
 
 errfile="err.txt"
 
-while getopts 'f:a:n:ht:' flag; do
+while getopts 'f:a:n:ht:m' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -29,6 +31,7 @@ while getopts 'f:a:n:ht:' flag; do
     a) args="${OPTARG}" ;;
 		t) IFS=', ' read -r -a n_threads <<< "${OPTARG}" ;;
 		n) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
+		m) multithreading=1 ;;
     *) print_usage
        exit 1 ;;
   esac
@@ -52,12 +55,10 @@ for i in "${!n_threads[@]}"; do
 
 	echo "${n_thread},${n_node}:" >> ${errfile}
 	echo "		\"${n_thread},${n_node}\" : {"
+
+	n_core=$(($multithreading ? ${n_thread}/2 : ${n_thread}))
 	
-		if [ ${n_node} == 1 ]; then
-			echo "$(OMP_NUM_THREADS=${n_thread} ./${command} 2>> ${errfile} | indent | indent)${separator}"
-		else
-			echo "$(mpirun --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} -x OMP_NUM_THREADS=${n_thread} ${command} 2>> ${errfile} | indent | indent)${separator}"
-		fi
+	echo "$(mpirun --oversubscribe --cpus-per-proc ${n_core} -n ${n_node} -x OMP_NUM_THREADS=${n_thread} ${command} 2>> ${errfile} | indent | indent)${separator}"
 
 	echo "" >> ${errfile}
 done
