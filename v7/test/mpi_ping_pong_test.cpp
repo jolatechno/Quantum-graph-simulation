@@ -1,3 +1,5 @@
+#include <ranges>
+
 #include "../IQS/src/iqs_mpi.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
@@ -44,9 +46,11 @@ int main(int argc, char* argv[]) {
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
 
-	auto [n_iter, reversed_n_iter, local_state, _, __] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	iqs::tolerance = 1e-8;
 
-	iqs::rule_t *rule = new iqs::rules::qcgd::split_merge(0.25, 0.25);
+	auto [n_iter, reversed_n_iter, local_state, rules] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+
+	iqs::rules::qcgd::utils::print(state);
 
 	if (rank == 0)
 		for (int i = 0; i < local_state.num_object; ++i) {
@@ -60,16 +64,22 @@ int main(int argc, char* argv[]) {
 	mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD, true);
 
 	for (int i = 0; i < n_iter; ++i) {
-		iqs::simulate(state, iqs::rules::qcgd::step);
-		iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD);
-
-		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
+		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
+			for (int j = 0; j < n_iter; ++j)
+				if (is_rule) {
+					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD);
+				} else
+					iqs::simulate(state, modifier);
+		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD, false);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
-		iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD);
-		iqs::simulate(state, iqs::rules::qcgd::reversed_step);
-
-		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
+		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
+			for (int j = 0; j < n_iter; ++j)
+				if (is_rule) {
+					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD);
+				} else
+					iqs::simulate(state, modifier);
+		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD, false);
 	}
 
 	state.gather_objects(MPI_COMM_WORLD);
