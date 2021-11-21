@@ -5,68 +5,56 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 import numpy as np
 import os
+import functools
 import sys
 
-width = 0.7
-multi_threading = False
+def compare(item1, item2):
+	n_thread_1, n_nodes_1 = [int(x) for x in item1.split(',')]
+	n_thread_2, n_nodes_2 = [int(x) for x in item2.split(',')]
+
+	if n_thread_1*n_nodes_1 != n_thread_2*n_nodes_2:
+		return n_thread_1*n_nodes_1 - n_thread_2*n_nodes_2
+
+	return n_thread_2 - n_thread_1
 
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 if filenames == ["--mt"]:
 	filenames.append("res.json")
 
 for filename in filenames:
-	if filename == "--mt":
-		multi_threading = True
-		continue
-
 	with open(filename) as f:
 		data = json.load(f)
 
-	n_threads = list(data["results"].keys())[::-1]
+	n_threads = list(data["results"].keys())
+	n_threads.sort(key=functools.cmp_to_key(compare))
 	rule = data["command"].split("|")[-1].replace(";", "_")
 
-	scaling = np.zeros((len(n_threads), len(data["results"]["1"]["steps"]) + 1))
-	proportions = np.zeros((len(n_threads), len(data["results"]["1"]["steps"])))
+	scaling = np.zeros((len(n_threads), len(data["results"][n_threads[0]]["steps"]) + 1))
+	proportions = np.zeros((len(n_threads), len(data["results"][n_threads[0]]["steps"])))
 
 	for i, n_thread in enumerate(n_threads):
-		scaling[i, -1] = data["results"]["1"]["total"] / data["results"][n_thread]["total"]
+		scaling[i, -1] = data["results"][n_threads[0]]["total"] / data["results"][n_thread]["total"]
 		for step in range(proportions.shape[1]):
 			proportions[i, step] = data["results"][n_thread]["steps"][step] / data["results"][n_thread]["total"]
-			scaling[i, step] = data["results"]["1"]["steps"][step] / data["results"][n_thread]["steps"][step]
+			scaling[i, step] = data["results"][n_threads[0]]["steps"][step] / data["results"][n_thread]["steps"][step]
 
 
-
-
-
-	# bar positions
-	bar_width = width / (scaling.shape[1] - 1)
-	tick_position = np.arange(len(n_threads), dtype=float)  # the label locations
-	bar_starting_position = tick_position - bar_width * (scaling.shape[1] - 1) / 2
-
-
-	# second bar positions
-	bar_width_1 = width / (proportions.shape[1] - 1)
-	tick_position_1 = np.arange(len(n_threads), dtype=float)  # the label locations
-	bar_starting_position_1 = tick_position - bar_width_1 * (proportions.shape[1] - 1) / 2
 
 
 	# limit graph values
 	x_points, y_points = [[]], [[]]
-	total_end = bar_starting_position[-1] + bar_width*proportions.shape[1] + bar_width/2
-	total_begin = bar_starting_position[0] - bar_width/2
 	for i, n_thread in enumerate(n_threads):
-		begin = bar_starting_position[i] - bar_width/2
-		end = bar_starting_position[i] + bar_width*proportions.shape[1] + bar_width/2
+		n_thread = np.product([int(x) for x in n_thread.split(',')])
+		if i < len(n_threads) - 2:
+			n_thread_1 = np.product([int(x) for x in n_threads[i + 1].split(',')])
+			if n_thread_1 > n_thread:
+				x_points.append([i + 0.2, len(n_threads) - 1])
+				y_points.append([n_thread, n_thread])
 
-		n_thread = int(n_thread) if not multi_threading or i < len(n_threads) - 1 else int(n_threads[-2])
-		if not multi_threading or i < len(n_threads) - 2:
-			x_points.append([end, total_end])
-			y_points.append([n_thread, n_thread])
-
-		x_points[0].append(begin)
+		x_points[0].append(i - 0.2)
 		y_points[0].append(n_thread)
 
-		x_points[0].append(end)
+		x_points[0].append(i + 0.2)
 		y_points[0].append(n_thread)
 
 
@@ -76,21 +64,25 @@ for filename in filenames:
 	# plot wall time scalling
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("execution time scaling for each step")
-	ax.set_xticks(tick_position)
+	ax.set_xticks(np.arange(0, len(n_threads)))
 	ax.set_xticklabels(n_threads)
 
 	for step in range(proportions.shape[1]):
-		ax.bar(bar_starting_position + bar_width*step, scaling[:, step], width=bar_width, label=f'step { step + 1 }')
+		ax.plot(scaling[:, step], label=f'step { step + 1 }')
 
-	ax.bar(bar_starting_position + bar_width*proportions.shape[1], scaling[:, -1], width=bar_width, label='total')
+	ax.plot(scaling[:, -1], linewidth=4, label='total')
 
-	ax.plot(x_points[0], y_points[0], "k--")
+	ax.plot(x_points[0], y_points[0], "k--", label='total number of threads')
 	for i in range(1, len(x_points)):
 		ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
 	ax.set_yscale('log')
 
+	ymin, ymax = ax.get_ylim()
+	ax.set_ylim(max(ymin, 0.2), ymax)
+
 	# saving fig
-	ax.legend(loc='upper left')
+	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+	ax.set_xlim(0, len(n_threads) - 1)
 	fig.savefig("plots/scaling/scaling_" + rule + ".png")
 
 
@@ -100,12 +92,13 @@ for filename in filenames:
 	# plot proportions
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("proportion of the total execution time taken by each step")
-	ax.set_xticks(tick_position_1)
+	ax.set_xticks(np.arange(0, len(n_threads)))
 	ax.set_xticklabels(n_threads)
 
 	for step in range(proportions.shape[1]):
-		ax.bar(bar_starting_position_1 + bar_width_1*step, proportions[:, step], width=bar_width_1, label=f'step { step + 1 }')
+		ax.plot(proportions[:, step], label=f'step { step + 1 }')
 
 	# saving fig
-	ax.legend(loc='upper left')
+	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+	ax.set_xlim(0, len(n_threads) - 1)
 	fig.savefig("plots/proportions/proportions_" + rule + ".png")
