@@ -42,20 +42,26 @@ for filename in filenames:
 
 
 	# limit graph values
-	x_points, y_points = [[]], [[]]
-	for i, n_thread in enumerate(n_threads):
-		n_thread = np.product([int(x) for x in n_thread.split(',')])
+	x_points, y_points = [[], [], []], [[], [], []]
+	for i in range(0, len(n_threads)):
+		n_thread, n_nodes = [int(x) for x in n_threads[i].split(',')]
+		total_n_thread = n_thread*n_nodes
+
 		if i < len(n_threads) - 2:
-			n_thread_1 = np.product([int(x) for x in n_threads[i + 1].split(',')])
-			if n_thread_1 > n_thread:
+			total_n_thread_1 = np.product([int(x) for x in n_threads[i + 1].split(',')])
+			if total_n_thread_1 > total_n_thread:
 				x_points.append([i + 0.2, len(n_threads) - 1])
-				y_points.append([n_thread, n_thread])
+				y_points.append([total_n_thread, total_n_thread])
 
 		x_points[0].append(i - 0.2)
-		y_points[0].append(n_thread)
-
+		y_points[0].append(total_n_thread)
 		x_points[0].append(i + 0.2)
-		y_points[0].append(n_thread)
+		y_points[0].append(total_n_thread)
+
+		x_points[1].append(i - 0.2)
+		y_points[1].append(n_nodes)
+		x_points[1].append(i + 0.2)
+		y_points[1].append(n_nodes)
 
 
 
@@ -65,15 +71,16 @@ for filename in filenames:
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("execution time scaling for each step")
 	ax.set_xticks(np.arange(0, len(n_threads)))
-	ax.set_xticklabels(n_threads)
+	ax.set_xticklabels([np.product([int(x) for x in n_thread.split(',')]) for n_thread in n_threads])
 
 	for step in range(proportions.shape[1]):
 		ax.plot(scaling[:, step], label=f'step { step + 1 }')
 
 	ax.plot(scaling[:, -1], linewidth=4, label='total')
 
-	ax.plot(x_points[0], y_points[0], "k--", label='total number of threads')
-	for i in range(1, len(x_points)):
+	ax.plot(x_points[0], y_points[0], "k--", label='total number of thread')
+	ax.plot(x_points[1], y_points[1], "r--", label='number of mpi ranks')
+	for i in range(3, len(x_points)):
 		ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
 	ax.set_yscale('log')
 

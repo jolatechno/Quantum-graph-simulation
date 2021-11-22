@@ -44,19 +44,25 @@ echo "	\"results\" : {"
 
 echo "" > ${errfile}
 
+last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
 	n_thread=${n_threads[i]}
 	n_node=${n_nodes[i]}
 
 	separator=""
-	if [ $n_thread -gt 1 ]; then
+	if (( $i < $last_element )); then
 		separator=","
 	fi
 
 	echo "${n_thread},${n_node}:" >> ${errfile}
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	echo "$(mpirun --map-by node --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+	if [ ${n_node} == 1 ]; then
+		echo "$(mpirun --map-by node --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+	else
+		echo "$(mpirun --map-by numa --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+	fi
+
 
 	echo "" >> ${errfile}
 done
