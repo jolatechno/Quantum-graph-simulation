@@ -20,8 +20,6 @@ args=
 file="scaling_test.out"
 mpirun_args=
 
-errfile="err.txt"
-
 while getopts 'f:a:n:ht:m:' flag; do
   case "$flag" in
   	h) print_usage
@@ -41,8 +39,6 @@ echo "{"
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"
 
-echo "" > ${errfile}
-
 last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
 	n_thread=${n_threads[i]}
@@ -56,7 +52,7 @@ for i in "${!n_threads[@]}"; do
 	echo "${n_thread},${n_node}:" >> ${errfile}
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	echo "$(mpirun --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+	mpirun --quiet --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>&2 | indent | indent
 
 	echo "" >> ${errfile}
 done
