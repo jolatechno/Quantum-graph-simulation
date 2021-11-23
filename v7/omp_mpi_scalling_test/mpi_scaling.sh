@@ -41,8 +41,10 @@ while getopts 'a:n:ht:N:s:o:c:' flag; do
   esac
 done
 
-command="${file} ${args}"
+if [ ! -d ./tmp ]; then
+	mkdir tmp
+fi
 
 for n_node in "${n_nodes[@]}"; do
-	echo n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
+	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
 done

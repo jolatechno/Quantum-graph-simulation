@@ -49,3 +49,6 @@ __pycache__/
 
 # oneTBB installation directory
 oneTBB/
+
+# tmp results
+tmp/
