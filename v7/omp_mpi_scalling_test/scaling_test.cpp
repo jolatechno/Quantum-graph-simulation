@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 	/* print results as json */
+	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
 		printf("\t\"steps\" : [");
 		for (unsigned int i = 0; i < num_step; ++i) {
@@ -67,7 +68,7 @@ int main(int argc, char* argv[]) {
 			if (i < num_step - 1) {
 				printf(", ");
 			} else
-				printf("],\n\t\"total\" : %f\n}", duration.count() * 1e-6);
+				printf("],\n\t\"num_object\" : %lu,\n\t\"total\" : %f\n}", total_num_object, duration.count() * 1e-6);
 		}
 	}
 
