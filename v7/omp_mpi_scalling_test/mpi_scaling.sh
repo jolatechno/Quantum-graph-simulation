@@ -51,7 +51,7 @@ echo "	\"results\" : {"
 echo "" > ${errfile}
 
 for n_node in "${n_nodes}"; do
-	sbatch n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
+	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
 done
 
 echo "	}"
