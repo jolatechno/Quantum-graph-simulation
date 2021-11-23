@@ -25,7 +25,7 @@ base_name="out_"
 
 errfile="err.txt"
 
-while getopts 'a:n:ht:N:s:o:' flag; do
+while getopts 'a:n:ht:N:s:o:c:' flag; do
   case "$flag" in
   	h) print_usage
     	exit 1 ;;
@@ -44,5 +44,5 @@ done
 command="${file} ${args}"
 
 for n_node in "${n_nodes[@]}"; do
-	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
+	echo n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
 done
