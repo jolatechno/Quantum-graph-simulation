@@ -39,7 +39,7 @@ for filename in filenames:
 			proportions[i, step] = data["results"][n_thread]["steps"][step] / data["results"][n_thread]["total"]
 			scaling[i, step] = data["results"][n_threads[0]]["steps"][step] / data["results"][n_thread]["steps"][step]
 
-			total_n_thread = np.product([int(x) for x in n_thread[i].split(',')])
+			total_n_thread = np.product([int(x) for x in n_thread.split(',')])
 			object_per_threads[i] = data["results"][n_thread]["num_object"] / total_n_thread
 
 
@@ -82,10 +82,12 @@ for filename in filenames:
 
 	ax.plot(scaling[:, -1], linewidth=4, label='total')
 
-	ax.plot(x_points[0], y_points[0], "k--", label='total number of thread')
-	ax.plot(x_points[1], y_points[1], "r--", label='number of mpi ranks')
-	for i in range(3, len(x_points)):
-		ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
+	max_scalling = np.amax(scaling)
+	if max_scalling > y_points[0][-1] / 2:
+		ax.plot(x_points[0], y_points[0], "k--", label='total number of thread')
+		ax.plot(x_points[1], y_points[1], "r--", label='number of mpi ranks')
+		for i in range(3, len(x_points)):
+			ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
 	ax.set_yscale('log')
 
 	ymin, ymax = ax.get_ylim()
@@ -129,4 +131,6 @@ for filename in filenames:
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 	ax.set_xlim(0, len(n_threads) - 1)
+	ymin, ymax = ax.get_ylim()
+	ax.set_ylim(0, ymax)
 	fig.savefig("plots/properties/properties_" + rule + ".png")
