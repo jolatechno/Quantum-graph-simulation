@@ -31,12 +31,16 @@ for filename in filenames:
 
 	scaling = np.zeros((len(n_threads), len(data["results"][n_threads[0]]["steps"]) + 1))
 	proportions = np.zeros((len(n_threads), len(data["results"][n_threads[0]]["steps"])))
+	object_per_threads = np.zeros(len(n_threads))
 
 	for i, n_thread in enumerate(n_threads):
 		scaling[i, -1] = data["results"][n_threads[0]]["total"] / data["results"][n_thread]["total"]
 		for step in range(proportions.shape[1]):
 			proportions[i, step] = data["results"][n_thread]["steps"][step] / data["results"][n_thread]["total"]
 			scaling[i, step] = data["results"][n_threads[0]]["steps"][step] / data["results"][n_thread]["steps"][step]
+
+			total_n_thread = np.product([int(x) for x in n_thread[i].split(',')])
+			object_per_threads[i] = data["results"][n_thread]["num_object"] / total_n_thread
 
 
 
@@ -109,3 +113,20 @@ for filename in filenames:
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 	ax.set_xlim(0, len(n_threads) - 1)
 	fig.savefig("plots/proportions/proportions_" + rule + ".png")
+
+
+
+
+
+	# plot properties
+	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
+	ax.set_title("number of object per thread")
+	ax.set_xticks(np.arange(0, len(n_threads)))
+	ax.set_xticklabels(n_threads)
+
+	ax.plot(object_per_threads, label=f'number of object per thread')
+
+	# saving fig
+	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+	ax.set_xlim(0, len(n_threads) - 1)
+	fig.savefig("plots/properties/properties_" + rule + ".png")
