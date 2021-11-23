@@ -15,8 +15,6 @@ print_usage() {
 "
 }
 
-indent() { sed 's/^/	/'; }
-
 n_threads=$(nproc --all)
 n_nodes=1
 n_per_nodes=1
@@ -35,8 +33,8 @@ while getopts 'a:n:ht:N:s:o:' flag; do
     a) args="${OPTARG}" ;;
     c) CFLAGS="${OPTARG}" ;;
 	o) base_name="${OPTARG}" ;;
-	t) IFS=', ' read -r -a n_threads <<< "${OPTARG}" ;;
-	n) IFS=', ' read -r -a n_per_nodes <<< "${OPTARG}" ;;
+	t) n_threads="${OPTARG}" ;;
+	n) n_per_nodes="${OPTARG}" ;;
 	N) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
@@ -44,15 +42,7 @@ while getopts 'a:n:ht:N:s:o:' flag; do
 done
 
 command="${file} ${args}"
-echo "{"
-echo "	\"command\" : \"${command}\","
-echo "	\"results\" : {"
 
-echo "" > ${errfile}
-
-for n_node in "${n_nodes}"; do
+for n_node in "${n_nodes[@]}"; do
 	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=${base_name}${n_node}.out --error=${base_name}${n_node}.err -N ${n_node} slurm.sh
 done
-
-echo "	}"
-echo "}"
