@@ -58,9 +58,9 @@ for i in "${!n_threads[@]}"; do
 	echo "		\"${n_thread},${n_node}\" : {"
 	
 	if [ ${n_node} == 1 ]; then
-		echo "$(mpirun --map-by node --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+		echo "$(mpirun --map-by node --cpus-per-proc ${n_thread} --npernode ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
 	else
-		echo "$(mpirun --map-by numa --oversubscribe --cpus-per-proc ${n_thread} -n ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
+		echo "$(mpirun --map-by numa --cpus-per-proc ${n_thread} --npernode ${n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>> ${errfile} | indent | indent)${separator}"
 	fi
 
 

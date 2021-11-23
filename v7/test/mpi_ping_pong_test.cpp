@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	iqs::rules::qcgd::utils::max_print_num_graphs = 4;
+	iqs::rules::qcgd::utils::max_print_num_graphs = 10;
 
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
