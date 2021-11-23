@@ -1,7 +1,7 @@
 #!/bin/bash
 
 print_usage() {
-  printf "Usage: ./multithreading_test.sh ops...
+  printf "Usage: ./scaling_test.sh ops...
 	-h: this help menu
 	-f: file to execute (default=\"scaling_test.out\")
 	-a: arguments for scaling_test.cpp
@@ -16,10 +16,9 @@ indent() { sed 's/^/	/'; }
 
 n_threads=$(nproc --all)
 n_nodes=1
-args=""
-use_omp=false
+args=
 file="scaling_test.out"
-mpirun_args=""
+mpirun_args=
 
 errfile="err.txt"
 
