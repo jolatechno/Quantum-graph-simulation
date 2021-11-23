@@ -23,7 +23,7 @@ echo “As the user: $USER”
 echo -e "\n===== job compilation ====\n"
 
 cd /home/jtouzet/Quantum-graph-simulation/v7/omp_mpi_scalling_test
-make CXX=mpic++ CFLAGS="${CFLAGS}"
+#make CXX=mpic++ CFLAGS="${CFLAGS}"
 
 echo -e "\n===== job results ====\n"
 

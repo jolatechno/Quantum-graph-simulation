@@ -52,9 +52,9 @@ for i in "${!n_threads[@]}"; do
 	>&2 echo "${n_thread},${n_node}:"
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	mpirun --quiet --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>&2 | indent | indent 
+	mpirun --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2>&2 | indent | indent 
 	echo ${separator}
-	
+
 	>&2 echo -e "\n\n\n"
 done
 
