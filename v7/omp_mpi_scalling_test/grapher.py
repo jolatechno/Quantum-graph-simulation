@@ -17,14 +17,25 @@ def compare(item1, item2):
 
 	return n_thread_2 - n_thread_1
 
+def clear_tick_label(ax):
+	threshold = 30
+	for t in ax.get_xticklabels():
+	    if len(t.get_text()) > threshold:
+	        t.set_rotation(90)
+
 filenames = ["res.json"] if len(sys.argv) == 1 else sys.argv[1:]
 if filenames == ["--mt"]:
 	filenames.append("res.json")
 
-for filename in filenames:
+for Input in filenames:
+	no_x_label = False
 	name_extension = ""
-	if len(filename.split(",")) == 2:
-		filename, name_extension = filename.split(",")
+	Input = Input.split(",")
+	filename = Input[0]
+	if len(Input) > 1:
+		name_extension = Input[1]
+	if len(Input) > 2:
+		no_x_label = Input[2] == "no_x_label"
 
 	with open(filename) as f:
 		data = json.load(f)
@@ -57,28 +68,46 @@ for filename in filenames:
 
 
 
+	# intialize x values
+	offset = 1
+	log_xlist = num_threads.copy()
+	for i in range(1, len(num_threads)):
+		if num_threads[i] == num_threads[i - 1]:
+			offset *= 1.1
+		log_xlist[i] *= offset
+
+	# find the first x of the slope
+	first_idx = 0
+	while first_idx < len(num_threads) - 1:
+		scaling_ratio = scaling[first_idx + 1, -1] / scaling[first_idx, -1]
+		num_thread_ratio = num_threads[first_idx + 1] / num_threads[first_idx]
+
+		if scaling_ratio > num_thread_ratio**0.7 and num_thread_ratio > 1:
+			break
+
+		first_idx += 1
+		if first_idx == len(num_threads) - 1:
+			first_idx += 1
+
+	# create perfect scaling
+	perfect_scaling, x_perfect_scalling = [], []
+	for i in range(first_idx, len(num_threads)):
+		x_perfect_scalling.append(log_xlist[i])
+		perfect_scaling.append(num_threads[i] / num_threads[first_idx])
+
+	# intialize labels
+	labels = [num_threads[0]]
+	for i in range(1, len(num_threads)):
+		if num_threads[i] != num_threads[i - 1]:
+			labels.append(str(num_threads[i]))
+			if i < len(num_threads) - 1 and num_threads[i] == num_threads[i + 1]:
+				labels[-1] += "..."
+		else:
+			labels.append("")
+
+
 	# limit graph values
-	x_points, y_points = [[], [], []], [[], [], []]
 	min_num_threads = num_threads[0]
-	for i in range(0, len(n_threads)):
-		_, n_nodes = n_threads[i].split(",")
-		max_scaling = num_threads[i]/min_num_threads
-
-		if i < len(n_threads) - 2:
-			max_scaling_1 = num_threads[i + 1]/min_num_threads
-			if max_scaling_1 > max_scaling:
-				x_points.append([i + 0.2, len(n_threads) - 1])
-				y_points.append([max_scaling, max_scaling])
-
-		x_points[0].append(i - 0.2)
-		y_points[0].append(max_scaling)
-		x_points[0].append(i + 0.2)
-		y_points[0].append(max_scaling)
-
-		x_points[1].append(i - 0.2)
-		y_points[1].append(n_nodes)
-		x_points[1].append(i + 0.2)
-		y_points[1].append(n_nodes)
 
 
 
@@ -87,28 +116,29 @@ for filename in filenames:
 	# plot wall time scalling
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("execution time scaling for each step")
-	ax.set_xticks(np.arange(0, len(n_threads)))
-	ax.set_xticklabels(num_threads)
+
+	ax.set_yscale('log')
+	ax.set_xscale('log')
+	ax.get_xaxis().set_tick_params(which='minor', size=0)
+	ax.get_xaxis().set_tick_params(which='minor', width=0) 
+
+	if not no_x_label:
+		ax.set_xticks(log_xlist)
+		ax.set_xticklabels(labels)
 
 	for step in range(proportions.shape[1]):
-		ax.plot(scaling[:, step], label=f'step { step + 1 }')
+		ax.plot(log_xlist, scaling[:, step], label=f'step { step + 1 }')
 
-	ax.plot(scaling[:, -1], linewidth=4, label='total')
+	ax.plot(log_xlist, scaling[:, -1], linewidth=4, label='total')
 
-	max_scalling = np.amax(scaling)
-	if max_scalling > np.sqrt(y_points[0][-1]):
-		ax.plot(x_points[0], y_points[0], "k--", label='total number of thread')
-		ax.plot(x_points[1], y_points[1], "r--", label='number of mpi ranks')
-		for i in range(3, len(x_points)):
-			ax.plot(x_points[i], y_points[i], "--", color="dimgrey")
-	ax.set_yscale('log')
+	if len(perfect_scaling) > 0:
+		ax.plot(x_perfect_scalling, perfect_scaling, "k--", label='ideal scaling')
 
 	ymin, ymax = ax.get_ylim()
-	ax.set_ylim(max(ymin, 0.2), ymax)
+	ax.set_ylim(max(ymin, 0.2), ymax**1.1)
 
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-	ax.set_xlim(0, len(n_threads) - 1)
 	fig.savefig("plots/scaling/scaling_" + rule + name_extension + ".png")
 
 
@@ -118,15 +148,20 @@ for filename in filenames:
 	# plot proportions
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 	ax.set_title("proportion of the total execution time taken by each step")
-	ax.set_xticks(np.arange(0, len(n_threads)))
-	ax.set_xticklabels([np.product([int(x) for x in n_thread.split(',')]) for n_thread in n_threads])
+
+	ax.set_xscale('log')
+	ax.get_xaxis().set_tick_params(which='minor', size=0)
+	ax.get_xaxis().set_tick_params(which='minor', width=0) 
+
+	if not no_x_label:
+		ax.set_xticks(log_xlist)
+		ax.set_xticklabels(labels)
 
 	for step in range(proportions.shape[1]):
-		ax.plot(proportions[:, step], label=f'step { step + 1 }')
+		ax.plot(log_xlist, proportions[:, step], label=f'step { step + 1 }')
 
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-	ax.set_xlim(0, len(n_threads) - 1)
 	fig.savefig("plots/proportions/proportions_" + rule + name_extension + ".png")
 
 
@@ -135,17 +170,26 @@ for filename in filenames:
 
 	# plot properties
 	fig, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
-	ax2 = ax.twinx()
-	ax.set_title("number of object per thread")
-	ax.set_xticks(np.arange(0, len(n_threads)))
-	ax.set_xticklabels([np.product([int(x) for x in n_thread.split(',')]) for n_thread in n_threads])
+	ax.set_title("number of object")
 
-	ax.plot(object_per_threads, "b-", label='number of object per thread')
-	ax2.plot(num_object, "r-", label='total number of object')
+	ax.set_yscale('log')
+	ax.set_xscale('log')
+	ax.get_xaxis().set_tick_params(which='minor', size=0)
+	ax.get_xaxis().set_tick_params(which='minor', width=0) 
+
+	if not no_x_label:
+		ax.set_xticks(log_xlist)
+		ax.set_xticklabels(labels)
+
+	ax2 = ax.twinx()
+	ax2.set_yscale('log')
+
+	ax.plot(log_xlist, object_per_threads, "b-", label='number of object per thread')
+	ax2.plot(log_xlist, num_object, "r-", label='total number of object')
 
 	# saving fig
-	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-	ax.set_xlim(0, len(n_threads) - 1)
-	ymin, ymax = ax.get_ylim()
-	ax.set_ylim(0, ymax)
+	ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.45))
+	ax2.legend(loc='center left', bbox_to_anchor=(1.05, 0.55))
+	ymin, ymax = ax2.get_ylim()
+	ax2.set_ylim(1, ymax**1.1)
 	fig.savefig("plots/properties/properties_" + rule + name_extension + ".png")
