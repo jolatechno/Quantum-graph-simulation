@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 	iqs::tolerance = 1e-10;
 	iqs::rules::qcgd::utils::max_print_num_graphs = 10;
 
-	auto [n_iter, reversed_n_iter, state, rules] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	auto [n_iter, reversed_n_iter, state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	iqs::rules::qcgd::utils::print(state);
 
@@ -19,14 +19,14 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::simulate(state, rule, buffer, sy_it);
+					iqs::simulate(state, rule, buffer, sy_it, max_num_object);
 				} else
 					iqs::simulate(state, modifier);
 	for (int i = 0; i < reversed_n_iter; ++i)
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::simulate(state, rule, buffer, sy_it);
+					iqs::simulate(state, rule, buffer, sy_it, max_num_object);
 				} else
 					iqs::simulate(state, modifier);
 

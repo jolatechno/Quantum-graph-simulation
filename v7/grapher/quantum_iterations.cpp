@@ -5,7 +5,7 @@ int main(int argc, char* argv[]) {
 	iqs::it_t buffer;
 	iqs::sy_it_t sy_it;
 
-	auto [n_iter, _, state, rules] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	auto [n_iter, _, state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	iqs::rules::qcgd::utils::print(state);
 
@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::simulate(state, rule, buffer, sy_it);
+					iqs::simulate(state, rule, buffer, sy_it, max_num_object);
 				} else
 					iqs::simulate(state, modifier);
 		std::cout << ", ";

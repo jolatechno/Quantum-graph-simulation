@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
 
-	auto [n_iter, reversed_n_iter, local_state, rules] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	auto [n_iter, reversed_n_iter, local_state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	iqs::rule_t *rule = new iqs::rules::qcgd::split_merge(0.25, 0.25);
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, 0, mid_step_function);
+					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object, mid_step_function);
 				} else
 					iqs::simulate(state, modifier);
 	}

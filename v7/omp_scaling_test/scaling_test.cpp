@@ -28,14 +28,14 @@ int main(int argc, char* argv[]) {
 		}
 	};
 
-	auto [n_iter, reversed_n_iter, state, rules] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	auto [n_iter, reversed_n_iter, state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i)
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::simulate(state, rule, buffer, sy_it, 0, mid_step_function);
+					iqs::simulate(state, rule, buffer, sy_it, max_num_object, mid_step_function);
 				} else
 					iqs::simulate(state, modifier);
 	auto stop = std::chrono::high_resolution_clock::now();
