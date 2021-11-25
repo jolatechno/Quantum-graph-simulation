@@ -28,20 +28,29 @@ if filenames == ["--mt"]:
 	filenames.append("res.json")
 
 for Input in filenames:
-	no_x_label = False
-	name_extension = ""
 	Input = Input.split(",")
 	filename = Input[0]
+
+	no_x_label, only_omp, only_mpi, name_extension = False, False, False, ""
 	if len(Input) > 1:
 		name_extension = Input[1]
-	if len(Input) > 2:
-		no_x_label = Input[2] == "no_x_label"
+	for i in range(2, len(Input)):
+		no_x_label = no_x_label | (Input[i] == "no_x_label")
+		only_mpi = only_mpi | (Input[i] == "only_mpi")
+		only_omp = only_omp | (Input[i] == "only_omp")
 
 	with open(filename) as f:
 		data = json.load(f)
 
 	n_threads = list(data["results"].keys())
 	n_threads.sort(key=functools.cmp_to_key(compare))
+	print(only_mpi, only_omp, n_threads)
+	if only_mpi:
+		n_threads = list(filter(lambda threads : int(threads.split(",")[1]) > 1, n_threads))
+	if only_omp:
+		n_threads = list(filter(lambda threads : int(threads.split(",")[1]) == 1, n_threads))
+	print(only_mpi, only_omp, n_threads)
+	print()
 	num_threads = [np.product([int(x) for x in n_thread.split(',')]) for n_thread in n_threads]
 
 	rule = data["command"].split("|")[-1].replace(";", "_")
@@ -190,6 +199,4 @@ for Input in filenames:
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.45))
 	ax2.legend(loc='center left', bbox_to_anchor=(1.05, 0.55))
-	ymin, ymax = ax2.get_ylim()
-	ax2.set_ylim(1, ymax**1.1)
 	fig.savefig("plots/properties/properties_" + rule + name_extension + ".png")
