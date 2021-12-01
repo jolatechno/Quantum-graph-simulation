@@ -49,3 +49,25 @@ shown here :
   [/v6/scaling_test/multithreading_test.sh]: ./v6/scaling_test/multithreading_test.sh
   [/v6/scaling_test/numa_test.sh]: ./v6/scaling_test/numa_test.sh
   [/validation/selection/selector_benchmark.cpp]: ./validation/selection/selector_benchmark.cpp
+
+  ```bash
+srun --time=0-10:00 -C zonda --pty bash -i
+
+cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
+(cd ../IQS && git pull origin dev)
+
+module load compiler/gcc/11.2.0
+module load mpi/openmpi/3.1.4
+
+make CXX=mpic++ CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DLOAD_FACTOR=3 -DMIN_VECTOR_SIZE=1000"
+
+./mpi_scaling.sh -N 1 -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+  -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
+  -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
+
+./mpi_scaling.sh -N 1 -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+  -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
+  -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
+```

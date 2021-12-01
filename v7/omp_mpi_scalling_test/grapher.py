@@ -44,13 +44,11 @@ for Input in filenames:
 
 	n_threads = list(data["results"].keys())
 	n_threads.sort(key=functools.cmp_to_key(compare))
-	print(only_mpi, only_omp, n_threads)
 	if only_mpi:
 		n_threads = list(filter(lambda threads : int(threads.split(",")[1]) > 1, n_threads))
 	if only_omp:
 		n_threads = list(filter(lambda threads : int(threads.split(",")[1]) == 1, n_threads))
-	print(only_mpi, only_omp, n_threads)
-	print()
+		
 	num_threads = [np.product([int(x) for x in n_thread.split(',')]) for n_thread in n_threads]
 
 	rule = data["command"].split("|")[-1].replace(";", "_")
