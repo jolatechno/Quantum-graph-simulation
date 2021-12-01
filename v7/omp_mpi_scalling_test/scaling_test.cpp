@@ -11,7 +11,11 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 int main(int argc, char* argv[]) {
 	int rank;
-	MPI_Init(&argc, &argv);
+	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    if(provided < MPI_THREAD_MULTIPLE) {
+        printf("The threading support level is lesser than that demanded.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    }
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	iqs::mpi::mpi_it_t state, buffer;
