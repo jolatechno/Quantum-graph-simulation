@@ -31,13 +31,14 @@ for Input in filenames:
 	Input = Input.split(",")
 	filename = Input[0]
 
-	no_x_label, only_omp, only_mpi, name_extension = False, False, False, ""
+	no_x_label, only_omp, only_mpi, find_first_idx, name_extension = False, False, False, False, ""
 	if len(Input) > 1:
 		name_extension = Input[1]
 	for i in range(2, len(Input)):
 		no_x_label = no_x_label | (Input[i] == "no_x_label")
 		only_mpi = only_mpi | (Input[i] == "only_mpi")
 		only_omp = only_omp | (Input[i] == "only_omp")
+		find_first_idx = find_first_idx | (Input[i] == "find_first_idx")
 
 	with open(filename) as f:
 		data = json.load(f)
@@ -85,16 +86,17 @@ for Input in filenames:
 
 	# find the first x of the slope
 	first_idx = 0
-	while first_idx < len(num_threads) - 1:
-		scaling_ratio = scaling[first_idx + 1, -1] / scaling[first_idx, -1]
-		num_thread_ratio = num_threads[first_idx + 1] / num_threads[first_idx]
+	if find_first_idx:
+		while first_idx < len(num_threads) - 1:
+			scaling_ratio = scaling[first_idx + 1, -1] / scaling[first_idx, -1]
+			num_thread_ratio = num_threads[first_idx + 1] / num_threads[first_idx]
 
-		if scaling_ratio > num_thread_ratio**0.7 and num_thread_ratio > 1:
-			break
+			if scaling_ratio > num_thread_ratio**0.7 and num_thread_ratio > 1:
+				break
 
-		first_idx += 1
-		if first_idx == len(num_threads) - 1:
 			first_idx += 1
+			if first_idx == len(num_threads) - 1:
+				first_idx += 1
 
 	# create perfect scaling
 	perfect_scaling, x_perfect_scalling = [], []
