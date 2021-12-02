@@ -57,17 +57,29 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 (cd ../IQS && git pull origin dev)
 
 module load compiler/gcc/11.2.0
-module load mpi/openmpi/3.1.4
+module load mpi/openmpi/4.0.1
 
-make CXX=mpic++ CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DLOAD_FACTOR=3 -DMIN_VECTOR_SIZE=1000"
+make CXX=mpic++ CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000"
 
-./mpi_scaling.sh -N 1 -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
   -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
   -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
 
-./mpi_scaling.sh -N 1 -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
   -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
+
+srun --time=0-10:00 -C bora --pty bash -i
+
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
+  -n 2 -t 18 -s "-C bora --exclusive" \
+  -a 9,safety_margin=0.3,seed=0\|15\|step\;erase_create -oec_bora_
+
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
+  -n 2 -t 18 -s "-C bora --exclusive" \
+  -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
+
+./grapher.py .res_ec_local.json,_local .res_sm_local.json,_local .res_ec_cluster.json,_cluster,no_x_label .res_sm_cluster.json,_cluster,no_x_label .res_ec_local.json,_local_omp,only_omp .res_ec_local.json,_local_mpi,only_mpi
 ```

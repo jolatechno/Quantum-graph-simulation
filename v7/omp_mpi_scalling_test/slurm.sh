@@ -5,10 +5,12 @@
 #SBATCH -o %j.out
 #SBATCH -e %j.err
 
+NUM_HWTHREADS=$(lscpu -p | grep -c "^[0-9]")
+
 module load compiler/gcc/11.2.0
 export OMP_PROC_BIND=false
-export GOMP_CPU_AFFINITY=0-63
-module load mpi/openmpi/3.1.4
+export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
+module load mpi/openmpi/4.0.1
 
 echo -e "===== my job information ====\n"
 
@@ -23,11 +25,13 @@ echo “As the user: $USER”
 echo -e "\n===== job compilation ====\n"
 
 cd /home/jtouzet/Quantum-graph-simulation/v7/omp_mpi_scalling_test
-#make CXX=mpic++ CFLAGS="${CFLAGS}"
+make CXX=mpic++ CFLAGS="${CFLAGS} -o${NAME}.out"
 
 echo -e "\n===== job results ====\n"
 
-./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule}
+./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}.out
+
+rm ${NAME}.out
 
 #end job
 exit 0
