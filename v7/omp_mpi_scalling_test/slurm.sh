@@ -25,13 +25,14 @@ echo “As the user: $USER”
 echo -e "\n===== job compilation ====\n"
 
 cd /home/jtouzet/Quantum-graph-simulation/v7/omp_mpi_scalling_test
-make CXX=mpic++ CFLAGS="${CFLAGS} -o${SLURM_JOB_ID}.out"
+#make CXX=mpic++ CFLAGS="${CFLAGS} -o${SLURM_JOB_ID}.out"
 
 echo -e "\n===== job results ====\n"
 
-./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${SLURM_JOB_ID}.out
+#./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${SLURM_JOB_ID}.out
+./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 
-rm ${SLURM_JOB_ID}.out
+#rm ${SLURM_JOB_ID}.out
 
 #end job
 exit 0

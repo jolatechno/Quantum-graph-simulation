@@ -80,9 +80,16 @@ for Input in filenames:
 	offset = 1
 	log_xlist = num_threads.copy()
 	for i in range(1, len(num_threads)):
-		if num_threads[i] == num_threads[i - 1]:
+		same_num_threads = num_threads[i - 1] == num_threads[i];
+		unique_num_threads = num_threads[i - 1] != num_threads[i] and (i == len(num_threads) - 1 or num_threads[i] != num_threads[i + 1])
+
+		if same_num_threads:
 			offset *= 1.1
 		log_xlist[i] *= offset
+
+		if unique_num_threads:
+			log_xlist[i] *= np.sqrt(1.1)
+			offset *= 1.1
 
 	# find the first x of the slope
 	first_idx = 0
@@ -101,8 +108,17 @@ for Input in filenames:
 	# create perfect scaling
 	perfect_scaling, x_perfect_scalling = [], []
 	for i in range(first_idx, len(num_threads)):
-		x_perfect_scalling.append(log_xlist[i])
-		perfect_scaling.append(num_threads[i] / num_threads[first_idx])
+		unique_num_threads = num_threads[i - 1] != num_threads[i] and (i == len(num_threads) - 1 or num_threads[i] != num_threads[i + 1])
+
+		if unique_num_threads:
+			x_perfect_scalling.append(log_xlist[i] / np.sqrt(1.1))
+			x_perfect_scalling.append(log_xlist[i] * np.sqrt(1.1))
+
+			perfect_scaling.append(num_threads[i] / num_threads[first_idx])
+			perfect_scaling.append(num_threads[i] / num_threads[first_idx])
+		else:
+			x_perfect_scalling.append(log_xlist[i])
+			perfect_scaling.append(num_threads[i] / num_threads[first_idx])
 
 	# intialize labels
 	labels = [num_threads[0]]

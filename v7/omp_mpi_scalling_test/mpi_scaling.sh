@@ -22,22 +22,24 @@ args=
 sbatch_args=
 CFLAGS=
 base_name="out_"
+file="scaling_test.out"
 
 errfile="err.txt"
 
-while getopts 'a:n:ht:N:s:o:c:' flag; do
+while getopts 'a:n:ht:N:s:o:c:f:' flag; do
   case "$flag" in
   	h) print_usage
     	exit 1 ;;
-	s) sbatch_args="${OPTARG}" ;;
-    a) args="${OPTARG}" ;;
-    c) CFLAGS="${OPTARG}" ;;
-	o) base_name="${OPTARG}" ;;
-	t) n_threads="${OPTARG}" ;;
-	n) n_per_nodes="${OPTARG}" ;;
-	N) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
-    *) print_usage
-       exit 1 ;;
+		s) sbatch_args="${OPTARG}" ;;
+	  a) args="${OPTARG}" ;;
+	  c) CFLAGS="${OPTARG}" ;;
+		o) base_name="${OPTARG}" ;;
+		t) n_threads="${OPTARG}" ;;
+		n) n_per_nodes="${OPTARG}" ;;
+		N) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
+		f) file="${OPTARG}" ;;
+	  *) print_usage
+	    exit 1 ;;
   esac
 done
 
@@ -46,5 +48,5 @@ if [ ! -d ./tmp ]; then
 fi
 
 for n_node in "${n_nodes[@]}"; do
-	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
+	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} CFLAGS=${CFLAGS} sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
 done
