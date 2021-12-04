@@ -164,7 +164,7 @@ for Input in filenames:
 
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-	fig.savefig("plots/scaling/scaling_" + rule + name_extension + ".png")
+	fig.savefig("../../Quantum-graph-simulation-plots/scaling-plots/scaling/scaling_" + rule + name_extension + ".png")
 
 
 
@@ -187,7 +187,7 @@ for Input in filenames:
 
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-	fig.savefig("plots/proportions/proportions_" + rule + name_extension + ".png")
+	fig.savefig("../../Quantum-graph-simulation-plots/scaling-plots/proportions/proportions_" + rule + name_extension + ".png")
 
 
 
@@ -215,4 +215,4 @@ for Input in filenames:
 	# saving fig
 	ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.45))
 	ax2.legend(loc='center left', bbox_to_anchor=(1.05, 0.55))
-	fig.savefig("plots/properties/properties_" + rule + name_extension + ".png")
+	fig.savefig("../../Quantum-graph-simulation-plots/scaling-plots/properties/properties_" + rule + name_extension + ".png")

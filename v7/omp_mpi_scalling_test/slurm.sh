@@ -10,7 +10,7 @@ NUM_HWTHREADS=$(lscpu -p | grep -c "^[0-9]")
 module load compiler/gcc/11.2.0
 export OMP_PROC_BIND=false
 export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
-module load mpi/openmpi/4.0.1
+module load mpi/openmpi/4.0.3-mlx
 
 echo -e "===== my job information ====\n"
 

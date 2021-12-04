@@ -59,7 +59,7 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" CXX=mpic++
 
 module load compiler/gcc/11.2.0
-module load mpi/openmpi/4.0.1
+module load mpi/openmpi/4.0.3-mlx
 
 ./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
   -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
@@ -73,11 +73,13 @@ module load mpi/openmpi/4.0.1
 
 ./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
+  -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create" \
   -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
 
 ./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
+  -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
