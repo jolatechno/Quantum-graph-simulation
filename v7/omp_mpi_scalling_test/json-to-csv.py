@@ -47,22 +47,26 @@ for Input in filenames:
 	command = data["command"]
 	command = command.split(" ")[1]
 
-	rule = command.split("|")[-1].replace(";", "_")
+	n_iter = (command.split("|")[0]).split(",")[0]
+	n_node = command.split("|")[1]
+	rule = command.split("|")[2].replace(";", "_")
 
-	string = f"\"command:\",\"{ command }\"\n"
+	string = "\"#n iters\",\"initial #n node\",\"rule\"\n"
+	string += n_iter + "," + n_node + ",\"" + rule + "\"\n\n"  
+	
 	string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
 	for i in range(n_step):
 		string += f",\"step {i}\""
-	string += "\n";
 
 	for i, key in enumerate(keys):
+		string += "\n"
+
 		n_thread, n_task, n_node = n_threads[i]
 		this_step = data["results"][key]
 
 		string += f"{ n_thread },{ n_task },{ n_node },{ this_step['num_object'] },{ this_step['total'] }"
 		for i in range(n_step):
 			string += f",{ this_step['steps'][i] }"
-		string += "\n"
 	
 	write_file_name = "../../Quantum-graph-simulation-plots/scaling-plots/excel/" + rule + name_extension + ".csv"
 	with open(write_file_name, "w") as f:
