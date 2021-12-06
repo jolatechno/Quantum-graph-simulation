@@ -1,11 +1,15 @@
 #!/usr/bin/python3
 
 import json
-import numpy as np
 import functools
-import os
-import sys
+import os, sys
 
+def prod(List):
+	res = 1
+	for x in List:
+		res *= x
+	return res
+	
 def string_to_key(str):
 	keys = [int(i) for i in str.split(",")]
 	if len(keys) == 2:
@@ -13,8 +17,8 @@ def string_to_key(str):
 	return (*keys,)
 
 def compare(item1, item2):
-	if np.prod(item1) != np.prod(item2):
-		return np.prod(item2) - np.prod(item2)
+	if prod(item1) != prod(item2):
+		return prod(item2) - prod(item2)
 
 	if item1[2] != item2[2]:
 		return item2[2] - item1[2]
@@ -42,7 +46,8 @@ for Input in filenames:
 
 	rule = data["command"].split("|")[-1].replace(";", "_")
 
-	string = "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
+	string = f"\"command:\",\"{ data['command'] }\"\n"
+	string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
 	for i in range(n_step):
 		string += f",\"step {i}\""
 	string += "\n";

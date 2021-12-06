@@ -59,8 +59,8 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/3.1.4
 
-make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=skylake -obora_scling_test.out" CXX=mpic++
-make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozonda_scling_test.out" CXX=mpic++
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=skylake -obora_scaling_test.out" CXX=mpic++
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozonda_scaling_test.out" CXX=mpic++
 
 ./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
   -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
@@ -87,9 +87,7 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
 ./convert-json-to-csv.py .res_ec_local.json,_local \
   .res_sm_local.json,_local \
   .res_ec_cluster.json,_cluster \
-  .res_sm_cluster.json,_cluster \
-  .res_ec_local.json,_local_omp
-
+  .res_sm_cluster.json,_cluster
 
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2" CXX=mpic++ mpi_ping_pong_test
