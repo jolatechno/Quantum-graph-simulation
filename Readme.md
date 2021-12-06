@@ -52,6 +52,7 @@ shown here :
 
   ```bash
 srun --time=0-10:00 -C zonda --pty bash -i
+squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 
 cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 (cd ../IQS && git pull origin dev)
@@ -72,6 +73,8 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
   -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
 
+./json-to-csv.py .res_ec_local.json,_local .res_sm_local.json,_local
+
 ./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
   -f bora_scaling_test.out \
@@ -84,10 +87,8 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
   -s "-C bora --exclusive -J split_merge" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
-./convert-json-to-csv.py .res_ec_local.json,_local \
-  .res_sm_local.json,_local \
-  .res_ec_cluster.json,_cluster \
-  .res_sm_cluster.json,_cluster
+./csv-from-tmp.py ec_bora_
+./csv-from-tmp.py sm_bora_
 
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2" CXX=mpic++ mpi_ping_pong_test

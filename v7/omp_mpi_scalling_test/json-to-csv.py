@@ -18,7 +18,7 @@ def string_to_key(str):
 
 def compare(item1, item2):
 	if prod(item1) != prod(item2):
-		return prod(item2) - prod(item2)
+		return prod(item2) - prod(item1)
 
 	if item1[2] != item2[2]:
 		return item2[2] - item1[2]
@@ -44,9 +44,12 @@ for Input in filenames:
 
 	n_step = len(data["results"][keys[0]]["steps"])
 
-	rule = data["command"].split("|")[-1].replace(";", "_")
+	command = data["command"]
+	command = command.split(" ")[1]
 
-	string = f"\"command:\",\"{ data['command'] }\"\n"
+	rule = command.split("|")[-1].replace(";", "_")
+
+	string = f"\"command:\",\"{ command }\"\n"
 	string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
 	for i in range(n_step):
 		string += f",\"step {i}\""

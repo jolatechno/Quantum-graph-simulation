@@ -55,8 +55,11 @@ n_threads.sort(key=functools.cmp_to_key(compare))
 keys = [",".join([str(x) for x in key]) for key in n_threads]
 
 n_step = len(out_dict["results"][keys[0]]["steps"])
+command = out_dict["command"]
+command = command.split(" ")[1]
 
-string = "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
+string = "\"command:\",\"" + command  + "\"\n"
+string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
 for i in range(n_step):
 	string += ",\"step " + str(i) + "\""
 string += "\n";
