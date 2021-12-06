@@ -30,6 +30,7 @@ void mid_step_function(iqs::mpi::mpi_it_t const &state, iqs::mpi::mpi_it_t const
 			std::cout << "    " << state.num_object << " for rank " << rank << "/" << size << "\n";
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
+	usleep(1000);
 }
 
 int main(int argc, char* argv[]) {

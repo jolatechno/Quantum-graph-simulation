@@ -56,10 +56,11 @@ srun --time=0-10:00 -C zonda --pty bash -i
 cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 (cd ../IQS && git pull origin dev)
 
-make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" CXX=mpic++
-
 module load compiler/gcc/11.2.0
-module load mpi/openmpi/4.0.3-mlx
+module load mpi/openmpi/3.1.4
+
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=skylake -obora_scling_test.out" CXX=mpic++
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozonda_scling_test.out" CXX=mpic++
 
 ./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
   -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
@@ -83,15 +84,20 @@ module load mpi/openmpi/4.0.3-mlx
   -s "-C bora --exclusive -J split_merge" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
-./grapher.py .res_ec_local.json,_local \
+./convert-json-to-csv.py .res_ec_local.json,_local \
   .res_sm_local.json,_local \
-  .res_ec_cluster.json,_cluster,no_x_label,find_first_idx \
-  .res_sm_cluster.json,_cluster,no_x_label,find_first_idx \
-  .res_ec_local.json,_local_omp,only_omp \
-  .res_ec_local.json,_local_mpi,only_mpi
-```
+  .res_ec_cluster.json,_cluster \
+  .res_sm_cluster.json,_cluster \
+  .res_ec_local.json,_local_omp
 
-./mpi_scaling.sh -c "-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" \
-  -N 1,2,4 \
-  -n 2 -t 18 -s "-C bora --exclusive" \
-  -a 8,safety_margin=0.3,seed=0\|15\|step\;erase_create -oec_bora_
+
+
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2" CXX=mpic++ mpi_ping_pong_test
+
+salloc -N 3 --time=0-01:00 --exclusive -N 3 -C zonda
+srun hostname
+srun -N 1 hostname
+srun --pty bash -i
+
+./mpi_injectivity_test.sh -v -p 4 -t 16 -R 10 -n 7 -s 4 -S 13
+```

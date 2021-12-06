@@ -17,14 +17,17 @@ for match in matches:
   			with open("tmp/" + filename, "r") as file:
   				num_node = int(filename.split(".")[0].split(match)[1])
 
-  				txt_file = file.read()
-  				json_file = "{" + "{".join(txt_file.split("{")[1:])
+  				try:
+	  				txt_file = file.read()
+	  				json_file = "{" + "{".join(txt_file.split("{")[1:])
 
-  				json_dict = json.loads(json_file)
-  				out_dict["command"] = json_dict["command"]
+	  				json_dict = json.loads(json_file)
+	  				out_dict["command"] = json_dict["command"]
 
-  				for key in json_dict["results"].keys():
-  					out_dict["results"][multiply_key(key, num_node)] = json_dict["results"][key]
+	  				for key in json_dict["results"].keys():
+	  					out_dict["results"][key + f",{ num_node }"] = json_dict["results"][key]
+	  			except Exception:
+	  				pass
 
 	print(json.dumps(out_dict, indent=4))
 			
