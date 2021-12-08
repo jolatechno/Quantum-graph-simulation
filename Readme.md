@@ -102,3 +102,9 @@ srun --pty bash -i
 
 ./mpi_injectivity_test.sh -v -p 4 -t 16 -R 10 -n 7 -s 4 -S 13
 ```
+
+./mpi_scaling.sh -N 23,26,29 \
+  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J split_merge --time=00:10" \
+  -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_

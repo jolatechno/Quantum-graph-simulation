@@ -1,6 +1,7 @@
 #include <vector>
 #include <chrono>
 #include <ranges>
+#include <unistd.h>
 
 #include <iostream>
 
@@ -10,13 +11,14 @@
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 int main(int argc, char* argv[]) {
-	int rank, provided;
+	int provided, rank, size;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     if(provided < MPI_THREAD_MULTIPLE) {
         printf("The threading support level is lesser than that demanded.\n");
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
@@ -39,28 +41,57 @@ int main(int argc, char* argv[]) {
 	std::vector<time_point> step_start(num_step);
 
 	auto const mid_step_function = [&](int n) {
-		//MPI_Barrier(MPI_COMM_WORLD);
-		if (rank == 0)
+		MPI_Barrier(MPI_COMM_WORLD);
+		if (rank == 0) {
 			std::cerr << "step (" << n << ")\n";
 
-		if (n > 0) {
-			time_point stop = std::chrono::high_resolution_clock::now(); \
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
-			step_duration[n - 1] += duration.count() * 1e-6; \
-		}
-		if (n < num_step) {
-			step_start[n] = std::chrono::high_resolution_clock::now(); \
+			if (n > 0) {
+				time_point stop = std::chrono::high_resolution_clock::now(); \
+				auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
+				step_duration[n - 1] += duration.count() * 1e-6; \
+			}
+			if (n < num_step) {
+				step_start[n] = std::chrono::high_resolution_clock::now(); \
+			}
 		}
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
-			for (int j = 0; j < n_iter; ++j)
+			for (int j = 0; j < n_iter; ++j) {
+
+				for (int k = 0; k < size; ++k) {
+					MPI_Barrier(MPI_COMM_WORLD);
+					usleep(1000);
+					if (rank == k)
+						std::cerr << state.num_object << "=num_object, " << k << "=rank\n";
+				}
+				MPI_Barrier(MPI_COMM_WORLD);
+				usleep(1000);
+
 				if (is_rule) {
+					MPI_Barrier(MPI_COMM_WORLD);
+					if (rank == 0)
+						std::cerr << "simulate begin\n";
+
 					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object, mid_step_function);
-				} else
+
+					MPI_Barrier(MPI_COMM_WORLD);
+					if (rank == 0)
+						std::cerr << "simulate end\n\n";
+				} else {
+					MPI_Barrier(MPI_COMM_WORLD);
+					if (rank == 0)
+						std::cerr << "modifier begin\n";
+
 					iqs::simulate(state, modifier);
+
+					MPI_Barrier(MPI_COMM_WORLD);
+					if (rank == 0)
+						std::cerr << "modifier end\n\n";
+				}
+			}
 	}
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
