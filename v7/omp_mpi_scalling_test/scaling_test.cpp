@@ -41,10 +41,7 @@ int main(int argc, char* argv[]) {
 	std::vector<time_point> step_start(num_step);
 
 	auto const mid_step_function = [&](int n) {
-		MPI_Barrier(MPI_COMM_WORLD);
 		if (rank == 0) {
-			std::cerr << "step (" << n << ")\n";
-
 			if (n > 0) {
 				time_point stop = std::chrono::high_resolution_clock::now(); \
 				auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
@@ -60,37 +57,10 @@ int main(int argc, char* argv[]) {
 	for (int i = 0; i < n_iter; ++i) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j) {
-
-				for (int k = 0; k < size; ++k) {
-					MPI_Barrier(MPI_COMM_WORLD);
-					usleep(1000);
-					if (rank == k)
-						std::cerr << state.num_object << "=num_object, " << k << "=rank\n";
-				}
-				MPI_Barrier(MPI_COMM_WORLD);
-				usleep(1000);
-
 				if (is_rule) {
-					MPI_Barrier(MPI_COMM_WORLD);
-					if (rank == 0)
-						std::cerr << "simulate begin\n";
-
 					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object, mid_step_function);
-
-					MPI_Barrier(MPI_COMM_WORLD);
-					if (rank == 0)
-						std::cerr << "simulate end\n\n";
-				} else {
-					MPI_Barrier(MPI_COMM_WORLD);
-					if (rank == 0)
-						std::cerr << "modifier begin\n";
-
+				} else
 					iqs::simulate(state, modifier);
-
-					MPI_Barrier(MPI_COMM_WORLD);
-					if (rank == 0)
-						std::cerr << "modifier end\n\n";
-				}
 			}
 	}
 	auto stop = std::chrono::high_resolution_clock::now();

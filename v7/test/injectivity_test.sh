@@ -19,7 +19,7 @@ print_usage() {
 }
 
 min_seed=0
-max_seed=100
+max_seed=10
 
 n_iter=4
 

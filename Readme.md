@@ -80,31 +80,25 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
 ./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
   -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J erase_create --time=00:10" \
+  -s "-C bora --exclusive -J erase_create --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
 
 ./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
   -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J split_merge --time=00:10" \
+  -s "-C bora --exclusive -J split_merge --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_
 
 
-make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2" CXX=mpic++ mpi_ping_pong_test
+make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" CXX=mpic++ mpi_ping_pong_test
 
-salloc -N 3 --time=0-01:00 --exclusive -N 3 -C zonda
+salloc -N 3 --time=0-01:00 --exclusive -N 3 -C miriel
 srun hostname
 srun -N 1 hostname
 srun --pty bash -i
 
 ./mpi_injectivity_test.sh -v -p 4 -t 16 -R 10 -n 7 -s 4 -S 13
 ```
-
-./mpi_scaling.sh -N 23,26,29 \
-  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J split_merge --time=00:10" \
-  -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
