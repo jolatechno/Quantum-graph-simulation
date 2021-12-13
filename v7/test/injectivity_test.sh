@@ -19,7 +19,7 @@ print_usage() {
 }
 
 min_seed=0
-max_seed=10
+max_seed=100
 
 n_iter=4
 
@@ -39,17 +39,17 @@ while getopts 's:S:n:r:R:hvmec' flag; do
 
     n) n_iter="${OPTARG}" ;;
 
-	s) min_size="${OPTARG}" ;;
+		s) min_size="${OPTARG}" ;;
     S) max_size="${OPTARG}" ;;
 
-	r) min_seed="${OPTARG}" ;;
+		r) min_seed="${OPTARG}" ;;
     R) max_seed="${OPTARG}" ;;
 
-	v) verbose=true ;;
-	
-	m) rule_+=" split_merge"; overwriten_rule=true;;
-	e) rule_+=" erase_create"; overwriten_rule=true;;
-	c) rule_+=" coin"; overwriten_rule=true;;
+		v) verbose=true ;;
+		
+		m) rule_+=" split_merge"; overwriten_rule=true;;
+		e) rule_+=" erase_create"; overwriten_rule=true;;
+		c) rule_+=" coin"; overwriten_rule=true;;
 
     *) print_usage
        exit 1 ;;

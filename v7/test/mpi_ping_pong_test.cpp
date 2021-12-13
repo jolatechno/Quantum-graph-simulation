@@ -79,12 +79,16 @@ int main(int argc, char* argv[]) {
 		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
+		if (i == reversed_n_iter - 1)
+			iqs::collision_tolerance = 0;
+		
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
 					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object);
 				} else
 					iqs::simulate(state, modifier);
+
 		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
 	}
 

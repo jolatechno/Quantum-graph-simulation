@@ -1,14 +1,17 @@
 #!/bin/bash
 
 print_usage() {
-  printf "Usage: ./injectivity_test.sh ops...
+  printf "Usage: ./mpi_injectivity_test.sh ops...
+  -t: numer of thread per task (default = 1)
+  -p: number of task (default = 1)
+
 	-s: minimum size (default = 1)
 	-S: maxium size (default = 5)
 
 	-n: number of iterations (default = 4)
 
 	-r: minimum random seed (default = 0)
-	-R: maxium random seed (default = 100)
+	-R: maxium random seed (default = 10)
 
 	-m: test split merge rule (default : test all three rules)
 	-e: test erase create rule
@@ -19,7 +22,7 @@ print_usage() {
 }
 
 min_seed=0
-max_seed=100
+max_seed=10
 
 n_iter=4
 
@@ -40,21 +43,21 @@ while getopts 's:S:n:r:R:hvmect:p:' flag; do
        exit 1 ;;
 
     t) n_thread="${OPTARG}" ;;
-	p) n_node="${OPTARG}" ;;
+		p) n_node="${OPTARG}" ;;
 
     n) n_iter="${OPTARG}" ;;
 
-	s) min_size="${OPTARG}" ;;
+		s) min_size="${OPTARG}" ;;
     S) max_size="${OPTARG}" ;;
 
-	r) min_seed="${OPTARG}" ;;
+		r) min_seed="${OPTARG}" ;;
     R) max_seed="${OPTARG}" ;;
 
-	v) verbose=true ;;
-	
-	m) rule_+=" split_merge"; overwriten_rule=true;;
-	e) rule_+=" erase_create"; overwriten_rule=true;;
-	c) rule_+=" coin"; overwriten_rule=true;;
+		v) verbose=true ;;
+		
+		m) rule_+=" split_merge"; overwriten_rule=true;;
+		e) rule_+=" erase_create"; overwriten_rule=true;;
+		c) rule_+=" coin"; overwriten_rule=true;;
 
     *) print_usage
        exit 1 ;;
@@ -66,6 +69,10 @@ runner="mpirun --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=
 
 if [ "$overwriten_rule" == true ]; then
 	rule="${rule_}"
+fi
+
+if [ "$verbose" == true ]; then
+	echo "runner is : ${runner}"
 fi
 
 found=false
