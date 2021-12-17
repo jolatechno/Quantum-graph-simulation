@@ -51,19 +51,20 @@ shown here :
   [/validation/selection/selector_benchmark.cpp]: ./validation/selection/selector_benchmark.cpp
 
   ```bash
-srun --time=0-10:00 -C zonda --pty bash -i
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 
 cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 (cd ../IQS && git pull origin dev)
 
+
+
 module load compiler/gcc/11.2.0
-module load mpi/openmpi/3.1.4
+module load mpi/openmpi/4.0.1
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=skylake -obora_scaling_test.out" CXX=mpic++
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozonda_scaling_test.out" CXX=mpic++
 
-make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=armv8-a -oarm_scaling_test.out" CXX=mpic++
+
 
 ./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
   -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
@@ -79,20 +80,36 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=armv8-a -oarm
 
 ./json-to-csv.py .res_ec_local.json,_local .res_sm_local.json,_local
 
-./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38 \
+
+
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
 
-./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38 \
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
   -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
+  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J erase_create --time=0-00:15" \
+  -a 9,safety_margin=0.3,seed=0\|15\|step\;erase_create -oec_slow_bora_
+
+./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
+  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J erase_create --time=0-00:15" \
+  -a 11,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_long_bora_
+
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_
+./csv-from-tmp.py ec_slow_bora_
+./csv-from-tmp.py ec_long_bora_
 
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" CXX=mpic++ mpi_ping_pong_test
