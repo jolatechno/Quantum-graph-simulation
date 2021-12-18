@@ -66,19 +66,21 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
 
 
 
-./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
   -f zonda_scaling_test.out \
   -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
   -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
 
-./mpi_scaling.sh -N 1 -n 2,1,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 32,64,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
+  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
   -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
 
-./json-to-csv.py .res_ec_local.json,_local .res_sm_local.json,_local
+./csv-from-tmp.py res_ec_
+./csv-from-tmp.py res_sm_
+
 
 
 
@@ -94,22 +96,10 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
   -s "-C bora --exclusive -J split_merge --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
 
-./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
-  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J erase_create --time=0-00:15" \
-  -a 9,safety_margin=0.3,seed=0\|15\|step\;erase_create -oec_slow_bora_
-
-./mpi_scaling.sh -N 1,2,4,6,8,10,12,14,16,18,20,23,26,29,32,35,38,41,44 \
-  -n 1,2,4,9,18,36 -t 36,18,9,4,2,1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J erase_create --time=0-00:15" \
-  -a 11,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_long_bora_
-
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_
-./csv-from-tmp.py ec_slow_bora_
-./csv-from-tmp.py ec_long_bora_
+
+
 
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000" CXX=mpic++ mpi_ping_pong_test
