@@ -5,6 +5,10 @@
 
 #include <unistd.h>
 
+#ifndef END_TOLERANCE
+	#define END_TOLERANCE 1e-15
+#endif
+
 void mid_step_function(iqs::mpi::mpi_it_t const &state, iqs::mpi::mpi_it_t const &buffer, iqs::mpi::mpi_sy_it_t const &sy_it, MPI_Comm comunicator) {
 	int size, rank;
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -49,8 +53,6 @@ int main(int argc, char* argv[]) {
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
 
-	iqs::tolerance = 1e-8;
-
 	auto [n_iter, reversed_n_iter, local_state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	iqs::rules::qcgd::utils::print(state);
@@ -79,8 +81,10 @@ int main(int argc, char* argv[]) {
 		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
-		if (i == reversed_n_iter - 1)
+		if (i == reversed_n_iter - 1) {
 			iqs::collision_tolerance = 0;
+			iqs::tolerance = END_TOLERANCE;
+		}
 		
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)

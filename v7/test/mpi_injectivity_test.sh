@@ -95,12 +95,20 @@ for rule in $rule; do
 			#check if the graph at the end is of probability 1
 			if [ "${first_line[1]}" != "${last_line[1]}" ]; then
 				echo "${command} (probability not equal to 1 !)"
+
+				>&2 echo -e "\n\n${command} (probability not equal to 1 !):"
+				>&2 echo "${res}"
+
 				found=true
 			else
 
 				#check if the graph at the end is the same as the graph at the start
 				if [ "${first_line}" != "${last_line}" ]; then
 					echo "${command} (graphs not equal !)"
+
+					>&2 echo -e "\n\n${command} (more than one graph !):"
+					>&2 echo "${res}"
+
 					found=true
 				fi
 			fi

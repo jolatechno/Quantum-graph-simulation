@@ -70,13 +70,17 @@ for rule in $rule; do
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
 			command="./ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125 2> /dev/null"
-			res=$(eval $command)
+			res=$(eval $command 2> /dev/null)
 
 			n_line=$(echo "${res}"  | wc -l)
 
 			#check if there is more then one graph at the end
 			if [ "${n_line}" != 3 ]; then
 				echo "${command} (more than one graph !)"
+
+				>&2 echo -e "\n\n${command} (more than one graph !):"
+				>&2 echo "${res}"
+
 				found=true
 			else
 				first_line=$(echo "${res}" | sed -n '1p')
@@ -85,12 +89,20 @@ for rule in $rule; do
 				#check if the graph at the end is of probability 1
 				if [ "${first_line[0]}" != "${third_line[0]}" ]; then
 					echo "${command} (probability not equal to 1 !)"
+
+					>&2 echo "\n\n${command} (probability not equal to 1 !):"
+					>&2 echo "${res}"
+
 					found=true
 				else
 
 					#check if the graph at the end is the same as the graph at the start
 					if [ "${first_line}" != "${third_line}" ]; then
 						echo "${command} (graphs not equal !)"
+
+						>&2 echo -e "\n\n${command} (graphs not equal !):"
+						>&2 echo "${res}"
+						
 						found=true
 					fi
 				fi
