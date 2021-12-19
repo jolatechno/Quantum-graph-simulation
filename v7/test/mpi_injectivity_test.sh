@@ -75,10 +75,9 @@ if [ "$verbose" == true ]; then
 	echo "runner is : ${runner}"
 fi
 
-found=false
-
 for rule in $rule; do
 	for size in `seq ${min_size} ${max_size}`; do
+		found=false
 
 		if [ "$verbose" == true ]; then
 			echo "testing injectivity for graphs of size ${size} for ${n_iter} iterations of ${rule}..."
@@ -107,11 +106,7 @@ for rule in $rule; do
 			fi
 		done
 
-		if [ "${found}" = true ]; then
-			exit 0
-		fi
-
-		if [ "$verbose" == true ]; then
+		if [ "$verbose" == true ] && [ "${found}" != true ]; then
 			echo "...OK"
 		fi
 
