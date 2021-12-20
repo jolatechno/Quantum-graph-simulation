@@ -4,10 +4,6 @@
 #include "../IQS/src/iqs.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
-#ifndef END_TOLERANCE
-	#define END_TOLERANCE 1e-15
-#endif
-
 int main(int argc, char* argv[]) {
 	iqs::it_t buffer;
 	iqs::sy_it_t sy_it;
@@ -26,10 +22,8 @@ int main(int argc, char* argv[]) {
 				} else
 					iqs::simulate(state, modifier);
 	for (int i = 0; i < reversed_n_iter; ++i) {
-		if (i == reversed_n_iter - 1) {
+		if (i == reversed_n_iter - 1)
 			iqs::collision_tolerance = 0;
-			iqs::tolerance = END_TOLERANCE;
-		}
 		
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)

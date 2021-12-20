@@ -101,12 +101,12 @@ make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -DMIN_VECTOR_SIZE=1000 -march=znver2 -ozond
 
 
 
-make CFLAGS="-DMIN_VECTOR_SIZE=1000 -DTOLERANCE=1e-40" ping_pong_test
+make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
 
 
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -march=skylake -DMIN_VECTOR_SIZE=1000 -DTOLERANCE=1e-40" CXX=mpic++ mpi_ping_pong_test
 
-n_per_node=4 n_threads=9 args="-v -R 10 -n 8 -s 4 -S 14" sbatch -N 40 --time=0-02:00:00 --exclusive -C bora slurm.sh
+n_per_node=4 n_threads=9 args="-v -R 10 -n 7 -s 4 -S 14" sbatch -N 40 --time=0-02:00:00 --exclusive -C bora slurm.sh
 ```
 
 ./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \

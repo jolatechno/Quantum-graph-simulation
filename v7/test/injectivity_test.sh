@@ -86,25 +86,14 @@ for rule in $rule; do
 				first_line=$(echo "${res}" | sed -n '1p')
 				third_line=$(echo "${res}" | sed -n '3p')
 
-				#check if the graph at the end is of probability 1
-				if [ "${first_line[0]}" != "${third_line[0]}" ]; then
-					echo "${command} (probability not equal to 1 !)"
+				#check if the graph at the end is the same as the graph at the start
+				if [ "${first_line}" != "${third_line}" ]; then
+					echo "${command} (graphs not equal !)"
 
-					>&2 echo "\n\n${command} (probability not equal to 1 !):"
+					>&2 echo -e "\n\n${command} (graphs not equal !):"
 					>&2 echo "${res}"
-
-					found=true
-				else
-
-					#check if the graph at the end is the same as the graph at the start
-					if [ "${first_line}" != "${third_line}" ]; then
-						echo "${command} (graphs not equal !)"
-
-						>&2 echo -e "\n\n${command} (graphs not equal !):"
-						>&2 echo "${res}"
 						
-						found=true
-					fi
+					found=true
 				fi
 			fi
 		done
