@@ -109,10 +109,6 @@ module load mpi/openmpi/4.0.1
 make CFLAGS="-DMIN_EQUALIZE_SIZE=100 -march=skylake -DMIN_VECTOR_SIZE=1000 -DLESS_DEBUG" CXX=mpic++ mpi_ping_pong_test
 
 n_per_node=4 n_threads=9 args="-v -R 10 -n 7 -s 4 -S 14" sbatch -N 40 --time=0-03:00:00 --exclusive -C bora slurm.sh
-```
 
-./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
-  -f zonda_scaling_test.out \
-  -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
-  -a 7,max_num_object=2500000,seed=0\|14\|step\;erase_create -ores_ec_
+sed '/bora/d' 1467773.err
+```

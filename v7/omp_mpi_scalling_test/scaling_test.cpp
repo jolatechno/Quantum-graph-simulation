@@ -10,6 +10,14 @@
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
+const int num_step = 9;
+std::vector<double> total_step_duration(num_step, 0.0);
+std::vector<double> max_step_duration_dev(num_step, 0.0);
+
+std::vector<double> local_step_duration(num_step, 0.0);
+time_point step_start;
+
+
 int main(int argc, char* argv[]) {
 	int provided, rank, size;
 	MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &provided);
@@ -36,21 +44,29 @@ int main(int argc, char* argv[]) {
 			state.append(object_begin, object_begin + size, mag);
 		}
 
-	const int num_step = 9;
-	std::vector<double> step_duration(num_step, 0.0);
-	std::vector<time_point> step_start(num_step);
-
 	auto const mid_step_function = [&](int n) {
-		if (rank == 0) {
-			if (n > 0) {
-				time_point stop = std::chrono::high_resolution_clock::now(); \
-				auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start[n - 1]); \
-				step_duration[n - 1] += duration.count() * 1e-6; \
-			}
-			if (n < num_step) {
-				step_start[n] = std::chrono::high_resolution_clock::now(); \
-			}
+		if (n > 0) {
+			time_point stop = std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start);
+			local_step_duration[n - 1] = duration.count() * 1e-6;
 		}
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (n > 0) {
+			time_point stop = std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start);
+			total_step_duration[n - 1] += duration.count() * 1e-6;
+
+			/* collect min time one node 0 */
+			double min_time;
+			MPI_Reduce(&local_step_duration[n - 1], &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+			if (rank == 0)
+				max_step_duration_dev[n - 1] += local_step_duration[n - 1] - min_time;
+		}
+
+		if (n < num_step)
+			step_start = std::chrono::high_resolution_clock::now();
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -66,17 +82,29 @@ int main(int argc, char* argv[]) {
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
+	for (int i = 0; i < num_step; ++i)
+		if (total_step_duration[i] > 0) {
+			max_step_duration_dev[i] = max_step_duration_dev[i] / total_step_duration[i];
+		} else
+			max_step_duration_dev[i] = 0;
+
 	/* print results as json */
 	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
 		printf("\t\"steps\" : [");
-		for (unsigned int i = 0; i < num_step; ++i) {
-			printf("%f", step_duration[i]);
-			if (i < num_step - 1) {
+		for (int i = 0; i < num_step; ++i) {
+			printf("%f", total_step_duration[i]);
+			if (i < num_step - 1)
 				printf(", ");
-			} else
-				printf("],\n\t\"num_object\" : %lu,\n\t\"total\" : %f\n}", total_num_object, duration.count() * 1e-6);
 		}
+		printf(",\n\t\"relative_dev\" : [");
+		for (int i = 0; i < num_step; ++i) {
+			printf("%f", max_step_duration_dev[i]);
+			if (i < num_step - 1)
+				printf(", ");
+		}
+
+		printf("],\n\t\"num_object\" : %lu,\n\t\"total\" : %f\n}", total_num_object, duration.count() * 1e-6);
 	}
 
 	MPI_Finalize();
