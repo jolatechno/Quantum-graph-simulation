@@ -60,6 +60,8 @@ if [ "$overwriten_rule" == true ]; then
 	rule="${rule_}"
 fi
 
+temp_file=$(mktemp)
+
 for rule in $rule; do
 	for size in `seq ${min_size} ${max_size}`; do
 		found=false
@@ -70,7 +72,7 @@ for rule in $rule; do
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
 			command="./ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125 2> /dev/null"
-			res=$(eval $command 2> /dev/null)
+			res=$(eval $command 2> ${temp_file})
 
 			n_line=$(echo "${res}"  | wc -l)
 
@@ -78,8 +80,9 @@ for rule in $rule; do
 			if [ "${n_line}" != 3 ]; then
 				echo "${command} (more than one graph !)"
 
-				>&2 echo -e "\n\n${command} (more than one graph !):"
-				>&2 echo "${res}"
+				>&2 echo -e "\n\n\n\n\n${command} (more than one graph !):"
+				>&2 echo -e "${res}\n\n"
+				>&2 cat ${temp_file}
 
 				found=true
 			else
@@ -90,8 +93,9 @@ for rule in $rule; do
 				if [ "${first_line}" != "${third_line}" ]; then
 					echo "${command} (graphs not equal !)"
 
-					>&2 echo -e "\n\n${command} (graphs not equal !):"
-					>&2 echo "${res}"
+					>&2 echo -e "\n\n\n\n\n${command} (graphs not equal !):"
+					>&2 echo -e "${res}\n\n"
+					>&2 cat ${temp_file}
 						
 					found=true
 				fi

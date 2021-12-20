@@ -65,7 +65,7 @@ while getopts 's:S:n:r:R:hvmect:p:' flag; do
 done
 
 
-runner="mpirun --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} -x OMP_NUM_THREADS=${n_thread}"
+runner="mpirun --quiet --rank-by numa --bind-to hwthread --map-by ppr:${n_node}:node:PE=${n_thread} -x OMP_NUM_THREADS=${n_thread}"
 
 if [ "$overwriten_rule" == true ]; then
 	rule="${rule_}"
@@ -74,6 +74,8 @@ fi
 if [ "$verbose" == true ]; then
 	echo "runner is : ${runner}"
 fi
+
+temp_file=$(mktemp)
 
 for rule in $rule; do
 	for size in `seq ${min_size} ${max_size}`; do
@@ -85,32 +87,22 @@ for rule in $rule; do
 			
 		for seed in `seq ${min_seed} ${max_seed}`; do
 			command="mpi_ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125"
-			res=$(eval $runner $command 2> /dev/null)
+			res=$(eval $runner $command 2> ${temp_file})
 
 			n_line=$(echo "${res}" | wc -l)
 
 			first_line=$(echo "${res}" | sed -n '2p')
 			last_line=$(echo "${res}" | sed -n "${n_line}p")
 
-			#check if the graph at the end is of probability 1
-			if [ "${first_line[1]}" != "${last_line[1]}" ]; then
-				echo "${command} (probability not equal to 1 !)"
+			#check if the graph at the end is the same as the graph at the start
+			if [ "${first_line}" != "${last_line}" ]; then
+				echo "${command} (graphs not equal !)"
 
-				>&2 echo -e "\n\n${command} (probability not equal to 1 !):"
-				>&2 echo "${res}"
+				>&2 echo -e "\n\n\n\n\n${command} (graphs not equal !):"
+				>&2 echo -e "${res}\n\n"
+				>&2 cat ${temp_file}
 
 				found=true
-			else
-
-				#check if the graph at the end is the same as the graph at the start
-				if [ "${first_line}" != "${last_line}" ]; then
-					echo "${command} (graphs not equal !)"
-
-					>&2 echo -e "\n\n${command} (more than one graph !):"
-					>&2 echo "${res}"
-
-					found=true
-				fi
 			fi
 		done
 

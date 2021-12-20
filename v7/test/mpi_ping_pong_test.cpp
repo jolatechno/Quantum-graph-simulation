@@ -19,18 +19,23 @@ void mid_step_function(iqs::mpi::mpi_it_t const &state, iqs::mpi::mpi_it_t const
 
 	if (rank == 0) {
 		usleep(1000);
-		std::cout << "\n";
 		std::cout << previous_num_graphs << "->(" << symbolic_num_graphs << "->" << num_graphs_after_interferences << ")->" << current_num_graphs << "\n";
 	}
 
-	for (int i = 0; i < size; ++i) {
-		usleep(1000);
+#ifndef LESS_DEBUG
+		for (int i = 0; i < size; ++i) {
+			usleep(1000);
+			MPI_Barrier(MPI_COMM_WORLD);
+			if (rank == i) {
+				std::cout << "    " << state.num_object << " for rank " << rank << "/" << size << "\n";
+
+				if (rank == size - 1)
+					std::cout << "\n";
+			}
+		}
 		MPI_Barrier(MPI_COMM_WORLD);
-		if (rank == i)
-			std::cout << "    " << state.num_object << " for rank " << rank << "/" << size << "\n";
-	}
-	MPI_Barrier(MPI_COMM_WORLD);
-	usleep(1000);
+		usleep(1000);
+#endif
 }
 
 int main(int argc, char* argv[]) {
@@ -65,6 +70,7 @@ int main(int argc, char* argv[]) {
 	if (rank == 0) {
 		std::cout << "initial state:\n";
 		iqs::rules::qcgd::utils::print(state);
+		std::cout << "\n";
 	}
 
 	for (int i = 0; i < n_iter; ++i) {
@@ -90,12 +96,18 @@ int main(int argc, char* argv[]) {
 		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
 	}
 
+#ifdef LESS_DEBUG
+	if (rank == 0)
+		std::cout << "\n";
+#endif
+
+	if (rank == 0)
+		std::cout << "final state:\n";
+
 	state.gather_objects(MPI_COMM_WORLD);
 	
-	if (rank == 0) {
-		std::cout << "\nfinal state:\n";
+	if (rank == 0)
 		iqs::rules::qcgd::utils::print(state);
-	}
 
 	MPI_Finalize();
 	return 0;
