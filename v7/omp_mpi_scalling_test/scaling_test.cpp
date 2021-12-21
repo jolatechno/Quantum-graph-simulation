@@ -51,22 +51,21 @@ int main(int argc, char* argv[]) {
 			local_step_duration[n - 1] = duration.count() * 1e-6;
 		}
 
-		MPI_Barrier(MPI_COMM_WORLD);
-
 		if (n > 0) {
-			time_point stop = std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start);
-			total_step_duration[n - 1] += duration.count() * 1e-6;
+			/* collect max time one node 0 */
+			double max_time;
+			MPI_Reduce(&local_step_duration[n - 1], &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+			if (rank == 0)
+				total_step_duration[n - 1] += max_time;
 
 			/* collect min time one node 0 */
 			double min_time;
 			MPI_Reduce(&local_step_duration[n - 1], &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 			if (rank == 0)
-				max_step_duration_dev[n - 1] += local_step_duration[n - 1] - min_time;
+				max_step_duration_dev[n - 1] += min_time;
 		}
 
-		if (n < num_step)
-			step_start = std::chrono::high_resolution_clock::now();
+		step_start = std::chrono::high_resolution_clock::now();
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -84,7 +83,7 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 0; i < num_step; ++i)
 		if (total_step_duration[i] > 0) {
-			max_step_duration_dev[i] = max_step_duration_dev[i] / total_step_duration[i];
+			max_step_duration_dev[i] = (total_step_duration[i] - max_step_duration_dev[i]) / total_step_duration[i];
 		} else
 			max_step_duration_dev[i] = 0;
 
