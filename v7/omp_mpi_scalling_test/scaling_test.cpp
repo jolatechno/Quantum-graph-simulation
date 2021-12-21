@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 	iqs::mpi::mpi_it_t state, buffer;
 	iqs::mpi::mpi_sy_it_t sy_it;
 
-	auto [n_iter, reversed_n_iter, local_state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	auto [n_iter, reversed_n_iter, local_state, rules, max_allowed_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
 
 	iqs::rule_t *rule = new iqs::rules::qcgd::split_merge(0.25, 0.25);
 
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
 					min_num_object += mpi_buffer;
 
-					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object, mid_step_function);
+					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
 
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_symbolic_num_object += mpi_buffer;
