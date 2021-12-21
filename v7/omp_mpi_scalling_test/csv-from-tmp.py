@@ -54,7 +54,7 @@ n_threads.sort(key=functools.cmp_to_key(compare))
 
 keys = [",".join([str(x) for x in key]) for key in n_threads]
 
-n_step = len(out_dict["results"][keys[0]]["steps"])
+n_step = len(out_dict["results"][keys[0]]["max_step_time"])
 command = out_dict["command"]
 command = command.split(" ")[1]
 
@@ -77,6 +77,6 @@ for i, key in enumerate(keys):
 
 	string += str(n_thread) + "," + str(n_task) + "," + str(n_node) + "," + str(this_step["num_object"]) + "," + str(this_step["total"])
 	for i in range(n_step):
-		string += "," + str(this_step["steps"][i])
+		string += "," + str(this_step["max_step_time"][i])
 
 print(string)

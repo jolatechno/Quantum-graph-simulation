@@ -11,12 +11,23 @@
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 const int num_step = 9;
-std::vector<double> total_step_duration(num_step, 0.0);
-std::vector<double> max_step_duration_dev(num_step, 0.0);
+std::vector<double> max_step_duration(num_step, 0.0);
+std::vector<double> min_step_duration(num_step, 0.0);
 
 std::vector<double> local_step_duration(num_step, 0.0);
 time_point step_start;
 
+size_t max_num_object = 0;
+size_t min_num_object = 0;
+
+size_t max_symbolic_num_object = 0;
+size_t min_symbolic_num_object = 0;
+
+size_t max_num_object_after_interference = 0;
+size_t min_num_object_after_interference = 0;
+
+size_t max_num_object_after_selection = 0;
+size_t min_num_object_after_selection = 0;
 
 int main(int argc, char* argv[]) {
 	int provided, rank, size;
@@ -53,16 +64,13 @@ int main(int argc, char* argv[]) {
 
 		if (n > 0) {
 			/* collect max time one node 0 */
-			double max_time;
-			MPI_Reduce(&local_step_duration[n - 1], &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-			if (rank == 0)
-				total_step_duration[n - 1] += max_time;
+			double mpi_buffer;
+			MPI_Allreduce(&local_step_duration[n - 1], &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+			max_step_duration[n - 1] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			double min_time;
-			MPI_Reduce(&local_step_duration[n - 1], &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-			if (rank == 0)
-				max_step_duration_dev[n - 1] += min_time;
+			MPI_Allreduce(&local_step_duration[n - 1], &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			min_step_duration[n - 1] += mpi_buffer;
 		}
 
 		step_start = std::chrono::high_resolution_clock::now();
@@ -73,7 +81,29 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j) {
 				if (is_rule) {
+					size_t mpi_buffer = 0;
+					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					max_num_object += mpi_buffer;
+					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					min_num_object += mpi_buffer;
+
 					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object, mid_step_function);
+
+					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					max_symbolic_num_object += mpi_buffer;
+					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					min_symbolic_num_object += mpi_buffer;
+
+					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					max_num_object_after_interference += mpi_buffer;
+					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					min_num_object_after_interference += mpi_buffer;
+
+					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					max_num_object_after_selection += mpi_buffer;
+					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					min_num_object_after_selection += mpi_buffer;
+
 				} else
 					iqs::simulate(state, modifier);
 			}
@@ -81,29 +111,36 @@ int main(int argc, char* argv[]) {
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-	for (int i = 0; i < num_step; ++i)
-		if (total_step_duration[i] > 0) {
-			max_step_duration_dev[i] = (total_step_duration[i] - max_step_duration_dev[i]) / total_step_duration[i];
-		} else
-			max_step_duration_dev[i] = 0;
-
 	/* print results as json */
 	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
-		printf("\t\"steps\" : [");
+		printf("\t\"max_step_time\" : [");
 		for (int i = 0; i < num_step; ++i) {
-			printf("%f", total_step_duration[i]);
+			printf("%f", max_step_duration[i]);
 			if (i < num_step - 1)
 				printf(", ");
 		}
-		printf(",\n\t\"relative_dev\" : [");
+		printf("],\n\t\"min_step_time\" : [");
 		for (int i = 0; i < num_step; ++i) {
-			printf("%f", max_step_duration_dev[i]);
+			printf("%f", min_step_duration[i]);
 			if (i < num_step - 1)
 				printf(", ");
 		}
 
-		printf("],\n\t\"num_object\" : %lu,\n\t\"total\" : %f\n}", total_num_object, duration.count() * 1e-6);
+		printf("],\n\n\t\"max_num_object\" : %lu,", max_num_object);
+		printf("\n\t\"min_num_object\" : %lu,", min_num_object);
+
+		printf("\n\n\t\"max_symbolic_num_object\" : %lu,", max_symbolic_num_object);
+		printf("\n\t\"min_symbolic_num_object\" : %lu,", min_symbolic_num_object);
+
+		printf("\n\n\t\"max_num_object_after_interference\" : %lu,", max_num_object_after_interference);
+		printf("\n\t\"min_num_object_after_interference\" : %lu,", min_num_object_after_interference);
+
+		printf("\n\n\t\"max_num_object_after_selection\" : %lu,", max_num_object_after_selection);
+		printf("\n\t\"min_num_object_after_selection\" : %lu,", min_num_object_after_selection);
+
+		printf("\n\n\t\"num_object\" : %lu,", total_num_object);
+		printf("\n\t\"total\" : %f\n}", duration.count()*1e-6);
 	}
 
 	MPI_Finalize();
