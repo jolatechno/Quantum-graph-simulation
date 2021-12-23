@@ -60,8 +60,8 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-DMIN_VECTOR_SIZE=1000 -march=skylake -obora_scaling_test.out" CXX=mpic++
-make CFLAGS="-DMIN_VECTOR_SIZE=1000 -march=znver2 -ozonda_scaling_test.out" CXX=mpic++
+make CFLAGS="-march=skylake -obora_scaling_test.out" CXX=mpic++
+make CFLAGS="-march=znver2 -ozonda_scaling_test.out" CXX=mpic++
 
 
 
@@ -106,9 +106,9 @@ make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS=" -march=skylake -DMIN_VECTOR_SIZE=1000 -DLESS_DEBUG" CXX=mpic++ mpi_ping_pong_test
+make CFLAGS="-march=skylake -DMIN_VECTOR_SIZE=1000 -DLESS_DEBUG" CXX=mpic++ mpi_ping_pong_test
 
-n_per_node=4 n_threads=9 args="-v -R 10 -n 7 -s 4 -S 14" sbatch -N 40 --time=0-03:00:00 --exclusive -C bora slurm.sh
+n_per_node=4 n_threads=9 args="-v -R 10 -n 7 -s 4 -S 14" sbatch -N 40 --time=0-03:00:00 --output=test.out --error=test.err --exclusive -C bora slurm.sh
 
 sed '/bora/d' 1467773.err
 ```
