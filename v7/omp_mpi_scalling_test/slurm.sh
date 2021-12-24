@@ -16,6 +16,7 @@ export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
 echo -e "===== my job information ====\n"
 
 echo “Node List: ” $SLURM_NODELIST
+echo “Number of Nodes: ” $SLURM_JOB_NUM_NODES
 echo “my jobID: ” $SLURM_JOB_ID
 echo “Partition: ” $SLURM_JOB_PARTITION
 echo “submit directory:” $SLURM_SUBMIT_DIR
@@ -30,8 +31,7 @@ cd /home/jtouzet/Quantum-graph-simulation/v7/omp_mpi_scalling_test
 
 echo -e "\n===== job results ====\n"
 
-#./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${SLURM_JOB_ID}.out
-./scaling_test.sh -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
+./scaling_test.sh -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 
 #rm ${SLURM_JOB_ID}.out
 

@@ -16,6 +16,7 @@ export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
 echo -e "===== my job information ====\n"
 
 echo “Node List: ” $SLURM_NODELIST
+echo “Number of Nodes: ” $SLURM_JOB_NUM_NODES
 echo “my jobID: ” $SLURM_JOB_ID
 echo “Partition: ” $SLURM_JOB_PARTITION
 echo “submit directory:” $SLURM_SUBMIT_DIR
