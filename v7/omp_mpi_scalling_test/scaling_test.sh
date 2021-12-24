@@ -58,10 +58,10 @@ for i in "${!n_threads[@]}"; do
 
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	for map_by in numa socket node; do #
+	for map_by in numa socket node; do #hwthread core L3cache
 		res=$(mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2> ${temp_file})
 		if [ $? -eq 0 ]; then
-			echo "${res}" | indent | indent 
+			echo "${res}${separator}" | indent | indent 
 
 			>&2 echo "${n_thread},${n_node} (${map_by}):"
 			>&2 cat ${temp_file}
@@ -69,8 +69,6 @@ for i in "${!n_threads[@]}"; do
 			break
 		fi
 	done
-
-	echo ${separator}
 
 	>&2 echo -e "\n\n\n"
 done
