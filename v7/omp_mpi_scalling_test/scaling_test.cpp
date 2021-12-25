@@ -2,6 +2,7 @@
 #include <chrono>
 #include <ranges>
 #include <unistd.h>
+#include <time.h>
 
 #include <iostream>
 
@@ -13,9 +14,10 @@ typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 const int num_step = 9;
 std::vector<double> max_step_duration(num_step, 0.0);
 std::vector<double> min_step_duration(num_step, 0.0);
+std::vector<double> avg_cpu_step_duration(num_step, 0.0);
 
-std::vector<double> local_step_duration(num_step, 0.0);
 time_point step_start;
+clock_t cpu_step_start;
 
 size_t max_num_object = 0;
 size_t min_num_object = 0;
@@ -58,22 +60,27 @@ int main(int argc, char* argv[]) {
 	auto const mid_step_function = [&](int n) {
 		if (n > 0) {
 			time_point stop = std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start);
-			local_step_duration[n - 1] = duration.count() * 1e-6;
-		}
+			clock_t cpu_stop = clock();
 
-		if (n > 0) {
+			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
+			double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
+
 			/* collect max time one node 0 */
 			double mpi_buffer;
-			MPI_Allreduce(&local_step_duration[n - 1], &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 			max_step_duration[n - 1] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			MPI_Allreduce(&local_step_duration[n - 1], &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 			min_step_duration[n - 1] += mpi_buffer;
+
+			/* collect min time one node 0 */
+			MPI_Allreduce(&local_cpu_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			avg_cpu_step_duration[n - 1] += mpi_buffer;
 		}
 
 		step_start = std::chrono::high_resolution_clock::now();
+		cpu_step_start = clock();
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -123,6 +130,18 @@ int main(int argc, char* argv[]) {
 		printf("],\n\t\"min_step_time\" : [");
 		for (int i = 0; i < num_step; ++i) {
 			printf("%f", min_step_duration[i]);
+			if (i < num_step - 1)
+				printf(", ");
+		}
+
+		int total_num_threads = size;
+		#pragma omp parallel
+		#pragma omp single
+		total_num_threads *= omp_get_num_threads();
+
+		printf("],\n\t\"avg_cpu_step_time\" : [");
+		for (int i = 0; i < num_step; ++i) {
+			printf("%f", avg_cpu_step_duration[i] / total_num_threads);
 			if (i < num_step - 1)
 				printf(", ");
 		}
