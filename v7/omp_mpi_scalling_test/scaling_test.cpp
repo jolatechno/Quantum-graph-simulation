@@ -32,8 +32,8 @@ size_t min_num_object_after_selection = 0;
 
 int main(int argc, char* argv[]) {
 	int provided, rank, size;
-	MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &provided);
-    if(provided < MPI_THREAD_SERIALIZED) {
+	MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    if(provided < MPI_THREAD_MULTIPLE) {
         printf("The threading support level is lesser than that demanded.\n");
         MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
     }
