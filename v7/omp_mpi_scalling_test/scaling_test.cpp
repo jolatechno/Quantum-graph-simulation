@@ -11,10 +11,9 @@
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
-const int num_step = 9;
-std::vector<double> max_step_duration(num_step, 0.0);
-std::vector<double> min_step_duration(num_step, 0.0);
-std::vector<double> avg_cpu_step_duration(num_step, 0.0);
+std::vector<double> max_step_duration;
+std::vector<double> min_step_duration;
+std::vector<double> avg_cpu_step_duration;
 
 time_point step_start;
 clock_t cpu_step_start;
@@ -61,6 +60,12 @@ int main(int argc, char* argv[]) {
 		if (n > 0) {
 			time_point stop = std::chrono::high_resolution_clock::now();
 			clock_t cpu_stop = clock();
+
+			if (n - 1 >= max_step_duration.size()) {
+				max_step_duration.push_back(0.0);
+				min_step_duration.push_back(0.0);
+				avg_cpu_step_duration.push_back(0.0);
+			}
 
 			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
 			double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
@@ -122,15 +127,15 @@ int main(int argc, char* argv[]) {
 	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
 		printf("\t\"max_step_time\" : [");
-		for (int i = 0; i < num_step; ++i) {
+		for (int i = 0; i < max_step_duration.size(); ++i) {
 			printf("%f", max_step_duration[i]);
-			if (i < num_step - 1)
+			if (i < max_step_duration.size() - 1)
 				printf(", ");
 		}
 		printf("],\n\t\"min_step_time\" : [");
-		for (int i = 0; i < num_step; ++i) {
+		for (int i = 0; i < min_step_duration.size(); ++i) {
 			printf("%f", min_step_duration[i]);
-			if (i < num_step - 1)
+			if (i < min_step_duration.size() - 1)
 				printf(", ");
 		}
 
@@ -140,9 +145,9 @@ int main(int argc, char* argv[]) {
 		total_num_threads *= omp_get_num_threads();
 
 		printf("],\n\t\"avg_cpu_step_time\" : [");
-		for (int i = 0; i < num_step; ++i) {
+		for (int i = 0; i < avg_cpu_step_duration.size(); ++i) {
 			printf("%f", avg_cpu_step_duration[i] / total_num_threads);
-			if (i < num_step - 1)
+			if (i < avg_cpu_step_duration.size() - 1)
 				printf(", ");
 		}
 

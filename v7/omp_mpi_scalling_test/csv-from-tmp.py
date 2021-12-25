@@ -71,6 +71,9 @@ for i in range(n_step):
 string += ","
 for i in range(n_step):
 	string += ",\"min step " + str(i) + "\""
+string += ","
+for i in range(n_step):
+	string += ",\"cpu step " + str(i) + "\""
 
 for i, key in enumerate(keys):
 	string += "\n";
@@ -84,5 +87,8 @@ for i, key in enumerate(keys):
 	string += ","
 	for i in range(n_step):
 		string += "," + str(this_step["min_step_time"][i])
+	string += ","
+	for i in range(n_step):
+		string += "," + str(this_step["avg_cpu_step_time"][i])
 
 print(string)
