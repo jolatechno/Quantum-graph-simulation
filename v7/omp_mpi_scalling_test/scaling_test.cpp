@@ -11,9 +11,9 @@
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
-std::vector<double> max_step_duration;
-std::vector<double> min_step_duration;
-std::vector<double> avg_cpu_step_duration;
+std::map<std::string, double> max_step_duration;
+std::map<std::string, double> min_step_duration;
+std::map<std::string, double> avg_cpu_step_duration;
 
 time_point step_start;
 clock_t cpu_step_start;
@@ -29,6 +29,8 @@ size_t min_num_object_after_interference = 0;
 
 size_t max_num_object_after_selection = 0;
 size_t min_num_object_after_selection = 0;
+
+std::string last_name = "end";
 
 int main(int argc, char* argv[]) {
 	int provided, rank, size;
@@ -56,33 +58,37 @@ int main(int argc, char* argv[]) {
 			state.append(object_begin, object_begin + size, mag);
 		}
 
-	auto const mid_step_function = [&](int n) {
-		if (n > 0) {
+	auto const mid_step_function = [&](const char* name) {
+		std::string string_name(name);
+
+		if (last_name != "end") {
 			time_point stop = std::chrono::high_resolution_clock::now();
 			clock_t cpu_stop = clock();
 
-			if (n - 1 >= max_step_duration.size()) {
-				max_step_duration.push_back(0.0);
-				min_step_duration.push_back(0.0);
-				avg_cpu_step_duration.push_back(0.0);
+			if (!max_step_duration.count(last_name)) {
+				max_step_duration[last_name] = 0.0;
+				min_step_duration[last_name] = 0.0;
+				avg_cpu_step_duration[last_name] = 0.0;
 			}
 
 			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
 			double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
 
 			/* collect max time one node 0 */
-			double mpi_buffer;
-			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-			max_step_duration[n - 1] += mpi_buffer;
+			double mpi_buffer = local_step_duration;
+			//MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+			max_step_duration[last_name] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-			min_step_duration[n - 1] += mpi_buffer;
+			//MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			min_step_duration[last_name] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			MPI_Allreduce(&local_cpu_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-			avg_cpu_step_duration[n - 1] += mpi_buffer;
+			//MPI_Allreduce(&local_cpu_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			avg_cpu_step_duration[last_name] += mpi_buffer;
 		}
+
+		last_name = string_name;
 
 		step_start = std::chrono::high_resolution_clock::now();
 		cpu_step_start = clock();
@@ -126,32 +132,39 @@ int main(int argc, char* argv[]) {
 	/* print results as json */
 	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
-		printf("\t\"max_step_time\" : [");
-		for (int i = 0; i < max_step_duration.size(); ++i) {
-			printf("%f", max_step_duration[i]);
-			if (i < max_step_duration.size() - 1)
+		printf("\t\"max_step_time\" : {");
+		for (auto it = max_step_duration.begin();;) {
+			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
+			if (++it != max_step_duration.end()) {
 				printf(", ");
+			} else
+				break;
 		}
-		printf("],\n\t\"min_step_time\" : [");
-		for (int i = 0; i < min_step_duration.size(); ++i) {
-			printf("%f", min_step_duration[i]);
-			if (i < min_step_duration.size() - 1)
+		
+		/*printf("\n\t},\n\n\t\"min_step_time\" : {");
+		for (auto it = min_step_duration.begin();;) {
+			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
+			if (++it != min_step_duration.end()) {
 				printf(", ");
+			} else
+				break;
 		}
 
-		int total_num_threads = size;
+		/*int total_num_threads = size;
 		#pragma omp parallel
 		#pragma omp single
 		total_num_threads *= omp_get_num_threads();
 
-		printf("],\n\t\"avg_cpu_step_time\" : [");
-		for (int i = 0; i < avg_cpu_step_duration.size(); ++i) {
-			printf("%f", avg_cpu_step_duration[i] / total_num_threads);
-			if (i < avg_cpu_step_duration.size() - 1)
+		printf("\n\t},\n\n\t\"avg_cpu_step_time\" : {");
+		for (auto it = avg_cpu_step_duration.begin();;) {
+			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second / total_num_threads);
+			if (++it != avg_cpu_step_duration.end()) {
 				printf(", ");
-		}
+			} else
+				break;
+		}*/
 
-		printf("],\n\n\t\"max_num_object\" : %lu,", max_num_object);
+		printf("\n\t},\n\n\t\"max_num_object\" : %lu,", max_num_object);
 		printf("\n\t\"min_num_object\" : %lu,", min_num_object);
 
 		printf("\n\n\t\"max_symbolic_num_object\" : %lu,", max_symbolic_num_object);
