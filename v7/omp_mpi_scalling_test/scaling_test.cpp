@@ -63,35 +63,35 @@ int main(int argc, char* argv[]) {
 
 		if (last_name != "end") {
 			time_point stop = std::chrono::high_resolution_clock::now();
-			clock_t cpu_stop = clock();
+			//clock_t cpu_stop = clock();
 
 			if (!max_step_duration.count(last_name)) {
 				max_step_duration[last_name] = 0.0;
 				min_step_duration[last_name] = 0.0;
-				avg_cpu_step_duration[last_name] = 0.0;
+				//avg_cpu_step_duration[last_name] = 0.0;
 			}
 
 			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
-			double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
+			//double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
 
 			/* collect max time one node 0 */
-			double mpi_buffer = local_step_duration;
-			//MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+			double mpi_buffer;
+			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 			max_step_duration[last_name] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			//MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 			min_step_duration[last_name] += mpi_buffer;
 
 			/* collect min time one node 0 */
 			//MPI_Allreduce(&local_cpu_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-			avg_cpu_step_duration[last_name] += mpi_buffer;
+			//avg_cpu_step_duration[last_name] += mpi_buffer;
 		}
 
 		last_name = string_name;
 
 		step_start = std::chrono::high_resolution_clock::now();
-		cpu_step_start = clock();
+		//cpu_step_start = clock();
 	};
 
 	auto start = std::chrono::high_resolution_clock::now();
@@ -135,6 +135,16 @@ int main(int argc, char* argv[]) {
 		printf("\t\"max_step_time\" : {");
 		for (auto it = max_step_duration.begin();;) {
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
+			if (++it != max_step_duration.end()) {
+				printf(", ");
+			} else
+				break;
+		}
+
+		printf("\n\t},\n\n\t\"relative_inbalnce\" : {");
+		for (auto it = max_step_duration.begin();;) {
+			double relative_inbalance = (it->second - min_step_duration[it->first])/it->second*100;
+			printf("\n\t\t\"%s\" : %f", it->first.c_str(), relative_inbalance);
 			if (++it != max_step_duration.end()) {
 				printf(", ");
 			} else
