@@ -12,23 +12,23 @@
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 std::map<std::string, double> max_step_duration;
-std::map<std::string, double> min_step_duration;
-std::map<std::string, double> avg_cpu_step_duration;
+std::map<std::string, double> avg_step_duration;
+//std::map<std::string, double> avg_cpu_step_duration;
 
 time_point step_start;
 clock_t cpu_step_start;
 
 size_t max_num_object = 0;
-size_t min_num_object = 0;
+size_t avg_num_object = 0;
 
 size_t max_symbolic_num_object = 0;
-size_t min_symbolic_num_object = 0;
+size_t avg_symbolic_num_object = 0;
 
 size_t max_num_object_after_interference = 0;
-size_t min_num_object_after_interference = 0;
+size_t avg_num_object_after_interference = 0;
 
 size_t max_num_object_after_selection = 0;
-size_t min_num_object_after_selection = 0;
+size_t avg_num_object_after_selection = 0;
 
 std::string last_name = "end";
 
@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 
 			if (!max_step_duration.count(last_name)) {
 				max_step_duration[last_name] = 0.0;
-				min_step_duration[last_name] = 0.0;
+				avg_step_duration[last_name] = 0.0;
 				//avg_cpu_step_duration[last_name] = 0.0;
 			}
 
@@ -80,8 +80,8 @@ int main(int argc, char* argv[]) {
 			max_step_duration[last_name] += mpi_buffer;
 
 			/* collect min time one node 0 */
-			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-			min_step_duration[last_name] += mpi_buffer;
+			MPI_Allreduce(&local_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			avg_step_duration[last_name] += mpi_buffer / size;
 
 			/* collect min time one node 0 */
 			//MPI_Allreduce(&local_cpu_step_duration, &mpi_buffer, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -103,24 +103,24 @@ int main(int argc, char* argv[]) {
 					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object += mpi_buffer;
 					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					min_num_object += mpi_buffer;
+					avg_num_object += mpi_buffer;
 
 					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
 
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_symbolic_num_object += mpi_buffer;
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					min_symbolic_num_object += mpi_buffer;
+					avg_symbolic_num_object += mpi_buffer;
 
 					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object_after_interference += mpi_buffer;
 					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					min_num_object_after_interference += mpi_buffer;
+					avg_num_object_after_interference += mpi_buffer;
 
 					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object_after_selection += mpi_buffer;
 					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					min_num_object_after_selection += mpi_buffer;
+					avg_num_object_after_selection += mpi_buffer;
 
 				} else
 					iqs::simulate(state, modifier);
@@ -132,29 +132,29 @@ int main(int argc, char* argv[]) {
 	/* print results as json */
 	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
-		printf("\t\"max_step_time\" : {");
-		for (auto it = max_step_duration.begin();;) {
+		printf("\t\"avg_step_time\" : {");
+		for (auto it = avg_step_duration.begin();;) {
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
-			if (++it != max_step_duration.end()) {
+			if (++it != avg_step_duration.end()) {
 				printf(", ");
 			} else
 				break;
 		}
 
 		printf("\n\t},\n\n\t\"relative_inbalnce\" : {");
-		for (auto it = max_step_duration.begin();;) {
-			double relative_inbalance = (it->second - min_step_duration[it->first])/it->second*100;
+		for (auto it = avg_step_duration.begin();;) {
+			double relative_inbalance = (max_step_duration[it->first] - it->second)/it->second*100;
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), relative_inbalance);
-			if (++it != max_step_duration.end()) {
+			if (++it != avg_step_duration.end()) {
 				printf(", ");
 			} else
 				break;
 		}
 
-		/*printf("\n\t},\n\n\t\"min_step_time\" : {");
-		for (auto it = min_step_duration.begin();;) {
+		/*printf("\n\t},\n\n\t\"avg_step_time\" : {");
+		for (auto it = avg_step_duration.begin();;) {
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
-			if (++it != min_step_duration.end()) {
+			if (++it != avg_step_duration.end()) {
 				printf(", ");
 			} else
 				break;
@@ -174,17 +174,25 @@ int main(int argc, char* argv[]) {
 				break;
 		}*/
 
-		printf("\n\t},\n\n\t\"max_num_object\" : %lu,", max_num_object);
-		printf("\n\t\"min_num_object\" : %lu,", min_num_object);
+		double total_max = 0, total_avg = 0;
+		for (auto it = max_step_duration.begin(); it != max_step_duration.end(); ++it) {
+			total_max += it->second;
+			total_avg += avg_step_duration[it->first];
+		}
+		double total_imbalance = (total_max - total_avg)/total_avg*100;
+		printf("\n\t},\n\t\"total_relative_inbalance\" : %f,", total_imbalance);
+
+		printf("\n\n\t\"max_num_object\" : %lu,", max_num_object);
+		printf("\n\t\"avg_num_object\" : %lu,", avg_num_object);
 
 		printf("\n\n\t\"max_symbolic_num_object\" : %lu,", max_symbolic_num_object);
-		printf("\n\t\"min_symbolic_num_object\" : %lu,", min_symbolic_num_object);
+		printf("\n\t\"avg_symbolic_num_object\" : %lu,", avg_symbolic_num_object);
 
 		printf("\n\n\t\"max_num_object_after_interference\" : %lu,", max_num_object_after_interference);
-		printf("\n\t\"min_num_object_after_interference\" : %lu,", min_num_object_after_interference);
+		printf("\n\t\"avg_num_object_after_interference\" : %lu,", avg_num_object_after_interference);
 
 		printf("\n\n\t\"max_num_object_after_selection\" : %lu,", max_num_object_after_selection);
-		printf("\n\t\"min_num_object_after_selection\" : %lu,", min_num_object_after_selection);
+		printf("\n\t\"avg_num_object_after_selection\" : %lu,", avg_num_object_after_selection);
 
 		printf("\n\n\t\"num_object\" : %lu,", total_num_object);
 		printf("\n\t\"total\" : %f\n}", duration.count()*1e-6);
