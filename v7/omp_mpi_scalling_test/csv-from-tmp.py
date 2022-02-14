@@ -4,6 +4,47 @@ import os, sys, fnmatch
 import functools
 import json
 
+ordered_keys = ["symbolic_iteration", "collisions", "truncation", "final_iteration", "communication"]
+
+starting = {
+	"symbolic_iteration" : 0.0,
+	"collisions" : 0.0,
+	"truncation" : 0.0,
+	"final_iteration" : 0.0,
+	"communication" : 0.0
+}
+
+translator = {
+	"num_child" : ["symbolic_iteration"], 
+	"prepare_index" : ["symbolic_iteration"], 
+	"equalize_child" : ["communication", "symbolic_iteration"], 
+	"symbolic_iteration" : ["symbolic_iteration"], 
+
+	"compute_collisions - com" : ["communication", "collisions"], 
+    "compute_collisions - finalize" : ["collisions"], 
+    "compute_collisions - insert" : ["collisions"], 
+    "compute_collisions - prepare" : ["collisions"], 
+
+    "get_max_num_object" : ["truncation"], 
+    "truncate" : ["truncation"], 
+
+    "final" : ["final_iteration"], 
+    "prepare_final" : ["final_iteration"], 
+    "normalize" : ["final_iteration"], 
+    "equalize" : ["communication", "final_iteration"]
+}
+
+def accumulate_steptime(indict):
+	outdict = starting.copy()
+
+	for key in indict.keys():
+		value = indict[key]
+
+		for outkey in translator[key]:
+			outdict[outkey] += value
+
+	return outdict
+
 def prod(List):
 	res = 1
 	for x in List:
@@ -43,7 +84,8 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  			out_dict["command"] = json_dict["command"]
 
 	  			for key in json_dict["results"].keys():
-	  				out_dict["results"][key + "," + str(num_node)] = json_dict["results"][key]
+	  				name = key + "," + str(num_node)
+	  				out_dict["results"][name] = json_dict["results"][key]
 	  		except Exception:
 	  			pass
 
@@ -54,7 +96,6 @@ n_threads.sort(key=functools.cmp_to_key(compare))
 
 keys = [",".join([str(x) for x in key]) for key in n_threads]
 
-n_step = len(out_dict["results"][keys[0]]["max_step_time"])
 command = out_dict["command"]
 command = command.split(" ")[1]
 
@@ -65,15 +106,8 @@ rule = command.split("|")[2].replace(";", "_")
 string = "\"#n iters\",\"initial #n node\",\"rule\"\n"
 string += n_iter + "," + n_node + ",\"" + rule + "\"\n\n" 
 
-string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\""
-for i in range(n_step):
-	string += ",\"max step " + str(i) + "\""
-string += ","
-for i in range(n_step):
-	string += ",\"min step " + str(i) + "\""
-string += ","
-for i in range(n_step):
-	string += ",\"cpu step " + str(i) + "\""
+string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\",\""
+string += "\",\"".join(ordered_keys) + "\""
 
 for i, key in enumerate(keys):
 	string += "\n";
@@ -82,13 +116,9 @@ for i, key in enumerate(keys):
 	this_step = out_dict["results"][key]
 
 	string += str(n_thread) + "," + str(n_task) + "," + str(n_node) + "," + str(this_step["num_object"]) + "," + str(this_step["total"])
-	for i in range(n_step):
-		string += "," + str(this_step["max_step_time"][i])
-	string += ","
-	for i in range(n_step):
-		string += "," + str(this_step["min_step_time"][i])
-	string += ","
-	for i in range(n_step):
-		string += "," + str(this_step["avg_cpu_step_time"][i])
+
+	avg_step_time = accumulate_steptime(this_step["avg_step_time"])
+	for name in ordered_keys:
+		string += "," + str(avg_step_time[name])
 
 print(string)
