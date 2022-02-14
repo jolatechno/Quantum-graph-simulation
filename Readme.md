@@ -77,18 +77,6 @@ make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DL
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
   -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
 
-./mpi_scaling.sh -n 1,1,1,1,1,1,1 \
-  -t 64,32,16,8,4,2,1 \
-  -f zonda_scaling_test.out \
-  -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
-  -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_omp_
-
-./mpi_scaling.sh -n 1,1,1,1,1,1,1 \
-  -t 64,32,16,8,4,2,1 \
-  -f zonda_scaling_test.out \
-  -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
-  -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_omp_
-
 ./csv-from-tmp.py res_ec_
 ./csv-from-tmp.py res_sm_
 

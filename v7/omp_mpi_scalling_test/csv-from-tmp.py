@@ -78,7 +78,7 @@ for dirpath, dirs, files in os.walk("tmp"):
 
   			try:
 	  			txt_file = file.read()
-	  			json_file = "{" + "{".join(txt_file.split("{")[1:])
+	  			json_file = "{" + "{".join(txt_file.split("{")[1:]).replace("nan", "0.0")
 
 	  			json_dict = json.loads(json_file)
 	  			out_dict["command"] = json_dict["command"]
@@ -86,8 +86,8 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  			for key in json_dict["results"].keys():
 	  				name = key + "," + str(num_node)
 	  				out_dict["results"][name] = json_dict["results"][key]
-	  		except Exception:
-	  			pass
+	  		except Exception as err:
+	  			print(filename, err, file=sys.stderr)
 
 keys = list(out_dict["results"].keys())
 
