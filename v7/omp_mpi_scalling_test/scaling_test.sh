@@ -62,13 +62,12 @@ for i in "${!n_threads[@]}"; do
 		res=$(mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2> ${temp_file})
 		if [ $? -eq 0 ]; then
 			echo "${res}${separator}" | indent | indent 
-
-			>&2 echo "${n_thread},${n_node} (${map_by}):"
-			>&2 cat ${temp_file}
-
 			break
 		fi
 	done
+
+	>&2 echo "${n_thread},${n_node} (${map_by}):"
+	>&2 cat ${temp_file}
 
 	>&2 echo -e "\n\n\n"
 done
