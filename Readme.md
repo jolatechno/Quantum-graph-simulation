@@ -75,7 +75,7 @@ make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DL
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
-  -a 8,max_num_object=25000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 8,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
 
 ./csv-from-tmp.py res_ec_
 ./csv-from-tmp.py res_sm_
@@ -87,13 +87,13 @@ make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DL
   -n 1,2,36 -t 36,18,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:15" \
-  -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
+  -a 9,safety_margin=0.4,seed=0\|14\|step\;erase_create -oec_bora_
 
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,4,2,1 \
   -n 1,2,36 -t 36,18,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:15" \
-  -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
+  -a 9,safety_margin=0.4,seed=0\|15\|step\;split_merge -osm_bora_
 
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_

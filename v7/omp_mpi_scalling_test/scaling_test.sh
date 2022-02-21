@@ -59,13 +59,16 @@ for i in "${!n_threads[@]}"; do
 
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	for map_by in numa socket node; do #hwthread core L3cache
+	for map_by in L1cache numa socket node; do #hwthread core L3cache
+		>&2 echo -e "\n\n\n${n_thread},${n_node} (${map_by}):"
+
 		start=`date +%s.%N`
-		res=$(mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2> ${temp_file})
+		mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} > ${temp_file}
 		exit_code=$?
 		runtime=$( echo "`date +%s.%N` - $start" | bc -l )
+
 		if [ "$exit_code" -eq 0 ]; then
-			echo "${res}${separator}" | indent | indent 
+			echo "$(cat ${temp_file})${separator}" | indent | indent 
 			break
 		fi
 
@@ -74,9 +77,6 @@ for i in "${!n_threads[@]}"; do
 			break
 		fi
 	done
-
-	>&2 echo "${n_thread},${n_node} (${map_by}):"
-	>&2 cat ${temp_file}
 
 	>&2 echo -e "\n\n\n"
 done
