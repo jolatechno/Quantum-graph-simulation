@@ -42,10 +42,13 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	iqs::mpi::mpi_it_t state, buffer;
+	iqs::mpi::mpi_it_t buffer1, buffer2;
 	iqs::mpi::mpi_sy_it_t sy_it;
+	iqs::it_t local_state;
 
-	auto [n_iter, reversed_n_iter, local_state, rules, max_allowed_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	iqs::mpi::mpi_it_t *state = new iqs::mpi::mpi_it_t, *buffer = new iqs::mpi::mpi_it_t;
+
+	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1], local_state);
 
 	iqs::rule_t *rule = new iqs::rules::qcgd::split_merge(0.25, 0.25);
 
@@ -55,7 +58,7 @@ int main(int argc, char* argv[]) {
 			size_t size;
 			char const *object_begin;
 			local_state.get_object(i, object_begin, size, mag);
-			state.append(object_begin, object_begin + size, mag);
+			state->append(object_begin, object_begin + size, mag);
 		}
 
 	auto const mid_step_function = [&](const char* name) {
@@ -100,12 +103,14 @@ int main(int argc, char* argv[]) {
 			for (int j = 0; j < n_iter; ++j) {
 				if (is_rule) {
 					size_t mpi_buffer = 0;
-					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object += mpi_buffer;
-					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
 					avg_num_object += mpi_buffer;
 
-					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
+					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
+
+					std::swap(state, buffer);
 
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_symbolic_num_object += mpi_buffer;
@@ -117,20 +122,20 @@ int main(int argc, char* argv[]) {
 					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
 					avg_num_object_after_interference += mpi_buffer;
 
-					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object_after_selection += mpi_buffer;
-					MPI_Allreduce(&state.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
 					avg_num_object_after_selection += mpi_buffer;
 
 				} else
-					iqs::simulate(state, modifier);
+					iqs::simulate(*state, modifier);
 			}
 	}
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 	/* print results as json */
-	size_t total_num_object = state.get_total_num_object(MPI_COMM_WORLD);
+	size_t total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
 	if (rank == 0) {
 		printf("\t\"avg_step_time\" : {");
 		for (auto it = avg_step_duration.begin();;) {
@@ -142,37 +147,14 @@ int main(int argc, char* argv[]) {
 		}
 
 		printf("\n\t},\n\n\t\"relative_inbalnce\" : {");
-		for (auto it = avg_step_duration.begin();;) {
-			double relative_inbalance = (max_step_duration[it->first] - it->second)/it->second*100;
+		for (auto it = max_step_duration.begin();;) {
+			double relative_inbalance = (it->second - avg_step_duration[it->first])/it->second*100;
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), relative_inbalance);
-			if (++it != avg_step_duration.end()) {
+			if (++it != max_step_duration.end()) {
 				printf(", ");
 			} else
 				break;
 		}
-
-		/*printf("\n\t},\n\n\t\"avg_step_time\" : {");
-		for (auto it = avg_step_duration.begin();;) {
-			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
-			if (++it != avg_step_duration.end()) {
-				printf(", ");
-			} else
-				break;
-		}
-
-		/*int total_num_threads = size;
-		#pragma omp parallel
-		#pragma omp single
-		total_num_threads *= omp_get_num_threads();
-
-		printf("\n\t},\n\n\t\"avg_cpu_step_time\" : {");
-		for (auto it = avg_cpu_step_duration.begin();;) {
-			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second / total_num_threads);
-			if (++it != avg_cpu_step_duration.end()) {
-				printf(", ");
-			} else
-				break;
-		}*/
 
 		double total_max = 0, total_avg = 0;
 		for (auto it = max_step_duration.begin(); it != max_step_duration.end(); ++it) {

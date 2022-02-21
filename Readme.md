@@ -60,19 +60,19 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-march=skylake -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DLOAD_BALANCING_BUCKET_PER_THREAD=32 -obora_scaling_test.out" CXX=mpic++
+make CFLAGS="-march=skylake -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DLOAD_BALANCING_BUCKET_PER_THREAD=32 -obora_scaling_test.out" CXX=mpic++ 
 make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DLOAD_BALANCING_BUCKET_PER_THREAD=32 -ozonda_scaling_test.out" CXX=mpic++
 
 
 
-./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -n 64,32,16,8,4,2,1 \
+  -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J erase_create -C zonda --exclusive --time=0-10:00" \
   -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
 
-./mpi_scaling.sh -n 1,2,4,8,16,32,64,1,2,4,8,16,32,1,2,4,8,16,1,2,4,8,1,2,4,1,2,1 \
-  -t 64,32,16,8,4,2,1,32,16,8,4,2,1,16,8,4,2,1,8,4,2,1,4,2,1,2,1,1 \
+./mpi_scaling.sh -n 64,32,16,8,4,2,1 \
+  -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
   -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
@@ -83,14 +83,14 @@ make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DL
 
 
 
-./mpi_scaling.sh -N 44,41,38,35,32,29,26,23,20,18,16,14,12,10,8,4,2,1 \
-  -n 1,2,4,6,12,18,36 -t 36,18,9,6,3,2,1 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,4,2,1 \
+  -n 1,2,36 -t 36,18,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
 
-./mpi_scaling.sh -N 44,41,38,35,32,29,26,23,20,18,16,14,12,10,8,4,2,1 \
-  -n 1,2,4,6,12,18,36 -t 36,18,9,6,3,2,1 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,4,2,1 \
+  -n 1,2,36 -t 36,18,1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:15" \
   -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_

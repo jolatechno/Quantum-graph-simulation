@@ -87,7 +87,7 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  				name = key + "," + str(num_node)
 	  				out_dict["results"][name] = json_dict["results"][key]
 	  		except Exception as err:
-	  			print(filename, err, file=sys.stderr)
+	  			print(filename, err)
 
 keys = list(out_dict["results"].keys())
 

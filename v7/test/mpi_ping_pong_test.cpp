@@ -51,12 +51,14 @@ int main(int argc, char* argv[]) {
 
 	iqs::rules::qcgd::utils::max_print_num_graphs = 10;
 
-	iqs::mpi::mpi_it_t state, buffer;
+	iqs::mpi::mpi_it_t *state = new iqs::mpi::mpi_it_t(), *buffer = new iqs::mpi::mpi_it_t();
 	iqs::mpi::mpi_sy_it_t sy_it;
 
-	auto [n_iter, reversed_n_iter, local_state, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1]);
+	iqs::it_t local_state;
 
-	iqs::rules::qcgd::utils::print(state);
+	auto [n_iter, reversed_n_iter, rules, max_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1], local_state);
+
+	iqs::rules::qcgd::utils::print(*state);
 
 	if (rank == 0)
 		for (int i = 0; i < local_state.num_object; ++i) {
@@ -64,12 +66,12 @@ int main(int argc, char* argv[]) {
 			size_t size;
 			char const *object_begin;
 			local_state.get_object(i, object_begin, size, mag);
-			state.append(object_begin, object_begin + size, mag);
+			state->append(object_begin, object_begin + size, mag);
 		}
 
 	if (rank == 0) {
 		std::cout << "initial state:\n";
-		iqs::rules::qcgd::utils::print(state);
+		iqs::rules::qcgd::utils::print(*state);
 		std::cout << "\n";
 	}
 
@@ -77,10 +79,12 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object);
+					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object);
+
+					std::swap(state, buffer);
 				} else
-					iqs::simulate(state, modifier);
-		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
+					iqs::simulate(*state, modifier);
+		mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
 		if (i == reversed_n_iter - 1)
@@ -89,11 +93,13 @@ int main(int argc, char* argv[]) {
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(state, rule, buffer, sy_it, MPI_COMM_WORLD, max_num_object);
-				} else
-					iqs::simulate(state, modifier);
+					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object);
 
-		mid_step_function(state, buffer, sy_it, MPI_COMM_WORLD);
+					std::swap(state, buffer);
+				} else
+					iqs::simulate(*state, modifier);
+
+		mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 	}
 
 #ifdef LESS_DEBUG
@@ -104,10 +110,10 @@ int main(int argc, char* argv[]) {
 	if (rank == 0)
 		std::cout << "final state:\n";
 
-	state.gather_objects(MPI_COMM_WORLD);
+	state->gather_objects(MPI_COMM_WORLD);
 	
 	if (rank == 0)
-		iqs::rules::qcgd::utils::print(state);
+		iqs::rules::qcgd::utils::print(*state);
 
 	MPI_Finalize();
 	return 0;
