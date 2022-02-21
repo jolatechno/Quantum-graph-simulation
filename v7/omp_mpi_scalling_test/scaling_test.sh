@@ -59,7 +59,7 @@ for i in "${!n_threads[@]}"; do
 
 	echo "		\"${n_thread},${n_node}\" : {"
 	
-	for map_by in L1cache numa socket node; do #hwthread core L3cache
+	for map_by in numa socket node; do #hwthread core L3cache
 		>&2 echo -e "\n\n\n${n_thread},${n_node} (${map_by}):"
 
 		start=`date +%s.%N`

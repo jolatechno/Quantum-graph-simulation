@@ -64,6 +64,12 @@ int main(int argc, char* argv[]) {
 	auto const mid_step_function = [&](const char* name) {
 		std::string string_name(name);
 
+		if (rank == 0)
+			if (name != "end") {
+				std::cerr << name << "\n";
+			} else
+				std::cerr << "\n\n";
+
 		if (last_name != "end") {
 			time_point stop = std::chrono::high_resolution_clock::now();
 			//clock_t cpu_stop = clock();
