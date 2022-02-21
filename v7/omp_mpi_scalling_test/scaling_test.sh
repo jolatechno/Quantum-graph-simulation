@@ -22,6 +22,7 @@ n_nodes=1
 args=
 file="scaling_test.out"
 mpirun_args=
+timeLimit=5
 
 while getopts 'f:a:n:ht:m:N:' flag; do
   case "$flag" in
@@ -59,9 +60,17 @@ for i in "${!n_threads[@]}"; do
 	echo "		\"${n_thread},${n_node}\" : {"
 	
 	for map_by in numa socket node; do #hwthread core L3cache
+		start=`date +%s.%N`
 		res=$(mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} --report-bindings -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} 2> ${temp_file})
-		if [ $? -eq 0 ]; then
+		exit_code=$?
+		runtime=$( echo "`date +%s.%N` - $start" | bc -l )
+		if [ "$exit_code" -eq 0 ]; then
 			echo "${res}${separator}" | indent | indent 
+			break
+		fi
+
+		if (( $(echo "$runtime > $timeLimit" |bc -l) )); then
+			echo -e "\t\"total\" : $runtime\n}" | indent | indent 
 			break
 		fi
 	done

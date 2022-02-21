@@ -75,7 +75,7 @@ make CFLAGS="-march=znver2 -DSIMPLE_TRUNCATION -DCOLLISION_TEST_PROPORTION=0 -DL
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-10:00" \
-  -a 8,max_num_object=30000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 8,max_num_object=25000000,seed=0\|15\|step\;split_merge -ores_sm_
 
 ./csv-from-tmp.py res_ec_
 ./csv-from-tmp.py res_sm_
