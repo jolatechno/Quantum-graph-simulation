@@ -24,10 +24,7 @@ int main(int argc, char* argv[]) {
 				} else
 					iqs::simulate(*state, modifier);
 
-	for (int i = 0; i < reversed_n_iter; ++i) {
-		if (i == reversed_n_iter - 1)
-			iqs::collision_tolerance = 0;
-		
+	for (int i = 0; i < reversed_n_iter; ++i)
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
@@ -36,7 +33,6 @@ int main(int argc, char* argv[]) {
 					std::swap(state, buffer);
 				} else
 					iqs::simulate(*state, modifier);
-	}
 
 	std::cout << "\n"; iqs::rules::qcgd::utils::print(*state);
 }

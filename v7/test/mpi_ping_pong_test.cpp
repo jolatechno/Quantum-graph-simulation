@@ -75,31 +75,43 @@ int main(int argc, char* argv[]) {
 		std::cout << "\n";
 	}
 
+	auto const real_mid_step_function = [&](const char* name) {
+		std::string stringName(name);
+
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if (rank == 0)
+			if (stringName != "end") {
+				std::cerr << stringName << "\n";
+			} else
+				std::cerr << "\n\n";
+
+		MPI_Barrier(MPI_COMM_WORLD);
+	};
+
 	for (int i = 0; i < n_iter; ++i) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object);
+					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 
 					std::swap(state, buffer);
+
+					mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 				} else
 					iqs::simulate(*state, modifier);
-		mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
-		if (i == reversed_n_iter - 1)
-			iqs::collision_tolerance = 0;
-		
 		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object);
+					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 
 					std::swap(state, buffer);
+
+					mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 				} else
 					iqs::simulate(*state, modifier);
-
-		mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 	}
 
 #ifdef LESS_DEBUG

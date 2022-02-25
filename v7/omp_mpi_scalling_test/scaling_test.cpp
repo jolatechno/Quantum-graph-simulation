@@ -118,6 +118,9 @@ int main(int argc, char* argv[]) {
 
 					std::swap(state, buffer);
 
+
+					std::cerr << state->get_total_num_object(MPI_COMM_WORLD) << "=num_object\n";
+
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_symbolic_num_object += mpi_buffer;
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
@@ -142,6 +145,7 @@ int main(int argc, char* argv[]) {
 
 	/* print results as json */
 	size_t total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
+
 	if (rank == 0) {
 		printf("\t\"avg_step_time\" : {");
 		for (auto it = avg_step_duration.begin();;) {
