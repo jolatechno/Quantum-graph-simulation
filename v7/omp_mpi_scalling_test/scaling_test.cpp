@@ -64,12 +64,6 @@ int main(int argc, char* argv[]) {
 	auto const mid_step_function = [&](const char* name) {
 		std::string string_name(name);
 
-		if (rank == 0)
-			if (name != "end") {
-				std::cerr << name << "\n";
-			} else
-				std::cerr << "\n\n";
-
 		if (last_name != "end") {
 			time_point stop = std::chrono::high_resolution_clock::now();
 			//clock_t cpu_stop = clock();
@@ -97,6 +91,12 @@ int main(int argc, char* argv[]) {
 			//avg_cpu_step_duration[last_name] += mpi_buffer;
 		}
 
+		if (rank == 0)
+			if (name != "end") {
+				std::cerr << name << "\n";
+			} else
+				std::cerr << "\n\n";
+
 		last_name = string_name;
 
 		step_start = std::chrono::high_resolution_clock::now();
@@ -111,30 +111,27 @@ int main(int argc, char* argv[]) {
 					size_t mpi_buffer = 0;
 					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object += mpi_buffer;
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					avg_num_object += mpi_buffer;
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+					avg_num_object += mpi_buffer/size;
 
 					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
 
 					std::swap(state, buffer);
 
-
-					std::cerr << state->get_total_num_object(MPI_COMM_WORLD) << "=num_object\n";
-
 					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_symbolic_num_object += mpi_buffer;
-					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					avg_symbolic_num_object += mpi_buffer;
+					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+					avg_symbolic_num_object += mpi_buffer/size;
 
 					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object_after_interference += mpi_buffer;
-					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					avg_num_object_after_interference += mpi_buffer;
+					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+					avg_num_object_after_interference += mpi_buffer/size;
 
 					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 					max_num_object_after_selection += mpi_buffer;
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
-					avg_num_object_after_selection += mpi_buffer;
+					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+					avg_num_object_after_selection += mpi_buffer/size;
 
 				} else
 					iqs::simulate(*state, modifier);
@@ -156,7 +153,7 @@ int main(int argc, char* argv[]) {
 				break;
 		}
 
-		printf("\n\t},\n\n\t\"relative_inbalnce\" : {");
+		printf("\n\t},\n\n\t\"relative_inbalance\" : {");
 		for (auto it = max_step_duration.begin();;) {
 			double relative_inbalance = (it->second - avg_step_duration[it->first])/it->second*100;
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), relative_inbalance);
@@ -171,7 +168,7 @@ int main(int argc, char* argv[]) {
 			total_max += it->second;
 			total_avg += avg_step_duration[it->first];
 		}
-		double total_imbalance = (total_max - total_avg)/total_avg*100;
+		double total_imbalance = (total_max - total_avg)/total_max*100;
 		printf("\n\t},\n\t\"total_relative_inbalance\" : %f,", total_imbalance);
 
 		printf("\n\n\t\"max_num_object\" : %lu,", max_num_object);

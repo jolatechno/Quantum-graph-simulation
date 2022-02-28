@@ -60,8 +60,16 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpic++
 make CFLAGS="-ozonda_scaling_test.out -march=znver2 -DSIMPLE_TRUNCATION" CXX=mpic++
+make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpic++
+
+
+
+./mpi_scaling.sh -n 64,1 -t 1,64 \
+  -f zonda_scaling_test.out \
+  -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
+  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
+
 
 
 
@@ -77,7 +85,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2 -DSIMPLE_TRUNCATION" CXX=mpi
   -t 1,64,1,32,1,16,1,8,1,4,1,2,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 8,max_num_object=25000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 8,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
 
 ./csv-from-tmp.py res_ec_
 ./csv-from-tmp.py res_sm_
@@ -89,13 +97,13 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2 -DSIMPLE_TRUNCATION" CXX=mpi
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 9,safety_margin=0.3,seed=0\|14\|step\;erase_create -oec_bora_
+  -a 9,seed=0\|14\|step\;erase_create -oec_bora_
 
 ./mpi_scaling.sh -N 38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 9,safety_margin=0.3,seed=0\|15\|step\;split_merge -osm_bora_
+  -a 9,seed=0\|15\|step\;split_merge -osm_bora_
 
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_
@@ -107,11 +115,26 @@ make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
 
 
 
-./mpi_scaling.sh -n 64,1 -t 1,64 \
-  -f zonda_scaling_test.out \
-  -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
-  -a 5,safety_margin=0.5,seed=0\|10\|step\;erase_create\;step\;split_merge -otest_birule_
 
+./mpi_scaling.sh -N 14 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J ec_long --time=0-2:00" \
+  -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
+
+./mpi_scaling.sh -N 14 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J sm_long --time=0-2:00" \
+  -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
+
+
+
+./mpi_scaling.sh -N 16 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
+  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
 
 
 module load compiler/gcc/11.2.0
