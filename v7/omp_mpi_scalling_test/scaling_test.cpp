@@ -91,6 +91,8 @@ int main(int argc, char* argv[]) {
 			//avg_cpu_step_duration[last_name] += mpi_buffer;
 		}
 
+		MPI_Barrier(MPI_COMM_WORLD);
+
 		if (rank == 0)
 			if (name != "end") {
 				std::cerr << name << "\n";

@@ -4,7 +4,7 @@ import os, sys, fnmatch
 import functools
 import json
 
-ordered_keys = ["symbolic_iteration", "collisions", "truncation", "final_iteration", "communication"]
+ordered_keys = ["pre-symbolic", "symbolic_iteration", "collisions", "pre-final", "final_iteration", "communication"]
 
 starting = {
 	"symbolic_iteration" : 0.0,
@@ -15,9 +15,11 @@ starting = {
 }
 
 translator = {
-	"num_child" : ["symbolic_iteration"], 
-	"prepare_index" : ["symbolic_iteration"], 
-	"equalize_child" : ["communication", "symbolic_iteration"], 
+	"num_child" : ["pre-symbolic"], 
+	"prepare_index" : ["pre-symbolic"], 
+	"equalize_child" : ["communication", "pre-symbolic"], 
+	"truncate_symbolic" : ["pre-symbolic"],
+
 	"symbolic_iteration" : ["symbolic_iteration"], 
 
 	"compute_collisions - com" : ["communication", "collisions"], 
@@ -25,11 +27,10 @@ translator = {
     "compute_collisions - insert" : ["collisions"], 
     "compute_collisions - prepare" : ["collisions"], 
 
-    "get_max_num_object" : ["truncation"], 
-    "truncate" : ["truncation"], 
+    "truncate" : ["pre-final"], 
+    "prepare_final" : ["pre-final"], 
 
     "final" : ["final_iteration"], 
-    "prepare_final" : ["final_iteration"], 
     "normalize" : ["final_iteration"], 
     "equalize" : ["communication", "final_iteration"]
 }

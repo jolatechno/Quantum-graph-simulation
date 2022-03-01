@@ -93,13 +93,13 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
 
 
 
-./mpi_scaling.sh -N 38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
   -a 9,seed=0\|14\|step\;erase_create -oec_bora_
 
-./mpi_scaling.sh -N 38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
@@ -114,6 +114,12 @@ make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
 
 
 
+./mpi_scaling.sh -N 16 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
+  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
+
 
 
 ./mpi_scaling.sh -N 14 \
@@ -127,14 +133,6 @@ make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
   -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
-
-
-
-./mpi_scaling.sh -N 16 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
-  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
 
 
 module load compiler/gcc/11.2.0
