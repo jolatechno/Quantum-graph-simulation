@@ -56,6 +56,9 @@ squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 (cd ../IQS && git pull origin dev)
 
+./mpi_scaling.sh \
+  -n 64,1,32,1,16,1,8,1,4,1,2,1,1 \
+  -t 1,64,1,32,1,16,1,8,1,4,1,2,1 \
 
 
 module load compiler/gcc/11.2.0
@@ -65,7 +68,24 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
 
 
 
-./mpi_scaling.sh -n 64,1 -t 1,64 \
+
+./mpi_scaling.sh \
+  -n 64,32,16,8,4,2,1 \
+  -t 1,1,1,1,1,1,1 \
+  -f zonda_scaling_test.out \
+  -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
+  -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
+
+./mpi_scaling.sh \
+  -n 64,32,16,8,4,2,1 \
+  -t 1,1,1,1,1,1,1 \
+  -f zonda_scaling_test.out \
+  -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
+  -a 8,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
+
+
+
+./mpi_scaling.sh -n 64 -t 1 \
   -f zonda_scaling_test.out \
   -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
@@ -73,31 +93,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
 
 
 
-./mpi_scaling.sh \
-  -n 64,1,32,1,16,1,8,1,4,1,2,1,1 \
-  -t 1,64,1,32,1,16,1,8,1,4,1,2,1 \
-  -f zonda_scaling_test.out \
-  -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
-  -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
-
-./mpi_scaling.sh \
-  -n 64,1,32,1,16,1,8,1,4,1,2,1,1 \
-  -t 1,64,1,32,1,16,1,8,1,4,1,2,1 \
-  -f zonda_scaling_test.out \
-  -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 8,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
-
-./csv-from-tmp.py res_ec_
-./csv-from-tmp.py res_sm_
 
 
 
-
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 9,seed=0\|14\|step\;erase_create -oec_bora_
+  -a 9,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
 
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -105,34 +108,41 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
   -a 9,seed=0\|15\|step\;split_merge -osm_bora_
 
-./csv-from-tmp.py ec_bora_
-./csv-from-tmp.py sm_bora_
 
 
 
-make CFLAGS="-DMIN_VECTOR_SIZE=1000" ping_pong_test
+./mpi_scaling.sh -N 10 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J ec_long --time=0-2:00" \
+  -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
+
+./mpi_scaling.sh -N 10 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J sm_long --time=0-2:00" \
+  -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
 
 
 
-./mpi_scaling.sh -N 16 \
+./mpi_scaling.sh -N 10 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
 
 
+./csv-from-tmp.py res_ec_
+./csv-from-tmp.py res_sm_
 
-./mpi_scaling.sh -N 14 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J ec_long --time=0-2:00" \
-  -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
+./csv-from-tmp.py ec_bora_
+./csv-from-tmp.py sm_bora_
 
-./mpi_scaling.sh -N 14 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J sm_long --time=0-2:00" \
-  -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
+
+
+
+
+
 
 
 module load compiler/gcc/11.2.0

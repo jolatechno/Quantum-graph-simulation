@@ -8,8 +8,9 @@ ordered_keys = ["pre-symbolic", "symbolic_iteration", "collisions", "pre-final",
 
 starting = {
 	"symbolic_iteration" : 0.0,
+	"pre-symbolic" : 0.0,
 	"collisions" : 0.0,
-	"truncation" : 0.0,
+	"pre-final" : 0.0,
 	"final_iteration" : 0.0,
 	"communication" : 0.0
 }
