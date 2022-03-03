@@ -19,6 +19,7 @@ translator = {
 	"num_child" : ["pre-symbolic"], 
 	"prepare_index" : ["pre-symbolic"], 
 	"equalize_child" : ["communication", "pre-symbolic"], 
+	"truncate_symbolic - prepare" : ["pre-symbolic"],
 	"truncate_symbolic" : ["pre-symbolic"],
 
 	"symbolic_iteration" : ["symbolic_iteration"], 
@@ -28,6 +29,7 @@ translator = {
     "compute_collisions - insert" : ["collisions"], 
     "compute_collisions - prepare" : ["collisions"], 
 
+    "truncate - prepare" : ["pre-symbolic"],
     "truncate" : ["pre-final"], 
     "prepare_final" : ["pre-final"], 
 

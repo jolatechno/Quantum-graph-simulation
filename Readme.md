@@ -63,8 +63,8 @@ cd Quantum-graph-simulation/v7/omp_mpi_scalling_test/
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-ozonda_scaling_test.out -march=znver2 -DSIMPLE_TRUNCATION" CXX=mpic++
-make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpic++
+make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
+make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 
@@ -111,13 +111,13 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
 
 
 
-./mpi_scaling.sh -N 10 \
+./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
   -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
 
-./mpi_scaling.sh -N 10 \
+./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
@@ -125,7 +125,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake -DSIMPLE_TRUNCATION" CXX=mpi
 
 
 
-./mpi_scaling.sh -N 10 \
+./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
