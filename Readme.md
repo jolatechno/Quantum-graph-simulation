@@ -2,7 +2,7 @@
 
 ## Implementation
 
-__*!!!ALL the implementation relies on [IQS](./v7/IQS/) found at [jolatechno/IQS](github.com/jolatechno/IQS)!!!*__
+__*!!!ALL the implementation relies on [v7/IQS](./v7/) found at [jolatechno/IQS](https://github.com/jolatechno/IQS)!!!*__
 
 ## Compilation
 
