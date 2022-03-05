@@ -75,21 +75,40 @@ Implemented _rules_ (all described in further details in [TO LINK](https://googl
 So to simulate 2 iteration of `step` followed by `erase_create` with a single starting graph with 12 nodes, and with a safety margin of `0.5`, the following argument is passed:
 
 ```bash
-./executable_file 2,safety_margin=0.5\|12\|step\|erase_create
+./executable_file 2,safety_margin=0.5\|12\|step\;erase_create
 ```
 
 To simulate 2 iteration of `step` followed by `split_merge` with one starting graph with 12 nodes and 2 starting graphs with 14 nodes and a pure imaginary magnitutde, the following argument is passed:
 
 ```bash
-./executable_file 2\|12\;14,n_graphs=2,imag=1,real=0\|step\|split_merge
+./executable_file 2\|12\;14,n_graphs=2,imag=1,real=0\|step\;split_merge
 ```
 
 To simulate 2 iteration, starting with a single graph of size 12, and applying `step` two times followed by `coin` with `theta=0.125`, the following argument is passed:
 
 ```bash
-./executable_file 2\|12\|step,n_iter=2\|split_merge,theta=0.125
+./executable_file 2\|12\|step,n_iter=2\;split_merge,theta=0.125
 ```
 
+## Running a simple test
+
+The [src/test/ping_pong_test.ccp](./src/test/) file (later used for injectivity test) simply print the intial state, and after running the simulation (including the inverse transformation) will print the final state. If you don't wat to apply the reverse transformation you can simply pass `reversed_n_iters=0`.
+
+After compiling it using `make ping_pong_test`, you can run it, for example for 4 iterations of `step` followed by `split_merge` starting with a single graph of size 12 using the following command:
+
+```bash
+./pin_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
+```
+
+### Using MPI
+
+The [src/test/mpi_ping_pong_test.ccp](./src/test/) file has the same function as [src/test/ping_pong_test.ccp](./src/test/), but support MPI. Since it gather the final state on the main rank at the end before printing it, if their is too much object by this time to fit in memory of a single node, the program will crash.
+
+After compiling it using `make CXX=mpic++ mpi_ping_pong_test`, you can run it, for example with 8 processes (see [mpirun(1) man page](https://www.open-mpi.org/doc/v4.0/man1/mpirun.1.php) for more info on mpirun), for 4 iterations of `step` followed by `split_merge` starting with a single graph of size 12 using the following command:
+
+```bash
+mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
+```
 
 ## Obtaining scaling results
 
