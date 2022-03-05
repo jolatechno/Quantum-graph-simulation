@@ -2,11 +2,11 @@
 
 ## Implementation
 
-__*!!!ALL the implementation relies on [v7/IQS](./v7/) found at [jolatechno/IQS](https://github.com/jolatechno/IQS)!!!*__
+__*!!!ALL the implementation relies on [src/IQS](./src/) found at [jolatechno/IQS](https://github.com/jolatechno/IQS)!!!*__
 
 ## Results
 
-
+Scaling results are in the [jolatechno/Quantum-graph-simulation-plots](https://github.com/jolatechno/Quantum-graph-simulation-plots) sub-repository.
 
 ## Compilation
 
@@ -112,15 +112,44 @@ mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
 
 ## Obtaining scaling results
 
-...
+The compilable file used to obtain scaling results is [src/omp_mpi_scalling_test/scaling_test.cpp](./src/omp_mpi_scalling_test/). After compiling it using `make CXX=mpic++`, actual scaling results are obtained using the [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, which get passed the following arguments:
+ - `-h`: simple help infos.
+ - `-f`: compiled file used, default is `scaling_test.out`.
+ - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_\|_graph\_size_\|_rules_).
+ - `-t`: list of the number of threads to test (ex: `1,2,6` the default is the number_of available threads).
+ - `-n`: list of the number of mpi rank to spawn per node (ex: `6,3,1` default is `1`).
+ - `-m`: additionals arguments for `mpirun`.
+ - `-N`: total number of nodes used for MPI, default is `1`.
+
+For example, to test the scaling on 5 nodes for 1 rank times 6 threads, 3 ranks time 2 threads, and 6 ranks times 1 threads for 3 iteration of `step` followed by `erase_create` starting with a single graph of 12 nodes, the command will be:
+
+```bash
+./scaling_test.sh -N 5 -t 6,2,1 -n 1,3,6 -a 4,reversed_n_iters=0\|12\|step\;split_merge
+```
+
+Note that the output (after separating `stderr` from `stdout`) will be formated as a json.
 
 ### Slurm integration
 
-...
+To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/) is used (which simply calls [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, and stores the results in `src/omp_mpi_scalling_test/tmp`). It get passed the following arguments:
+ - `-h`: simple help infos.
+ - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`.
+ - `-f`: similar to `-f` for `scaling_test.sh`.
+ - `-t`: similar to `-t` for `scaling_test.sh`.
+ - `-n`: similar to `-n` for `scaling_test.sh`.
+ - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
+ - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
+ - `-o`: base name of the output files (default is `res_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
 
-### Data processing
+For example, to test the scaling on 1,2,4 and 6 nodes for 1 rank times 6 threads, 3 ranks time 2 threads, and 6 ranks times 1 threads for 3 iteration of `step` followed by `erase_create` starting with a single graph of 12 nodes, the command will be:
 
-...
+```bash
+./mpi_scaling.sh -N 1,2,4,6 -t 6,2,1 -n 1,3,6 -a 4,reversed_n_iters=0\|12\|step\;split_merge
+```
+
+#### Data processing
+
+The [src/omp_mpi_scalling_test/csv-from-tmp.py](./src/omp_mpi_scalling_test/) script (requiering python 3) simply takes a base name (`-o` argument of [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/)) and returns a csv formated compilation of the results obtained by using [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/).
 
 ## Reproducing injectivity test
 
@@ -134,7 +163,7 @@ mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
 
 ...
 
-## Obtain QCGD dynamic evolution
+## Obtaining QCGD dynamic evolution
 
 ...
 

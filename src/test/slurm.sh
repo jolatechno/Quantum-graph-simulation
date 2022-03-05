@@ -26,7 +26,7 @@ echo “As the user: $USER”
 
 echo -e "\n===== job compilation ====\n"
 
-cd /home/jtouzet/Quantum-graph-simulation/v7/test
+cd /home/jtouzet/Quantum-graph-simulation/src/test
 
 echo -e "\n===== job results ====\n"
 
