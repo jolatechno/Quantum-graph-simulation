@@ -24,10 +24,6 @@ echo “submit host:” $SLURM_SUBMIT_HOST
 echo “In the directory: $PWD”
 echo “As the user: $USER”
 
-echo -e "\n===== job compilation ====\n"
-
-cd /home/jtouzet/Quantum-graph-simulation/src/omp_mpi_scalling_test
-
 echo -e "\n===== job results ====\n"
 
 ./scaling_test.sh -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}

@@ -134,9 +134,7 @@ Note that the output (after separating `stderr` from `stdout`) will be formated 
 To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/) is used (which simply calls [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, and stores the results in `src/omp_mpi_scalling_test/tmp`). It get passed the following arguments:
  - `-h`: simple help infos.
  - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`.
- - `-f`: similar to `-f` for `scaling_test.sh`.
- - `-t`: similar to `-t` for `scaling_test.sh`.
- - `-n`: similar to `-n` for `scaling_test.sh`.
+ - `-f`, `_t` and `-n`: same as `scaling_test.sh`.
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
  - `-o`: base name of the output files (default is `res_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
@@ -153,19 +151,31 @@ The [src/omp_mpi_scalling_test/csv-from-tmp.py](./src/omp_mpi_scalling_test/) sc
 
 ## Reproducing injectivity test
 
-...
+Injectivity testing for multiple graphs is done using [src/test/injectivity_test.sh](./src/test/) script (relying on [src/test/ping_pong_test.ccp](./src/test/) which should be compiled using `make ping_pong_test`). It takes the following arguments (not detailing other less usefull debuging flags):
+ - `-h`: show help infos.
+ - `-v`: show verbose.
+ - `-n`: number of iteration, default is `4`.
+ - `-s`: minimum graph size to test, default is `1`.
+ - `-S`: maximum graph size to test, default is `5`.
+ - `-r`: minimum random seed to test, default is `0`.
+ - `-R`: minimum random seed to test, default is `100`.
 
 ### MPI injectivity test
 
-...
-
-### Slurm integration
-
-...
+Injectivity testing for multiple graphs is done using [src/test/mpi_injectivity_tst.sh](./src/test/) script (relying on [src/test/mpi_ping_pong_test.ccp](./src/test/) which should be compiled using `make CXX=mpic++ mpi_ping_pong_test`). It takes the following arguments (not detailing other less usefull debuging flags):
+ - `-h`: show help infos.
+ - `-v`: show verbose.
+ - `-n`, `-s`, `-S`, `-r` and `-R`: same as `injectivity_test.sh`, but with different default value (detailed in the `-h` menu).
+ - `-t`: number of thread per rank, default is `1`.
+ - `-p`: number of rank per node, default is `1`.
 
 ## Obtaining QCGD dynamic evolution
 
-...
+Actual QCGDs simulations are supported (only using MPI) by the [src/simulation/quantum_iterations.cpp](./src/simulation/) file, which can be compiled using `make CXX=mpic++`, and simply takes the same arguments as [src/test/mpi_ping_pong_test.ccp](./src/test/) or [src/test/mpi_ping_pong_test.ccp](./src/test/), and prints out a json-formated list of the average values after each application of a rule. For example:
+
+```bash
+mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
+```
 
 # Experiment used in the paper:
 

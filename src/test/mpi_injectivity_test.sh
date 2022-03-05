@@ -2,6 +2,9 @@
 
 print_usage() {
   printf "Usage: ./mpi_injectivity_test.sh ops...
+  -h: shows this help menu
+  -v: enable verbose
+
   -t: numer of thread per task (default = 1)
   -p: number of task (default = 1)
 
@@ -16,8 +19,6 @@ print_usage() {
 	-m: test split merge rule (default : test all three rules)
 	-e: test erase create rule
 	-c: test coin rule
-
-	-v: enable verbose
 "
 }
 

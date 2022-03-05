@@ -24,10 +24,6 @@ echo “submit host:” $SLURM_SUBMIT_HOST
 echo “In the directory: $PWD”
 echo “As the user: $USER”
 
-echo -e "\n===== job compilation ====\n"
-
-cd /home/jtouzet/Quantum-graph-simulation/src/test
-
 echo -e "\n===== job results ====\n"
 
 ./mpi_injectivity_test.sh -p ${n_per_node} -t ${n_threads} ${args}

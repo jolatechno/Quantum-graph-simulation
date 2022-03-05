@@ -2,6 +2,9 @@
 
 print_usage() {
   printf "Usage: ./injectivity_test.sh ops...
+  -h: shows this help menu
+  -v: enable verbose
+
 	-s: minimum size (default = 1)
 	-S: maxium size (default = 5)
 
@@ -13,8 +16,6 @@ print_usage() {
 	-m: test split merge rule (default : test all three rules)
 	-e: test erase create rule
 	-c: test coin rule
-
-	-v: enable verbose
 "
 }
 
