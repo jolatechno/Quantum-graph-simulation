@@ -33,7 +33,5 @@ echo -e "\n===== job results ====\n"
 
 ./scaling_test.sh -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 
-#rm ${SLURM_JOB_ID}.out
-
 #end job
 exit 0

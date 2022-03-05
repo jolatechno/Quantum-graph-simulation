@@ -89,6 +89,9 @@ for rule in $rule; do
 			command="mpi_ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125"
 			res=$(eval $runner $command 2> ${temp_file})
 
+			# delete core-dump file to free-up memory
+			rm -f core.*
+
 			n_line=$(echo "${res}" | wc -l)
 
 			first_line=$(echo "${res}" | sed -n '2p')

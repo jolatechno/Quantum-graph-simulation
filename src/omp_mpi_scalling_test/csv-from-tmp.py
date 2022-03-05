@@ -34,8 +34,7 @@ translator = {
     "prepare_final" : ["pre-final"], 
 
     "final" : ["final_iteration"], 
-    "normalize" : ["final_iteration"], 
-    "equalize" : ["communication", "final_iteration"]
+    "normalize" : ["final_iteration"],
 }
 
 def accumulate_steptime(indict):

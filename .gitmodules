@@ -1,5 +1,5 @@
-[submodule "v7/IQS"]
-	path = v7/IQS
+[submodule "src/IQS"]
+	path = src/IQS
 	url = https://github.com/jolatechno/IQS.git
 [submodule "Quantum-graph-simulation-plots"]
 	path = Quantum-graph-simulation-plots

@@ -64,6 +64,10 @@ for i in "${!n_threads[@]}"; do
 
 		start=`date +%s.%N`
 		mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} > ${temp_file}
+
+		# delete core-dump file to free-up memory
+		rm -f core.*
+
 		exit_code=$?
 		runtime=$( echo "`date +%s.%N` - $start" | bc -l )
 
