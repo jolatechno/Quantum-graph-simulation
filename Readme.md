@@ -12,7 +12,17 @@ In any directory with compilable code, you can compile the code using the `make`
 
 ...
 
-## Usage
+# Usage
+
+## Obtaining scaling results
+
+...
+
+### Slurm integration
+
+...
+
+## Obtain QCGD dynamic evolution
 
 ...
 

@@ -50,8 +50,6 @@ int main(int argc, char* argv[]) {
 
 	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1], local_state);
 
-	iqs::rule_t *rule = new iqs::rules::qcgd::split_merge(0.25, 0.25);
-
 	if (rank == 0)
 		for (int i = 0; i < local_state.num_object; ++i) {
 			std::complex<PROBA_TYPE> mag;
