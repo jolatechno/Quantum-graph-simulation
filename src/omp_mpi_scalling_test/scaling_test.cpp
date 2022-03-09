@@ -103,6 +103,9 @@ int main(int argc, char* argv[]) {
 		//cpu_step_start = clock();
 	};
 
+	size_t total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
+	double total_proba = 1;
+
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < n_iter; ++i) {
 		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
@@ -133,6 +136,9 @@ int main(int argc, char* argv[]) {
 					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 					avg_num_object_after_selection += mpi_buffer/size;
 
+					total_num_object += state->get_total_num_object(MPI_COMM_WORLD);
+					total_proba *= std::pow(state->total_proba, 1/(double)n_iter);
+
 				} else
 					iqs::simulate(*state, modifier);
 			}
@@ -141,8 +147,6 @@ int main(int argc, char* argv[]) {
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 	/* print results as json */
-	size_t total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
-
 	if (rank == 0) {
 		printf("\t\"avg_step_time\" : {");
 		for (auto it = avg_step_duration.begin();;) {
@@ -184,6 +188,7 @@ int main(int argc, char* argv[]) {
 		printf("\n\t\"avg_num_object_after_selection\" : %lu,", avg_num_object_after_selection);
 
 		printf("\n\n\t\"num_object\" : %lu,", total_num_object);
+		std::cout << "\n\t\"total_proba\" : " << total_proba << ",";
 		printf("\n\t\"total\" : %f\n}", duration.count()*1e-6);
 	}
 

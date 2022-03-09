@@ -109,7 +109,7 @@ rule = command.split("|")[2].replace(";", "_")
 string = "\"#n iters\",\"initial #n node\",\"rule\"\n"
 string += n_iter + "," + n_node + ",\"" + rule + "\"\n\n" 
 
-string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"execution time\",\""
+string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"total_proba\",\"execution time\",\""
 string += "\",\"".join(ordered_keys) + "\""
 
 for i, key in enumerate(keys):
@@ -118,7 +118,7 @@ for i, key in enumerate(keys):
 	n_thread, n_task, n_node = n_threads[i]
 	this_step = out_dict["results"][key]
 
-	string += str(n_thread) + "," + str(n_task) + "," + str(n_node) + "," + str(this_step["num_object"]) + "," + str(this_step["total"])
+	string += f"{n_thread},{n_task},{n_node},{this_step['num_object']},{this_step['total_proba']:e},{this_step['total']}"
 
 	avg_step_time = accumulate_steptime(this_step["avg_step_time"])
 	for name in ordered_keys:
