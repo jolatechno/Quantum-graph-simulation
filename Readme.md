@@ -225,12 +225,23 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 9,seed=0\|15\|step\;split_merge -osm_bora_
+  -a 8,seed=0\|14\|step\;split_merge,theta=0.125 -osm_bora_
 
 
 # get results from multi-node
 ./csv-from-tmp.py ec_bora_
 ./csv-from-tmp.py sm_bora_
+
+
+# accuracy testing
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J accuracy --time=0-00:5" \
+  -a 8,seed=0\|12\|step\;split_merge -oacc_bora_
+
+# get results from multi-node
+./csv-from-tmp.py acc_bora_
 
 
 # single node multi-rule stability test
