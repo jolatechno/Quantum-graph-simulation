@@ -90,8 +90,8 @@ int main(int argc, char* argv[]) {
 	};
 
 	for (int i = 0; i < n_iter; ++i) {
-		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
-			for (int j = 0; j < n_iter; ++j)
+		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
+			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
 					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 
@@ -102,8 +102,8 @@ int main(int argc, char* argv[]) {
 					iqs::simulate(*state, modifier);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
-		for (auto [n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
-			for (int j = 0; j < n_iter; ++j)
+		for (auto [local_n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
+			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
 					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 

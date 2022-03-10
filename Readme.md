@@ -115,7 +115,7 @@ mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
 The compilable file used to obtain scaling results is [src/omp_mpi_scalling_test/scaling_test.cpp](./src/omp_mpi_scalling_test/). After compiling it using `make CXX=mpic++`, actual scaling results are obtained using the [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, which get passed the following arguments:
  - `-h`: simple help infos.
  - `-f`: compiled file used, default is `scaling_test.out`.
- - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_\|_graph\_size_\|_rules_).
+ - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_\|_graph\_size_\|_rules_). Note that `reversed_n_iter` is used set the iteration at which we start measuring performance (to let the program generate enough graphs at first). Default is `0`.
  - `-t`: list of the number of threads to test (ex: `1,2,6` the default is the number_of available threads).
  - `-n`: list of the number of mpi rank to spawn per node (ex: `6,3,1` default is `1`).
  - `-m`: additionals arguments for `mpirun`.
@@ -133,8 +133,8 @@ Note that the output (after separating `stderr` from `stdout`) will be formated 
 
 To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/) is used (which simply calls [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, and stores the results in `src/omp_mpi_scalling_test/tmp`). It get passed the following arguments:
  - `-h`: simple help infos.
- - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`.
- - `-f`, `_t` and `-n`: same as `scaling_test.sh`.
+ - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`. `reversed_n_iter` is also used set the iteration at which we start measuring performance. Default is `0`.
+ - `-f`, `-t`, `-n` and `-m`: same as `scaling_test.sh`.
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
  - `-o`: base name of the output files (default is `res_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
@@ -202,13 +202,13 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
-  -a 7,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
+  -a 8,reversed_n_iter=4,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
 ./mpi_scaling.sh \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 7,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 8,reversed_n_iter=4,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
 
 
 # get results from single node
@@ -222,13 +222,13 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 13,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
+  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 9,seed=0\|15\|step\;split_merge -osm_bora_
+  -a 9,reversed_n_iter=4,seed=0\|15\|step\;split_merge -osm_bora_
 
 
 # get results from multi-node
@@ -237,12 +237,11 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 # accuracy testing
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -N 41,38,35,32 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
-  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J accuracy --time=0-00:5" \
-  -a 9,seed=0\|11\|step\;split_merge,theta=0.125 -oacc_bora_
+  -a 9,seed=0\|12\|step\;split_merge,theta=0.125 -oacc_bora_
 
 
 # get results from multi-node

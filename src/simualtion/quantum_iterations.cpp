@@ -35,8 +35,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	for (int i = 0; i < n_iter; ++i) {
-		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
-			for (int j = 0; j < n_iter; ++j)
+		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
+			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
 					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object);
 

@@ -103,47 +103,56 @@ int main(int argc, char* argv[]) {
 		//cpu_step_start = clock();
 	};
 
-	size_t total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
 	double total_proba = 1;
+	size_t total_num_object = 0;
 
-	auto start = std::chrono::high_resolution_clock::now();
+	time_point start;
 	for (int i = 0; i < n_iter; ++i) {
-		for (auto [n_iter, is_rule, modifier, rule, _, __] : rules)
-			for (int j = 0; j < n_iter; ++j) {
+		if (i == reversed_n_iter) {
+			total_num_object = state->get_total_num_object(MPI_COMM_WORLD);
+			start = std::chrono::high_resolution_clock::now();
+		}
+		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
+			for (int j = 0; j < local_n_iter; ++j) {
 				if (is_rule) {
-					size_t mpi_buffer = 0;
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
-					max_num_object += mpi_buffer;
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-					avg_num_object += mpi_buffer/size;
+					if (i >= reversed_n_iter) {
+						size_t mpi_buffer = 0;
+						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+						max_num_object += mpi_buffer;
+						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+						avg_num_object += mpi_buffer/size;
+					}
 
 					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
 
 					std::swap(state, buffer);
 
-					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
-					max_symbolic_num_object += mpi_buffer;
-					MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-					avg_symbolic_num_object += mpi_buffer/size;
+					if (i >= reversed_n_iter) {
+						size_t mpi_buffer = 0;
+						MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+						max_symbolic_num_object += mpi_buffer;
+						MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+						avg_symbolic_num_object += mpi_buffer/size;
 
-					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
-					max_num_object_after_interference += mpi_buffer;
-					MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-					avg_num_object_after_interference += mpi_buffer/size;
+						MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+						max_num_object_after_interference += mpi_buffer;
+						MPI_Allreduce(&sy_it.num_object_after_interferences, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+						avg_num_object_after_interference += mpi_buffer/size;
 
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
-					max_num_object_after_selection += mpi_buffer;
-					MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-					avg_num_object_after_selection += mpi_buffer/size;
+						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
+						max_num_object_after_selection += mpi_buffer;
+						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+						avg_num_object_after_selection += mpi_buffer/size;
 
-					total_num_object += state->get_total_num_object(MPI_COMM_WORLD);
-					total_proba *= std::pow(state->total_proba, 1/(double)n_iter);
+						total_num_object += state->get_total_num_object(MPI_COMM_WORLD);
+						total_proba *= std::pow(state->total_proba, 1/(double)(n_iter - reversed_n_iter));
+					}
 
 				} else
 					iqs::simulate(*state, modifier);
 			}
 	}
-	auto stop = std::chrono::high_resolution_clock::now();
+	time_point stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 	/* print results as json */
