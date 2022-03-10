@@ -217,19 +217,16 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 # multi-node scaling
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 13,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
-./mpi_scaling.sh -N 6 \
-  -n 36,18,8,4,2 -t 1,1,1,1,1 \
-  -f bora_scaling_test.out \
-  -s "-C bora --exclusive -J erase_create --time=0-2:00" \
   -a 13,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
   -a 9,seed=0\|15\|step\;split_merge -osm_bora_
 
@@ -243,6 +240,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J accuracy --time=0-00:5" \
   -a 9,seed=0\|11\|step\;split_merge,theta=0.125 -oacc_bora_
 
@@ -261,6 +259,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
 
@@ -268,11 +267,13 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
   -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
   -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
 ```

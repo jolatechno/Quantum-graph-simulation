@@ -43,6 +43,7 @@ temp_file=$(mktemp)
 
 command="${file} ${args}"
 echo "{"
+echo "  \"mpi_command\" : \"mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=\$t:span -n \$n -x OMP_NUM_THREADS=\$t ${mpirun_args}\","
 echo "	\"command\" : \"${command}\","
 echo "	\"results\" : {"
 

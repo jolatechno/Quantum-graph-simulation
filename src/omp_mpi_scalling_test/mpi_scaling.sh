@@ -49,5 +49,5 @@ if [ ! -d ./tmp ]; then
 fi
 
 for n_node in "${n_nodes[@]}"; do
-	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} MPI_ARGS=${mpirun_args} sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
+	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} MPI_ARGS="${mpirun_args}" sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
 done
