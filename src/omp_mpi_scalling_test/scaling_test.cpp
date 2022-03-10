@@ -59,6 +59,15 @@ int main(int argc, char* argv[]) {
 			state->append(object_begin, object_begin + size, mag);
 		}
 
+	auto const debug_mid_step_function = [&](const char* name) {
+		std::string string_name(name);
+
+		if (rank == 0)
+			if (name != "end") {
+				std::cerr << name << "\n";
+			} else
+				std::cerr << "\n\n";
+	};
 	auto const mid_step_function = [&](const char* name) {
 		std::string string_name(name);
 
@@ -91,11 +100,7 @@ int main(int argc, char* argv[]) {
 
 		MPI_Barrier(MPI_COMM_WORLD);
 
-		if (rank == 0)
-			if (name != "end") {
-				std::cerr << name << "\n";
-			} else
-				std::cerr << "\n\n";
+		debug_mid_step_function(name);
 
 		last_name = string_name;
 
@@ -121,9 +126,10 @@ int main(int argc, char* argv[]) {
 						max_num_object += mpi_buffer;
 						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 						avg_num_object += mpi_buffer/size;
-					}
 
-					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
+						iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
+					} else
+						iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, debug_mid_step_function);
 
 					std::swap(state, buffer);
 

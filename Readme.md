@@ -237,7 +237,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 # accuracy testing
-./mpi_scaling.sh -N 41,38,35,32 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J accuracy --time=0-00:5" \
