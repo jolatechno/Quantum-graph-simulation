@@ -26,7 +26,7 @@ echo “As the user: $USER”
 
 echo -e "\n===== job results ====\n"
 
-./scaling_test.sh -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
+./scaling_test.sh -m ${MPI_ARGS} -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 
 #end job
 exit 0

@@ -181,6 +181,7 @@ mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
 
   ```bash
 # to clear slurm queue
+squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 
 # !!!!!!
@@ -207,7 +208,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 8,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 7,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
 
 
 # get results from single node
@@ -216,16 +217,21 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 # multi-node scaling
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 9,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
+  -a 13,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
+./mpi_scaling.sh -N 6 \
+  -n 36,18,8,4,2 -t 1,1,1,1,1 \
+  -f bora_scaling_test.out \
+  -s "-C bora --exclusive -J erase_create --time=0-2:00" \
+  -a 13,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 8,seed=0\|14\|step\;split_merge,theta=0.125 -osm_bora_
+  -a 9,seed=0\|15\|step\;split_merge -osm_bora_
 
 
 # get results from multi-node
@@ -238,7 +244,8 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -s "-C bora --exclusive -J accuracy --time=0-00:5" \
-  -a 8,seed=0\|12\|step\;split_merge -oacc_bora_
+  -a 9,seed=0\|11\|step\;split_merge,theta=0.125 -oacc_bora_
+
 
 # get results from multi-node
 ./csv-from-tmp.py acc_bora_
