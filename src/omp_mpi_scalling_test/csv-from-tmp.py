@@ -109,19 +109,26 @@ rule = command.split("|")[2].replace(";", "_")
 string = "\"#n iters\",\"initial #n node\",\"rule\"\n"
 string += n_iter + "," + n_node + ",\"" + rule + "\"\n\n" 
 
-string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"#n object\",\"total_proba\",\"execution time\",\""
+string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"\",\"#n object\",\"#n symb. object\",\"total_proba\",\"\",\"execution time\",\""
 string += "\",\"".join(ordered_keys) + "\""
+string += ",\"\",\"time inbalance\",\"NoO inbalance\",\"NoO symb. inbalance\""
 
 for i, key in enumerate(keys):
 	string += "\n";
 
 	n_thread, n_task, n_node = n_threads[i]
+	total_n_task = n_task*n_node
 	this_step = out_dict["results"][key]
 
-	string += f"{n_thread},{n_task},{n_node},{this_step['num_object']},{this_step['total_proba']:e},{this_step['total']}"
+	NoO_inbalance = (this_step['max_num_object'] - this_step['avg_num_object'])/this_step['max_num_object']
+	NoO_symb_inbalance = (this_step['max_symbolic_num_object'] - this_step['avg_symbolic_num_object'])/this_step['max_symbolic_num_object']
+
+	string += f"{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
 
 	avg_step_time = accumulate_steptime(this_step["avg_step_time"])
 	for name in ordered_keys:
 		string += "," + str(avg_step_time[name])
+
+	string += f",,{this_step['total_relative_inbalance']},{NoO_inbalance},{NoO_symb_inbalance}"
 
 print(string)

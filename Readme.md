@@ -137,7 +137,7 @@ To obtain scaling results for different number of nodes, using slurm [src/omp_mp
  - `-f`, `-t`, `-n` and `-m`: same as `scaling_test.sh`.
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
- - `-o`: base name of the output files (default is `res_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
+ - `-o`: base name of the output files (default is `out_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
 
 For example, to test the scaling on 1,2,4 and 6 nodes for 1 rank times 6 threads, 3 ranks time 2 threads, and 6 ranks times 1 threads for 3 iteration of `step` followed by `erase_create` starting with a single graph of 12 nodes, the command will be:
 
@@ -240,13 +240,26 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J accuracy --time=0-00:5" \
-  -a 9,seed=0\|12\|step\;split_merge,theta=0.125 -oacc_bora_
+  -a 9,reversed_n_iter=6,seed=2\|15\|step\;erase_create -oacc_ec_bora_
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J accuracy --time=0-00:5" \
+  -a 8,reversed_n_iter=6,seed=0\|13\|step\;split_merge -oacc_sm_bora_
 
 
 # get results from multi-node
-./csv-from-tmp.py acc_bora_
+./csv-from-tmp.py acc_ec_bora_
+./csv-from-tmp.py acc_sm_bora_
 
+
+
+# ---------------------------
+# stability tests from now on
+# ---------------------------
 
 # single node multi-rule stability test
 ./mpi_scaling.sh -n 64 -t 1 \
