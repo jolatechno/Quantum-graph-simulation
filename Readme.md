@@ -242,7 +242,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 9,reversed_n_iter=6,seed=0\|14\|step\;split_merge -o sm_bora_
+  -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_bora_
 
 
 # get results from multi-node

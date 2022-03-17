@@ -70,7 +70,7 @@ def compare(item1, item2):
 	return item2[0] - item1[0]
 
 
-out_dict = {"results" : {}}
+out_dict = {"results" : {}, "command" : "no_file_provided 0|0|"}
 
 match = "out_" if len(sys.argv) == 1 else sys.argv[1]
 
