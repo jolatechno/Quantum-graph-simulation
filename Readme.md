@@ -184,11 +184,14 @@ mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
 squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 
-# !!!!!!
+# ---------------------------
 # command to replicate results on plafrim
-# !!!!!!
+# ---------------------------
 
+# ---------------------------
 # compile
+# ---------------------------
+
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
 make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
@@ -196,19 +199,24 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 
+
+# ---------------------------
+# scaling test
+# ---------------------------
+
 # single node scaling
 ./mpi_scaling.sh \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
-  -a 8,reversed_n_iter=4,max_num_object=2000000,seed=0\|15\|step\;erase_create -ores_ec_
+  -a 8,reversed_n_iter=4,max_num_object=2000000,seed=0\|15\|step\;erase_create -o res_ec_
 ./mpi_scaling.sh \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 8,reversed_n_iter=4,max_num_object=20000000,seed=0\|15\|step\;split_merge -ores_sm_
+  -a 8,reversed_n_iter=4,max_num_object=20000000,seed=0\|15\|step\;split_merge -o res_sm_
 
 
 # get results from single node
@@ -221,51 +229,37 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -oec_bora_
+  -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
+  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
+./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
+  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 9,reversed_n_iter=4,seed=0\|15\|step\;split_merge -osm_bora_
+  -a 9,reversed_n_iter=6,seed=0\|14\|step\;split_merge -o sm_bora_
 
 
 # get results from multi-node
-./csv-from-tmp.py ec_bora_
+./csv-from-tmp.py strong_ec_bora_
+./csv-from-tmp.py weak_ec_bora_
 ./csv-from-tmp.py sm_bora_
 
 
-# accuracy testing
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J accuracy --time=0-00:5" \
-  -a 9,reversed_n_iter=6,seed=2\|15\|step\;erase_create -oacc_ec_bora_
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J accuracy --time=0-00:5" \
-  -a 8,reversed_n_iter=6,seed=0\|13\|step\;split_merge -oacc_sm_bora_
-
-
-# get results from multi-node
-./csv-from-tmp.py acc_ec_bora_
-./csv-from-tmp.py acc_sm_bora_
-
-
-
 # ---------------------------
-# stability tests from now on
+# stability tests
 # ---------------------------
 
 # single node multi-rule stability test
 ./mpi_scaling.sh -n 64 -t 1 \
   -f zonda_scaling_test.out \
   -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
-  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
+  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-bode multi-rule stability test
 ./mpi_scaling.sh -N 2,4,8,16 \
@@ -273,7 +267,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
-  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -otest_birule_
+  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-node stability test
 ./mpi_scaling.sh -N 2,4,8,16 \
@@ -281,11 +275,11 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
-  -a 20,seed=0\|20\|step\;erase_create -otest_long_ec_
+  -a 20,seed=0\|20\|step\;erase_create -o test_long_ec_
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
-  -a 20,seed=0\|30\|step\;split_merge -otest_long_sm_
+  -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
 ```
