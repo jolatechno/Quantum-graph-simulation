@@ -39,7 +39,7 @@ echo "	\"results\" : {"
 last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
 	n_thread=${n_threads[i]}
-	n_node=${n_nodes[i]}
+	n_node=${n_per_node[i]}
 
 	separator=""
 	if (( $i < $last_element )); then
