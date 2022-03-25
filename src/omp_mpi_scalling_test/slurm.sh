@@ -26,6 +26,8 @@ echo “As the user: $USER”
 
 echo -e "\n===== job results ====\n"
 
+indent() { sed 's/^/	/'; }
+
 temp_file=$(mktemp)
 
 command="${file} ${args}"
