@@ -38,7 +38,6 @@ last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
 	n_thread=${n_threads[i]}
 	n_node=${n_nodes[i]}
-	total_n_node=$(($n_node * $total_n_nodes))
 
 	separator=""
 	if (( $i < $last_element )); then
