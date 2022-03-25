@@ -5,6 +5,7 @@ print_usage() {
 	-h: this help menu
 	-a: arguments for scaling_test.cpp
 	-m: additional arguments to mpirun
+	-M: list of module to be loaded (comma separated)
 	-f: file to execute (default=\"scaling_test.out\")
 
 	-t: list of number of threads to test (ex: 1,2,5, default:number_of_available_thread)
@@ -22,12 +23,13 @@ n_per_nodes=1
 args=
 sbatch_args=
 mpirun_args=
+modules=
 base_name="out_"
 file="scaling_test.out"
 
 errfile="err.txt"
 
-while getopts 'a:n:ht:N:s:o:f:m:' flag; do
+while getopts 'a:n:ht:N:s:o:f:m:M:' flag; do
   case "$flag" in
   	h) print_usage
     	exit 1 ;;
@@ -39,6 +41,7 @@ while getopts 'a:n:ht:N:s:o:f:m:' flag; do
 		N) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
 		f) file="${OPTARG}" ;;
 		m) mpirun_args="${OPTARG}" ;;
+		M) modules="${OPTARG}" ;;
 	  *) print_usage
 	    exit 1 ;;
   esac
@@ -49,5 +52,5 @@ if [ ! -d ./tmp ]; then
 fi
 
 for n_node in "${n_nodes[@]}"; do
-	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} MPI_ARGS="${mpirun_args}" sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
+	n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} MPI_ARGS="${mpirun_args}" MODULES="${modules}" sbatch ${sbatch_args} --output=tmp/${base_name}${n_node}.out --error=tmp/${base_name}${n_node}.err -N ${n_node} slurm.sh
 done

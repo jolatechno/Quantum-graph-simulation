@@ -213,12 +213,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
   -a 8,reversed_n_iter=4,max_num_object=2000000,seed=0\|15\|step\;erase_create -o res_ec_
 ./mpi_scaling.sh \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
   -a 8,reversed_n_iter=4,max_num_object=20000000,seed=0\|15\|step\;split_merge -o res_sm_
 
@@ -232,18 +234,21 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
   -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
 ./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
   -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_bora_
@@ -262,6 +267,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 # single node multi-rule stability test
 ./mpi_scaling.sh -n 64 -t 1 \
   -f zonda_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
@@ -269,6 +275,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
@@ -277,12 +284,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
   -a 20,seed=0\|20\|step\;erase_create -o test_long_ec_
 ./mpi_scaling.sh -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
   -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
@@ -312,12 +321,14 @@ make CFLAGS="-march=cascadelake" CXX=mpic++
 # stability tests
 # ---------------------------
 
-./mpi_scaling.sh -N 50 \
+./mpi_scaling.sh -N 1,10,20 \
   -n 40 -t 1 \
-  -s "-C node --exclusive -J strong_erase_create --time=0-00:5" \
+  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
+  -s "--exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
-./mpi_scaling.sh -N 50 \
+./mpi_scaling.sh -N 1,10,20 \
   -n 40 -t 1 \
+  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
   -s "--exclusive -J weak_erase_create --time=0-00:5" \
   -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
 ```
