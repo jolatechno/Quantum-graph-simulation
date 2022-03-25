@@ -185,8 +185,12 @@ squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 
 # ---------------------------
-# command to replicate results on plafrim
 # ---------------------------
+# command to replicate results on plafrim
+#   '-> cluster info page: 
+# ---------------------------
+# ---------------------------
+
 
 # ---------------------------
 # compile
@@ -282,4 +286,38 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
   -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
+
+
+
+
+# ---------------------------
+# ---------------------------
+# command to replicate results on ruche
+#   '-> cluster info page: 
+# ---------------------------
+# ---------------------------
+
+
+# ---------------------------
+# compile
+# ---------------------------
+
+module load gcc/11.2.0/gcc-4.8.5
+module load openmpi/4.1.1/gcc-11.2.0
+
+make CFLAGS="-march=cascadelake" CXX=mpic++
+
+
+# ---------------------------
+# stability tests
+# ---------------------------
+
+./mpi_scaling.sh -N 50 \
+  -n 40 -t 1 \
+  -s "-C node --exclusive -J strong_erase_create --time=0-00:5" \
+  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
+./mpi_scaling.sh -N 50 \
+  -n 40 -t 1 \
+  -s "--exclusive -J weak_erase_create --time=0-00:5" \
+  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
 ```

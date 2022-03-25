@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH -J injectivity_test
 #SBATCH --time=0-2:00:00 --exclusive
-#SBATCH -N 1 -C zonda
 #SBATCH -o %j.out
 #SBATCH -e %j.err
 
