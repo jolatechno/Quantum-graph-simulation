@@ -134,6 +134,7 @@ Note that the output (after separating `stderr` from `stdout`) will be formated 
 To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/) is used (which simply calls [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, and stores the results in `src/omp_mpi_scalling_test/tmp`). It get passed the following arguments:
  - `-h`: simple help infos.
  - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`. `reversed_n_iter` is also used set the iteration at which we start measuring performance. Default is `0`.
+ - `-M`: comma-separated list of modules to be loaded.
  - `-f`, `-t`, `-n` and `-m`: same as `scaling_test.sh`.
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
@@ -179,15 +180,26 @@ mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
 
 # Experiment used in the paper:
 
-  ```bash
+## Clusters
+
+We mainly used two clusters:
+ - [Plafrim](https://plafrim-users.gitlabpages.inria.fr/doc/#hardware).
+ - [Ruche](https://mesocentre.pages.centralesupelec.fr/user_doc/ruche/01_cluster_overview/) provided by __Centrale Supelec__.
+
+## Commands
+
+The following commands
+
+```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
+squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 # ---------------------------
 # ---------------------------
 # command to replicate results on plafrim
-#   '-> cluster info page: 
+#   '-> cluster info page: https://plafrim-users.gitlabpages.inria.fr/doc/#hardware
 # ---------------------------
 # ---------------------------
 
@@ -301,7 +313,7 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 # ---------------------------
 # ---------------------------
 # command to replicate results on ruche
-#   '-> cluster info page: 
+#   '-> cluster info page: https://mesocentre.pages.centralesupelec.fr/user_doc/ruche/01_cluster_overview/
 # ---------------------------
 # ---------------------------
 
@@ -317,17 +329,28 @@ make CFLAGS="-march=cascadelake" CXX=mpigxx
 
 
 # ---------------------------
-# stability tests
+# scaling tests
 # ---------------------------
 
-./mpi_scaling.sh -N 4,10,20 \
+# multi-bode multi-rule stability test
+./mpi_scaling.sh -N 4,6,8,10,13,16,20,23,26,30,33,36,40,43,45,49 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "--exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
-./mpi_scaling.sh -N 1,10,20 \
+  -s "-p cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
+  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_
+./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,45,49 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "--exclusive -J weak_erase_create --time=0-00:5" \
-  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
+  -s "-p cpu_prod --exclusive -J weak_erase_create --time=0-00:5" \
+  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_
+./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,45,49 \
+  -n 40 -t 1 \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_prod --exclusive -J split_merge --time=0-00:5" \
+  -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_
+
+# get results from multi-node
+./csv-from-tmp.py strong_ec_
+./csv-from-tmp.py weak_ec_
+./csv-from-tmp.py sm_
 ```
