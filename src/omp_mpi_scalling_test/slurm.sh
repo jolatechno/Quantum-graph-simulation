@@ -52,7 +52,7 @@ for i in "${!n_threads[@]}"; do
 		>&2 echo -e "\n\n\n${n_thread},${n_node} (${map_by}):"
 
 		start=`date +%s.%N`
-		srun --cpu-bin=${map_by} --cpus-per-task=${n_thread} --task=${n_node} ${mpirun_args} ${command} > ${temp_file}
+		srun --cpu-bin=${map_by} --cpus-per-task=${n_thread} --ntasks-per-node=${n_node} ${mpirun_args} ${command} > ${temp_file}
 
 		# delete core-dump file to free-up memory
 		rm -f core.*
