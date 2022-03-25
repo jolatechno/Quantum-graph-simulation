@@ -30,7 +30,7 @@ indent() { sed 's/^/	/'; }
 
 temp_file=$(mktemp)
 
-command="${file} ${args}"
+command="./${NAME} ${rule}"
 echo "{"
 echo "  \"mpi_command\" : \"srun --cpus-per-task=${n_thread} --task=${n_node} ${mpirun_args}\","
 echo "	\"command\" : \"${command}\","
