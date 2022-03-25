@@ -181,8 +181,8 @@ mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
 
   ```bash
 # to clear slurm queue
-squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
+squeue -u $USER | grep "acc" | awk '{print $1}' | xargs scancel
 
 # ---------------------------
 # ---------------------------
@@ -312,23 +312,23 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 # ---------------------------
 
 module load gcc/11.2.0/gcc-4.8.5
-module load openmpi/4.1.1/gcc-11.2.0
+module load intel-mpi/2019.9.304/intel-20.0.4.304
 
-make CFLAGS="-march=cascadelake" CXX=mpic++
+make CFLAGS="-march=cascadelake" CXX=mpigxx
 
 
 # ---------------------------
 # stability tests
 # ---------------------------
 
-./mpi_scaling.sh -N 1,10,20 \
+./mpi_scaling.sh -N 4,10,20 \
   -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -s "--exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
 ./mpi_scaling.sh -N 1,10,20 \
   -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -s "--exclusive -J weak_erase_create --time=0-00:5" \
   -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
 ```
