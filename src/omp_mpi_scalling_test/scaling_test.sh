@@ -41,7 +41,7 @@ done
 
 temp_file=$(mktemp)
 
-command="${file} ${args}"
+command="./${file} ${args}"
 echo "{"
 echo "  \"mpi_command\" : \"mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=\$t:span -n \$n -x OMP_NUM_THREADS=\$t ${mpirun_args}\","
 echo "	\"command\" : \"${command}\","
@@ -64,7 +64,7 @@ for i in "${!n_threads[@]}"; do
 		>&2 echo -e "\n\n\n${n_thread},${n_node} (${map_by}):"
 
 		start=`date +%s.%N`
-		mpirun --rank-by numa --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} -x OMP_NUM_THREADS=${n_thread} ${mpirun_args} ${command} > ${temp_file}
+		mpirun --bind-to hwthread --map-by ${map_by}:PE=${n_thread}:span -n ${total_n_node} ${mpirun_args} ${command} > ${temp_file}
 
 		# delete core-dump file to free-up memory
 		rm -f core.*

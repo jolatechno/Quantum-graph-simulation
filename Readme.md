@@ -203,7 +203,6 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 
-
 # ---------------------------
 # scaling test
 # ---------------------------
