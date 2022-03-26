@@ -9,15 +9,15 @@ NUM_HWTHREADS=$(lscpu -p | grep -c "^[0-9]")
 echo -e "===== loading modules (${MODULES}) ====\n"
 
 #module purge
-for module in ${${MODULES}//,/ }; do
+for module in ${MODULES//,/ }; do
+    echo -e "loading ${module}"
     module load ${module}
-    echo "   loading ${modules}"
 done
 
 export OMP_PROC_BIND=false
 export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
 
-echo -e "===== my job information ====\n"
+echo -e "\n===== my job information ====\n"
 
 echo “Node List: ” $SLURM_NODELIST
 echo “Number of Nodes: ” $SLURM_JOB_NUM_NODES
