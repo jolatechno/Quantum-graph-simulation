@@ -33,9 +33,9 @@ echo -e "\n===== job results ====\n"
 
 temp_file=$(mktemp)
 
-command="./${file} ${args}"
+command="./${NAME} ${rule}"
 echo "{"
-echo "  \"mpi_command\" : \"slurm --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args}\","
+echo "  \"mpi_command\" : \"srun --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args}\","
 echo "  \"command\" : \"${command}\","
 echo "  \"results\" : {"
 
@@ -43,7 +43,7 @@ last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
     n_thread=${n_threads[i]}
     n_node=${n_nodes[i]}
-    total_n_node=$(($n_node * $total_n_nodes))
+    total_n_node=$(($n_node * $SLURM_JOB_NUM_NODES))
 
     separator=""
     if (( $i < $last_element )); then
