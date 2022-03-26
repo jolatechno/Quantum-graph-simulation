@@ -42,6 +42,20 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+
+	/* output informations */
+	MPI_Comm localComm;
+	int local_size;
+	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &localComm);
+	MPI_Comm_size(localComm, &local_size);
+	if (rank == 0) {
+		std::cerr << "\tsize : " << size << "\n";
+		std::cerr << "\tlocal size : " << local_size << "\n";
+		std::cerr << "\tmemory size : " << (float)iqs::utils::get_free_mem()/1e9 << "GB\n";
+	}
+
+
+
 	iqs::mpi::mpi_it_t buffer1, buffer2;
 	iqs::mpi::mpi_sy_it_t sy_it;
 	iqs::it_t local_state;
