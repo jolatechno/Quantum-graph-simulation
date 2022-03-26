@@ -57,9 +57,9 @@ for i in "${!n_threads[@]}"; do
 
         start=`date +%s.%N`
         if [ "$map_by" = "none" ]; then
-            slurm --spread-job --cpu-bind=threads --mask_cpu=${map_by} --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args} ${command} > ${temp_file}
+            srun --spread-job --cpu-bind=threads --mask_cpu=${map_by} --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args} ${command} > ${temp_file}
         else
-            slurm --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args} ${command} > ${temp_file}
+            srun --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${mpirun_args} ${command} > ${temp_file}
         fi
 
         # delete core-dump file to free-up memory
