@@ -8,7 +8,7 @@ NUM_HWTHREADS=$(lscpu -p | grep -c "^[0-9]")
 
 echo -e "===== loading modules (${MODULES}) ====\n"
 
-#module purge
+module purge
 for module in ${MODULES//,/ }; do
     echo -e "loading ${module}"
     module load ${module}
