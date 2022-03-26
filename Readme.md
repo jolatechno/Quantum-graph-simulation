@@ -333,64 +333,36 @@ make CFLAGS="-march=cascadelake" CXX=mpigxx
 # ---------------------------
 
 # multi-bode multi-rule stability test
-./mpi_scaling.sh -N 4,6,8,10,13,16,20,23 \
+./mpi_scaling.sh -N 4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med --exclusive -J strong_erase_create --time=0-00:5" \
+  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
+./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_
-
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med --exclusive -J weak_erase_create --time=0-00:5" \
+  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J weak_erase_create --time=0-00:5" \
   -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
+./mpi_scaling.sh -N 8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_prod --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_
-
-./mpi_scaling.sh -N 8,10,13,16,20,23 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med --exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14,n_graphs=8\|step\;erase_create -o strong_long_ec_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
+  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14,n_graphs=8\|step\;erase_create -o strong_long_ec_
 
 
 
 
-
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
+./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med --exclusive -J split_merge --time=0-00:5" \
-  -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_prod --exclusive -J split_merge --time=0-00:5" \
+  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J split_merge --time=0-00:5" \
   -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_
 
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
+./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
   -n 40 -t 1 \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med --exclusive -J split_merge --time=0-00:5" \
-  -a 11,reversed_n_iter=6,seed=0\|12\|step\;split_merge -o long_sm_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_prod --exclusive -J split_merge --time=0-00:5" \
-  -a 11,reversed_n_iter=6,seed=0\|12\|step\;split_merge -o long_sm_
+  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J split_merge --time=0-00:5" \
+  -a 11,reversed_n_iter=6,seed=0\|10,n_graphs=16\|step\;split_merge -o longer_sm_
 
 # get results from multi-node
 ./csv-from-tmp.py strong_ec_
