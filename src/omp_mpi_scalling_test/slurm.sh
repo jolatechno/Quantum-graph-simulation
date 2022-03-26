@@ -31,7 +31,7 @@ echo “As the user: $USER”
 echo -e "\n“Program name: ” ${NAME}"
 echo "n“Program parameters: ” ${rule}"
 echo "“Number of thread list: ” ${n_threads}"
-echo "“Number of task per nodes list: ” ${n_per_nodes}"
+echo "“Number of task per nodes list: ” ${n_per_node}"
 echo "“Srun arguments: ” ${MPI_ARGS}"
 
 echo -e "\n===== job results ====\n"
@@ -40,14 +40,14 @@ temp_file=$(mktemp)
 
 command="./${NAME} ${rule}"
 echo "{"
-echo "  \"mpi_command\" : \"srun --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${MPI_ARGS}\","
+echo "  \"mpi_command\" : \"srun --spread-job --cpu-bind=threads ${MPI_ARGS}\","
 echo "  \"command\" : \"${command}\","
 echo "  \"results\" : {"
 
 last_element=$((${#n_threads[@]} - 1))
 for i in "${!n_threads[@]}"; do
     n_thread=${n_threads[i]}
-    n_node=${n_per_nodes[i]}
+    n_node=${n_per_node[i]}
     total_n_node=$(($n_node * $SLURM_JOB_NUM_NODES))
 
     separator=""
