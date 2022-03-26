@@ -43,16 +43,28 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 
+
 	/* output informations */
 	MPI_Comm localComm;
-	int local_size;
+	int local_size, local_rank;
 	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &localComm);
 	MPI_Comm_size(localComm, &local_size);
+	MPI_Comm_rank(localComm, &local_rank);
+
+	int min_local_size, max_local_size;
+	MPI_Reduce(&local_size, &min_local_size, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&local_size, &max_local_size, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+
+	float avg_free_mem, free_mem = local_rank == 0 ? (float)iqs::utils::get_free_mem()/1e9 : 0;
+	MPI_Reduce(&free_mem, &avg_free_mem, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+	avg_free_mem /= size;
+
 	if (rank == 0) {
 		std::cerr << "\tsize : " << size << "\n";
-		std::cerr << "\tlocal size : " << local_size << "\n";
-		std::cerr << "\tmemory size : " << (float)iqs::utils::get_free_mem()/1e9 << "GB\n";
+		std::cerr << "\tlocal size : " << local_size << "([" << min_local_size << "," << max_local_size << "\n";
+		std::cerr << "\tmemory size : " <<  free_mem << "GB (average=" << avg_free_mem << "GB\n";
 	}
+
 
 
 
