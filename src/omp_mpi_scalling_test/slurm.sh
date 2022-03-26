@@ -59,8 +59,11 @@ for i in "${!n_threads[@]}"; do
 
     echo "      \"${n_thread},${n_node}\" : {"
     
-    for map_by in ldoms sockets none; do #hwthread core L3cache
+    for map_by in ldoms sockets none; do
         >&2 echo -e "\n\n\n${n_thread},${n_node} (${map_by}):"
+
+        export OMP_NUM_THREADS=${n_thread}
+        export OMP_PLACES=threads
 
         start=`date +%s.%N`
         if [ "$map_by" = "none" ]; then
