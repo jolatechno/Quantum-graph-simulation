@@ -36,6 +36,8 @@ echo "“Srun arguments: ” ${MPI_ARGS}"
 
 echo -e "\n===== job results ====\n"
 
+indent() { sed 's/^/    /'; }
+
 temp_file=$(mktemp)
 
 command="./${NAME} ${rule}"
