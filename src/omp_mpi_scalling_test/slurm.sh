@@ -42,7 +42,7 @@ temp_file=$(mktemp)
 
 command="./${NAME} ${rule}"
 echo "{"
-echo "  \"mpi_command\" : \"srun --spread-job --cpu-bind=threads ${MPI_ARGS}\","
+echo "  \"mpi_command\" : \"srun --spread-job --mem=0 --cpu-bind=threads ${MPI_ARGS}\","
 echo "  \"command\" : \"${command}\","
 echo "  \"results\" : {"
 
@@ -64,9 +64,9 @@ for i in "${!n_threads[@]}"; do
 
         start=`date +%s.%N`
         if [ "$map_by" = "none" ]; then
-            srun --spread-job --cpu-bind=threads --mask_cpu=${map_by} --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${MPI_ARGS} ${command} > ${temp_file}
+            srun --spread-job --mem=0 --cpu-bind=threads --mask_cpu=${map_by} --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${MPI_ARGS} ${command} > ${temp_file}
         else
-            srun --spread-job --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${MPI_ARGS} ${command} > ${temp_file}
+            srun --spread-job --mem=0 --cpu-bind=threads --ntasks=${total_n_node} --cpus-per-task=${n_thread} ${MPI_ARGS} ${command} > ${temp_file}
         fi
 
         # delete core-dump file to free-up memory
