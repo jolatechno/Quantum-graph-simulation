@@ -22,7 +22,7 @@ translator = {
 	"truncate_symbolic - prepare" : ["pre-symbolic-iteration"],
 	"truncate_symbolic" : ["pre-symbolic-iteration"],
 
-	"symbolic-iteration" : ["symbolic-iteration"], 
+	"symbolic_iteration" : ["symbolic-iteration"], 
 
 	"compute_collisions - com" : ["communication", "collisions"], 
     "compute_collisions - finalize" : ["collisions"], 

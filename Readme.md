@@ -276,19 +276,24 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # memory usage test
 # ---------------------------
 
+
+
 ./mpi_scaling.sh -u \
   -N 4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J split_merge --time=0-00:5" \
+  -s "-C bora --exclusive -J memory_test --time=0-00:5" \
   -a 14,reversed_n_iter=0,seed=0\|11\|step\;split_merge -o mem_test_
+
 
 
 # ---------------------------
 # stability tests
 # ---------------------------
+
+
 
 # single node multi-rule stability test
 ./mpi_scaling.sh -u -n 64 -t 1 \
