@@ -190,7 +190,7 @@ The following commands
 ```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
-squeue -u $USER | grep "strong_" | awk '{print $1}' | xargs scancel
+squeue -u $USER | grep "weak_e" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 # ---------------------------
@@ -205,6 +205,7 @@ squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scance
 # compile
 # ---------------------------
 
+module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
 make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
@@ -254,7 +255,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
+  -a 11,reversed_n_iter=4,seed=0\|15\|step\;erase_create -o weak_ec_bora_
 ./mpi_scaling.sh -u \
   -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \

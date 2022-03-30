@@ -70,7 +70,8 @@ def compare(item1, item2):
 	return item2[0] - item1[0]
 
 
-out_dict = {"results" : {}, "command" : "no_file_provided 0|0|"}
+results = {}
+command = "no_file_provided 0|0|"
 
 match = "out_" if len(sys.argv) == 1 else sys.argv[1]
 
@@ -84,41 +85,42 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  			json_file = "{" + "{".join(txt_file.split("{")[1:]).replace("nan", "0.0")
 
 	  			json_dict = json.loads(json_file)
-	  			out_dict["command"] = json_dict["command"]
+	  			command = json_dict["command"]
 
 	  			for key in json_dict["results"].keys():
 	  				name = key + "," + str(num_node)
-	  				out_dict["results"][name] = json_dict["results"][key]
+	  				results[name] = json_dict["results"][key]
+
 	  		except Exception as err:
 	  			print(filename, err)
 
-keys = list(out_dict["results"].keys())
+keys = list(results.keys())
 
 n_threads = [string_to_key(key) for key in keys]
 n_threads.sort(key=functools.cmp_to_key(compare))
 
 keys = [",".join([str(x) for x in key]) for key in n_threads]
 
-command = out_dict["command"]
 command = command.split(" ")[1]
 
 n_iter = (command.split("|")[0]).split(",")[0]
 n_node = command.split("|")[1]
 rule = command.split("|")[2].replace(";", "_")
 
-string = "\"#n iters\",\"initial #n node\",\"rule\"\n"
-string += n_iter + "," + n_node + ",\"" + rule + "\"\n\n" 
+print("\"#n iters\",\"initial #n node\",\"rule\"")
+print(n_iter + "," + n_node + ",\"" + rule + "\"\n")
 
-string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"\",\"#n object\",\"#n symb. object\",\"total_proba\",\"\",\"execution time\",\""
+string = "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"\",\"#n object\",\"#n symb. object\",\"total_proba\",\"\",\"execution time\",\""
 string += "\",\"".join(ordered_keys) + "\""
 string += ",\"\",\"time inbalance\",\"NoO inbalance\",\"NoO symb. inbalance\""
+print(string)
 
 for i, key in enumerate(keys):
-	string += "\n";
+	string = "";
 
 	n_thread, n_task, n_node = n_threads[i]
 	total_n_task = n_task*n_node
-	this_step = out_dict["results"][key]
+	this_step = results[key]
 
 	NoO_inbalance = (this_step['max_num_object'] - this_step['avg_num_object'])/this_step['max_num_object']
 	NoO_symb_inbalance = (this_step['max_symbolic_num_object'] - this_step['avg_symbolic_num_object'])/this_step['max_symbolic_num_object']
@@ -130,5 +132,5 @@ for i, key in enumerate(keys):
 		string += "," + str(avg_step_time[name])
 
 	string += f",,{this_step['total_relative_inbalance']},{NoO_inbalance},{NoO_symb_inbalance}"
-
-print(string)
+	
+	print(string)
