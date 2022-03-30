@@ -221,14 +221,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 # ---------------------------
 
 # single node scaling
-./mpi_scaling.sh \
+./mpi_scaling.sh -u \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
   -a 8,reversed_n_iter=4,max_num_object=2000000,seed=0\|15\|step\;erase_create -o res_ec_
-./mpi_scaling.sh \
+./mpi_scaling.sh -u \
   -n 64,32,16,8,4,2,1 \
   -t 1,1,1,1,1,1,1 \
   -f zonda_scaling_test.out \
@@ -243,21 +243,24 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
 
 # multi-node scaling
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
+./mpi_scaling.sh -u \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -u \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
   -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_bora_
-./mpi_scaling.sh -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -u \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \

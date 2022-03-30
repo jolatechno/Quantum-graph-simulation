@@ -31,7 +31,7 @@ use_mpi=
 
 errfile="err.txt"
 
-while getopts 'a:n:ht:N:s:o:f:m:M:U' flag; do
+while getopts 'a:n:ht:N:s:o:f:m:M:u' flag; do
   case "$flag" in
   	h) print_usage
     	exit 1 ;;
@@ -44,7 +44,7 @@ while getopts 'a:n:ht:N:s:o:f:m:M:U' flag; do
 		f) file="${OPTARG}" ;;
 		m) mpirun_args="${OPTARG}" ;;
 		M) modules="${OPTARG}" ;;
-		U) use_mpi="true" ;;
+		u) use_mpi="true" ;;
 	  *) print_usage
 	    exit 1 ;;
   esac
