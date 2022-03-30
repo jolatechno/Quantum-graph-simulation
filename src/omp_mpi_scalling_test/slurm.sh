@@ -19,6 +19,9 @@ export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
 
 echo -e "\n===== my job information ====\n"
 
+IFS=', ' read -r -a n_threads <<< "${n_threads}"
+IFS=', ' read -r -a n_per_node <<< "${n_per_node}"
+
 echo “Node List: ” $SLURM_NODELIST
 echo “Number of Nodes: ” $SLURM_JOB_NUM_NODES
 echo “my jobID: ” $SLURM_JOB_ID
