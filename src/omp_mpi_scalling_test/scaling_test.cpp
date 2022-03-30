@@ -43,6 +43,7 @@ size_t getTotalSystemMemory() {
 std::vector<float> min_memory_usage;
 std::vector<float> max_memory_usage;
 std::vector<float> avg_memory_usage;
+std::vector<float> step_accuracy;
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
@@ -188,9 +189,7 @@ int main(int argc, char* argv[]) {
 						min_memory_usage.push_back(min_mem);
 						max_memory_usage.push_back(max_mem);
 						avg_memory_usage.push_back(avg_mem);
-
-						if (rank == 0)
-							std::cerr << "\t\t" << (float)iqs::utils::get_free_mem()/1e9 << "," << (float)getTotalSystemMemory()/1e9 << "=free,total mem (GB)\n";
+						step_accuracy.push_back(state->total_proba);
 
 						size_t mpi_buffer = 0;
 						MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
@@ -269,6 +268,13 @@ int main(int argc, char* argv[]) {
 			if (i > 0)
 				printf(", ");
 			printf("%f", avg_memory_usage[i]);
+		}
+
+		printf("],\n\n\t\"step_accuracy\" : [");
+		for (int i = 0; i < step_accuracy.size(); ++i) {
+			if (i > 0)
+				printf(", ");
+			printf("%f", step_accuracy[i]);
 		}
 
 
