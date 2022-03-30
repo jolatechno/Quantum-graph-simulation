@@ -135,7 +135,8 @@ To obtain scaling results for different number of nodes, using slurm [src/omp_mp
  - `-h`: simple help infos.
  - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`. `reversed_n_iter` is also used set the iteration at which we start measuring performance. Default is `0`.
  - `-M`: comma-separated list of modules to be loaded.
- - `-f`, `-t`, `-n` and `-m`: same as `scaling_test.sh`.
+ - `-u`: if true, uses `mpirun` through [scaling_test.sh](./src/omp_mpi_scalling_test/), otherwise uses `slurm`.
+ - `-f`, `-t`, `-n` and `-m`: same as [scaling_test.sh](./src/omp_mpi_scalling_test/).
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
  - `-o`: base name of the output files (default is `out_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
