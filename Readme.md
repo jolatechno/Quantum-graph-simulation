@@ -35,14 +35,10 @@ The _options_ are:
  - `max_num_object` : representing the maximum number of object to keep. `0` represents auto-truncation (keeping the maximum number of graph within memory limits), `-1` represent no truncation (can cause crashes when running out of memory). The default is `0`.
  - `safety_margin` : representing `iqs::safety_margin` (see the Readme from [jolatechno/IQS](https://github.com/jolatechno/IQS)).
  - `tolerance` : representing `iqs::tolerance`.
- - `truncation_tolerance` : representing `iqs::truncation_tolerance`.
- - `max_truncate_step` : representing `iqs::max_truncate_step`.
- - `min_truncate_step` : representing `iqs::min_truncate_step`.
  - `simple_truncation` : representing `iqs::simple_truncation`.
  - `load_balancing_bucket_per_thread` : representing `iqs::load_balancing_bucket_per_thread`.
  - `min_equalize_size` : representing `iqs::mpi::min_equalize_size` (only interpreted when MPI is used).
  - `equalize_inbalance` : representing `iqs::mpi::equalize_inbalance` (only interpreted when MPI is used).
- - `minimize_truncation` : representing `iqs::mpi::minimize_truncation` (only interpreted when MPI is used).
 
 ### Graph generation options
 
@@ -211,8 +207,8 @@ squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scance
 
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
+make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 
@@ -280,14 +276,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 # ---------------------------
 
 # single node multi-rule stability test
-./mpi_scaling.sh -n 64 -t 1 \
+./mpi_scaling.sh -u -n 64 -t 1 \
   -f zonda_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-bode multi-rule stability test
-./mpi_scaling.sh -N 2,4,8,16 \
+./mpi_scaling.sh -u -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -296,14 +292,14 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-node stability test
-./mpi_scaling.sh -N 2,4,8,16 \
+./mpi_scaling.sh -u -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
   -a 20,seed=0\|20\|step\;erase_create -o test_long_ec_
-./mpi_scaling.sh -N 2,4,8,16 \
+./mpi_scaling.sh -u -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \

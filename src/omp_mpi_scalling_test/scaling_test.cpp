@@ -40,21 +40,6 @@ size_t getTotalSystemMemory() {
 #endif
 
 
-
-std::tuple<float, float, float> get_min_max_avg_memory_usage() {
-	int size;
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	float min_mem, max_mem, avg_mem, used_memory = 1. - (float)iqs::utils::get_free_mem() / (float)getTotalSystemMemory();
-
-	MPI_Allreduce(&used_memory, &min_mem, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
-	MPI_Allreduce(&used_memory, &max_mem, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
-	MPI_Allreduce(&used_memory, &avg_mem, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-	avg_mem /= size;
-
-	return {min_mem, max_mem, avg_mem};
-}
-
 std::vector<float> min_memory_usage;
 std::vector<float> max_memory_usage;
 std::vector<float> avg_memory_usage;
@@ -119,6 +104,8 @@ int main(int argc, char* argv[]) {
 			} else
 				std::cerr << "\n\n";
 	};
+
+	float used_memory = 0;
 	auto const mid_step_function = [&](const char* name) {
 		std::string string_name(name);
 
@@ -134,6 +121,10 @@ int main(int argc, char* argv[]) {
 
 			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
 			//double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
+
+			float this_step_used_memory = 1. - (float)iqs::utils::get_free_mem() / (float)getTotalSystemMemory();
+			if (this_step_used_memory > used_memory)
+				used_memory = this_step_used_memory;
 
 			/* collect max time one node 0 */
 			double mpi_buffer;
@@ -171,6 +162,8 @@ int main(int argc, char* argv[]) {
 		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < local_n_iter; ++j) {
 				if (is_rule) {
+					used_memory = 0;
+
 					if (i >= reversed_n_iter) {
 						size_t mpi_buffer = 0;
 						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
@@ -185,7 +178,13 @@ int main(int argc, char* argv[]) {
 					std::swap(state, buffer);
 
 					if (i >= reversed_n_iter) {
-						auto [min_mem, max_mem, avg_mem] = get_min_max_avg_memory_usage();
+						float min_mem, max_mem, avg_mem;
+
+						MPI_Allreduce(&used_memory, &min_mem, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+						MPI_Allreduce(&used_memory, &max_mem, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+						MPI_Allreduce(&used_memory, &avg_mem, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+						avg_mem /= size;
+
 						min_memory_usage.push_back(min_mem);
 						max_memory_usage.push_back(max_mem);
 						avg_memory_usage.push_back(avg_mem);
