@@ -9,6 +9,56 @@
 #include "../IQS/src/iqs_mpi.hpp"
 #include "../IQS/src/rules/qcgd.hpp"
 
+
+#ifdef __CYGWIN__ // windows systems
+
+#include <windows.h>
+
+size_t getTotalSystemMemory() {
+    MEMORYSTATUSEX status;
+    status.dwLength = sizeof(status);
+    GlobalMemoryStatusEx(&status);
+    return status.ullTotalPhys;
+}
+
+#elif defined(__linux__) // linux systems
+
+#include <unistd.h>
+
+size_t getTotalSystemMemory() {
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages * page_size;
+}
+
+#elif defined(__unix__) // other unix systems
+	#error "UNIX system other than LINUX aren't supported for now"
+#elif defined(__MACH__) // mac os systems
+	#error "macos isn't supported for now !"
+#else // other systems
+	#error "system isn't supported"
+#endif
+
+
+
+std::tuple<float, float, float> get_min_max_avg_memory_usage() {
+	int size;
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	float min_mem, max_mem, avg_mem, used_memory = 1. - (float)iqs::utils::get_free_mem() / (float)getTotalSystemMemory();
+
+	MPI_Allreduce(&used_memory, &min_mem, 1, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);
+	MPI_Allreduce(&used_memory, &max_mem, 1, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Allreduce(&used_memory, &avg_mem, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+	avg_mem /= size;
+
+	return {min_mem, max_mem, avg_mem};
+}
+
+std::vector<float> min_memory_usage;
+std::vector<float> max_memory_usage;
+std::vector<float> avg_memory_usage;
+
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
 std::map<std::string, double> max_step_duration;
@@ -135,6 +185,14 @@ int main(int argc, char* argv[]) {
 					std::swap(state, buffer);
 
 					if (i >= reversed_n_iter) {
+						auto [min_mem, max_mem, avg_mem] = get_min_max_avg_memory_usage();
+						min_memory_usage.push_back(min_mem);
+						max_memory_usage.push_back(max_mem);
+						avg_memory_usage.push_back(avg_mem);
+
+						if (rank == 0)
+							std::cerr << "\t\t" << (float)iqs::utils::get_free_mem()/1e9 << "," << (float)getTotalSystemMemory()/1e9 << "=free,total mem (GB)\n";
+
 						size_t mpi_buffer = 0;
 						MPI_Allreduce(&sy_it.num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);
 						max_symbolic_num_object += mpi_buffer;
@@ -191,7 +249,32 @@ int main(int argc, char* argv[]) {
 		double total_imbalance = (total_max - total_avg)/total_max*100;
 		printf("\n\t},\n\t\"total_relative_inbalance\" : %f,", total_imbalance);
 
-		printf("\n\n\t\"max_num_object\" : %lu,", max_num_object);
+
+
+		printf("\n\n\t\"min_memory_usage\" : [");
+		for (int i = 0; i < min_memory_usage.size(); ++i) {
+			if (i > 0)
+				printf(", ");
+			printf("%f", min_memory_usage[i]);
+		}
+
+		printf("],\n\t\"max_memory_usage\" : [");
+		for (int i = 0; i < max_memory_usage.size(); ++i) {
+			if (i > 0)
+				printf(", ");
+			printf("%f", max_memory_usage[i]);
+		}
+
+		printf("],\n\t\"avg_memory_usage\" : [");
+		for (int i = 0; i < avg_memory_usage.size(); ++i) {
+			if (i > 0)
+				printf(", ");
+			printf("%f", avg_memory_usage[i]);
+		}
+
+
+
+		printf("],\n\n\t\"max_num_object\" : %lu,", max_num_object);
 		printf("\n\t\"avg_num_object\" : %lu,", avg_num_object);
 
 		printf("\n\n\t\"max_symbolic_num_object\" : %lu,", max_symbolic_num_object);

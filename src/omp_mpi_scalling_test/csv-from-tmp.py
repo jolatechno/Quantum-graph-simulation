@@ -4,37 +4,37 @@ import os, sys, fnmatch
 import functools
 import json
 
-ordered_keys = ["pre-symbolic", "symbolic_iteration", "collisions", "pre-final", "final_iteration", "communication"]
+ordered_keys = ["pre-symbolic-iteration", "symbolic-iteration", "collisions", "pre-object-generation", "object-generation", "communication"]
 
 starting = {
-	"symbolic_iteration" : 0.0,
-	"pre-symbolic" : 0.0,
+	"symbolic-iteration" : 0.0,
+	"pre-symbolic-iteration" : 0.0,
 	"collisions" : 0.0,
-	"pre-final" : 0.0,
-	"final_iteration" : 0.0,
+	"pre-object-generation" : 0.0,
+	"object-generation" : 0.0,
 	"communication" : 0.0
 }
 
 translator = {
-	"num_child" : ["pre-symbolic"], 
-	"prepare_index" : ["pre-symbolic"], 
-	"equalize_child" : ["communication", "pre-symbolic"], 
-	"truncate_symbolic - prepare" : ["pre-symbolic"],
-	"truncate_symbolic" : ["pre-symbolic"],
+	"num_child" : ["pre-symbolic-iteration"], 
+	"prepare_index" : ["pre-symbolic-iteration"], 
+	"equalize_child" : ["communication", "pre-symbolic-iteration"], 
+	"truncate_symbolic - prepare" : ["pre-symbolic-iteration"],
+	"truncate_symbolic" : ["pre-symbolic-iteration"],
 
-	"symbolic_iteration" : ["symbolic_iteration"], 
+	"symbolic-iteration" : ["symbolic-iteration"], 
 
 	"compute_collisions - com" : ["communication", "collisions"], 
     "compute_collisions - finalize" : ["collisions"], 
     "compute_collisions - insert" : ["collisions"], 
     "compute_collisions - prepare" : ["collisions"], 
 
-    "truncate - prepare" : ["pre-symbolic"],
-    "truncate" : ["pre-final"], 
-    "prepare_final" : ["pre-final"], 
+    "truncate - prepare" : ["pre-symbolic-iteration"],
+    "truncate" : ["pre-object-generation"], 
+    "prepare_final" : ["pre-object-generation"], 
 
-    "final" : ["final_iteration"], 
-    "normalize" : ["final_iteration"],
+    "final" : ["object-generation"], 
+    "normalize" : ["object-generation"],
 }
 
 def accumulate_steptime(indict):
