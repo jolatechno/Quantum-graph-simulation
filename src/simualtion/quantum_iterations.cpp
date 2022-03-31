@@ -1,5 +1,5 @@
-#include "../IQS/src/iqs_mpi.hpp"
-#include "../IQS/src/rules/qcgd.hpp"
+#include "../IQDS/src/iqds_mpi.hpp"
+#include "../IQDS/src/rules/qcgd.hpp"
 
 int main(int argc, char* argv[]) {
 	int provided, rank, size;
@@ -11,19 +11,19 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	iqs::mpi::mpi_it_t buffer1, buffer2;
-	iqs::mpi::mpi_sy_it_t sy_it;
-	iqs::it_t local_state;
+	iqds::mpi::mpi_it_t buffer1, buffer2;
+	iqds::mpi::mpi_sy_it_t sy_it;
+	iqds::it_t local_state;
 
-	iqs::mpi::mpi_it_t *state = new iqs::mpi::mpi_it_t, *buffer = new iqs::mpi::mpi_it_t;
+	iqds::mpi::mpi_it_t *state = new iqds::mpi::mpi_it_t, *buffer = new iqds::mpi::mpi_it_t;
 
-	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = iqs::rules::qcgd::flags::parse_simulation(argv[1], local_state);
+	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = iqds::rules::qcgd::flags::parse_simulation(argv[1], local_state);
 
 	if (rank == 0) {
 		std::cout << "{\n\t\"command\" : \"" << argv[1] << "\",\n";
 		std::cout << "\t\"iterations\" : [\n\t\t";
 
-		iqs::rules::qcgd::utils::serialize(local_state, sy_it, 2);
+		iqds::rules::qcgd::utils::serialize(local_state, sy_it, 2);
 
 		for (int i = 0; i < local_state.num_object; ++i) {
 			std::complex<PROBA_TYPE> mag;
@@ -38,14 +38,14 @@ int main(int argc, char* argv[]) {
 		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
-					iqs::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object);
+					iqds::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object);
 
 					std::swap(state, buffer);
 
 					if (rank == 0) std::cout << ", ";
-					iqs::rules::qcgd::utils::serialize(*state, sy_it, MPI_COMM_WORLD, 2);
+					iqds::rules::qcgd::utils::serialize(*state, sy_it, MPI_COMM_WORLD, 2);
 				} else
-					iqs::simulate(*state, modifier);
+					iqds::simulate(*state, modifier);
 	}
 
 	if (rank == 0) std::cout << "\n\t]\n}\n";

@@ -2,7 +2,7 @@
 
 ## Implementation
 
-__*!!!ALL the implementation relies on [src/IQS](./src/) found at [jolatechno/IQS](https://github.com/jolatechno/IQS)!!!*__
+__*!!!ALL the implementation relies on [src/IQDS](./src/) found at [jolatechno/IQDS](https://github.com/jolatechno/IQDS)!!!*__
 
 ## Results
 
@@ -147,6 +147,8 @@ For example, to test the scaling on 1,2,4 and 6 nodes for 1 rank times 6 threads
 
 The [src/omp_mpi_scalling_test/csv-from-tmp.py](./src/omp_mpi_scalling_test/) script (requiering python 3) simply takes a base name (`-o` argument of [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/)) and returns a csv formated compilation of the results obtained by using [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/).
 
+Similarly, [src/omp_mpi_scalling_test/mem-csv-from-file.py](./src/omp_mpi_scalling_test/) is used to process the memory usage evolution of a single file into a csv format. The argument provided should simply be the name of the file ("`-o`" base name, number of node, and `.out` extension).
+
 ## Reproducing injectivity test
 
 Injectivity testing for multiple graphs is done using [src/test/injectivity_test.sh](./src/test/) script (relying on [src/test/ping_pong_test.ccp](./src/test/) which should be compiled using `make ping_pong_test`). It takes the following arguments (not detailing other less usefull debuging flags):
@@ -267,7 +269,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 # get results from multi-node
-./csv-from-tmp.py strong_ec_bora_
+./csv-from-tmp.py   
 ./csv-from-tmp.py weak_ec_bora_
 ./csv-from-tmp.py sm_bora_
 
@@ -278,16 +280,18 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # ---------------------------
 
 
-
+# 4-node memory usage test
 ./mpi_scaling.sh -u \
   -N 4 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J memory_test --time=0-00:5" \
-  -a 14,reversed_n_iter=0,seed=0\|11\|step\;split_merge -o mem_test_
+  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
+  -a 18,reversed_n_iter=0,seed=0\|11\|step\;split_merge -o mem_test_
 
+# get results
+./mem-csv-from-file.py mem_test_4.out
 
 
 # ---------------------------
@@ -333,7 +337,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 # ---------------------------
 # ---------------------------
-# command to replicate results on ruche
+# command to replicate results on Ruche
 #   '-> cluster info page: https://mesocentre.pages.centralesupelec.fr/user_doc/ruche/01_cluster_overview/
 # ---------------------------
 # ---------------------------
@@ -355,37 +359,5 @@ make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
 # scaling tests
 # ---------------------------
 
-# multi-bode multi-rule stability test
-./mpi_scaling.sh -N 4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_
-./mpi_scaling.sh -N 8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J strong_long_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14,n_graphs=8\|step\;erase_create -o strong_long_ec_
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 12,reversed_n_iter=6,seed=2\|15\|step\;erase_create -o weak_ec_
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J split_merge --time=0-00:5" \
-  -a 9,reversed_n_iter=5,seed=0\|11\|step\;split_merge -o sm_
-
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23,26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod --exclusive -J long_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=6,seed=0\|11,n_graphs=2\|step\;split_merge -o long_sm_
-
-# get results from multi-node
-./csv-from-tmp.py strong_ec_
-./csv-from-tmp.py weak_ec_
-./csv-from-tmp.py strong_long_ec_
-./csv-from-tmp.py sm_
+# no scaling test done on Ruche were included...
 ```
