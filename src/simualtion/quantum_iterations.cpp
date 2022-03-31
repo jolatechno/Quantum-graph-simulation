@@ -1,5 +1,5 @@
-#include "../IQDS/src/iqds_mpi.hpp"
-#include "../IQDS/src/rules/qcgd.hpp"
+#include "../QuIDS/src/iqds_mpi.hpp"
+#include "../QuIDS/src/rules/qcgd.hpp"
 
 int main(int argc, char* argv[]) {
 	int provided, rank, size;

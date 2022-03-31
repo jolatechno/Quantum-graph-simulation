@@ -1,6 +1,6 @@
 [submodule "Quantum-graph-simulation-plots"]
 	path = Quantum-graph-simulation-plots
 	url = https://github.com/jolatechno/Quantum-graph-simulation-plots.git
-[submodule "src/IQDS"]
-	path = src/IQDS
-	url = https://github.com/jolatechno/IQDS.git
+[submodule "src/QuIDS"]
+	path = src/QuIDS
+	url = https://github.com/jolatechno/QuIDS.git

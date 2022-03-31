@@ -1,8 +1,8 @@
 #include <iostream>
 #include <ranges>
 
-#include "../IQDS/src/iqds.hpp"
-#include "../IQDS/src/rules/qcgd.hpp"
+#include "../QuIDS/src/iqds.hpp"
+#include "../QuIDS/src/rules/qcgd.hpp"
 
 int main(int argc, char* argv[]) {
 	iqds::it_t *state = new iqds::it_t(), *buffer = new iqds::it_t();

@@ -1,7 +1,7 @@
 #include <ranges>
 
-#include "../IQDS/src/iqds_mpi.hpp"
-#include "../IQDS/src/rules/qcgd.hpp"
+#include "../QuIDS/src/iqds_mpi.hpp"
+#include "../QuIDS/src/rules/qcgd.hpp"
 
 #include <unistd.h>
 
