@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "../QuIDS/src/iqds_mpi.hpp"
+#include "../QuIDS/src/quids_mpi.hpp"
 #include "../QuIDS/src/rules/qcgd.hpp"
 
 
@@ -79,13 +79,13 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
 
-	iqds::mpi::mpi_it_t buffer1, buffer2;
-	iqds::mpi::mpi_sy_it_t sy_it;
-	iqds::it_t local_state;
+	quids::mpi::mpi_it_t buffer1, buffer2;
+	quids::mpi::mpi_sy_it_t sy_it;
+	quids::it_t local_state;
 
-	iqds::mpi::mpi_it_t *state = new iqds::mpi::mpi_it_t, *buffer = new iqds::mpi::mpi_it_t;
+	quids::mpi::mpi_it_t *state = new quids::mpi::mpi_it_t, *buffer = new quids::mpi::mpi_it_t;
 
-	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = iqds::rules::qcgd::flags::parse_simulation(argv[1], local_state);
+	auto [n_iter, reversed_n_iter, rules, max_allowed_num_object] = quids::rules::qcgd::flags::parse_simulation(argv[1], local_state);
 
 	if (rank == 0)
 		for (int i = 0; i < local_state.num_object; ++i) {
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 			double local_step_duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - step_start).count() * 1e-6;
 			//double local_cpu_step_duration = (double(cpu_stop - cpu_step_start)/CLOCKS_PER_SEC);
 
-			float this_step_used_memory = 1. - (float)iqds::utils::get_free_mem() / (float)getTotalSystemMemory();
+			float this_step_used_memory = 1. - (float)quids::utils::get_free_mem() / (float)getTotalSystemMemory();
 			if (this_step_used_memory > used_memory)
 				used_memory = this_step_used_memory;
 
@@ -172,9 +172,9 @@ int main(int argc, char* argv[]) {
 						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 						avg_num_object += mpi_buffer/size;
 
-						iqds::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
+						quids::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, mid_step_function);
 					} else
-						iqds::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, debug_mid_step_function);
+						quids::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_allowed_num_object, debug_mid_step_function);
 
 					std::swap(state, buffer);
 
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
 					}
 
 				} else
-					iqds::simulate(*state, modifier);
+					quids::simulate(*state, modifier);
 			}
 	}
 	time_point stop = std::chrono::high_resolution_clock::now();

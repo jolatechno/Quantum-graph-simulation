@@ -33,12 +33,12 @@ The _options_ are:
  - `seed` : the random seed used to generate random objects. If not given, selected as random.
  - `reversed_n_iters` : number of iteration to do with the inverse transformation (only used in certain files, for injectivity testing, default is _n\_iter_ when used).
  - `max_num_object` : representing the maximum number of object to keep. `0` represents auto-truncation (keeping the maximum number of graph within memory limits), `-1` represent no truncation (can cause crashes when running out of memory). The default is `0`.
- - `safety_margin` : representing `iqds::safety_margin` (see the Readme from [jolatechno/QuIDS](https://github.com/jolatechno/QuIDS)).
- - `tolerance` : representing `iqds::tolerance`.
- - `simple_truncation` : representing `iqds::simple_truncation`.
- - `load_balancing_bucket_per_thread` : representing `iqds::load_balancing_bucket_per_thread`.
- - `min_equalize_size` : representing `iqds::mpi::min_equalize_size` (only interpreted when MPI is used).
- - `equalize_inbalance` : representing `iqds::mpi::equalize_inbalance` (only interpreted when MPI is used).
+ - `safety_margin` : representing `quids::safety_margin` (see the Readme from [jolatechno/QuIDS](https://github.com/jolatechno/QuIDS)).
+ - `tolerance` : representing `quids::tolerance`.
+ - `simple_truncation` : representing `quids::simple_truncation`.
+ - `load_balancing_bucket_per_thread` : representing `quids::load_balancing_bucket_per_thread`.
+ - `min_equalize_size` : representing `quids::mpi::min_equalize_size` (only interpreted when MPI is used).
+ - `equalize_inbalance` : representing `quids::mpi::equalize_inbalance` (only interpreted when MPI is used).
 
 ### Graph generation options
 
@@ -52,7 +52,7 @@ __IMPORTANT:__ Note that the initial state is normalized after generation, so th
 ### Rules
 
 Implemented _rules_ (all described in further details in [TO LINK](https://google.com)) are:
- - `step` : a simple `iqds::modifier` moving all particles in the same direction as their orientation.
+ - `step` : a simple `quids::modifier` moving all particles in the same direction as their orientation.
  - `reversed_step` : inverse transformation of `step`.
  - `coin` : flip particle going left and right locally.
  - `erase_create` : exchange an empty node and a full node locally.

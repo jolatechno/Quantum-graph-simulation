@@ -1,11 +1,11 @@
 #include <ranges>
 
-#include "../QuIDS/src/iqds_mpi.hpp"
+#include "../QuIDS/src/quids_mpi.hpp"
 #include "../QuIDS/src/rules/qcgd.hpp"
 
 #include <unistd.h>
 
-void mid_step_function(iqds::mpi::mpi_it_t const &state, iqds::mpi::mpi_it_t const &buffer, iqds::mpi::mpi_sy_it_t const &sy_it, MPI_Comm comunicator) {
+void mid_step_function(quids::mpi::mpi_it_t const &state, quids::mpi::mpi_it_t const &buffer, quids::mpi::mpi_sy_it_t const &sy_it, MPI_Comm comunicator) {
 	int size, rank;
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -49,16 +49,16 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	iqds::rules::qcgd::utils::max_print_num_graphs = 10;
+	quids::rules::qcgd::utils::max_print_num_graphs = 10;
 
-	iqds::mpi::mpi_it_t *state = new iqds::mpi::mpi_it_t(), *buffer = new iqds::mpi::mpi_it_t();
-	iqds::mpi::mpi_sy_it_t sy_it;
+	quids::mpi::mpi_it_t *state = new quids::mpi::mpi_it_t(), *buffer = new quids::mpi::mpi_it_t();
+	quids::mpi::mpi_sy_it_t sy_it;
 
-	iqds::it_t local_state;
+	quids::it_t local_state;
 
-	auto [n_iter, reversed_n_iter, rules, max_num_object] = iqds::rules::qcgd::flags::parse_simulation(argv[1], local_state);
+	auto [n_iter, reversed_n_iter, rules, max_num_object] = quids::rules::qcgd::flags::parse_simulation(argv[1], local_state);
 
-	iqds::rules::qcgd::utils::print(*state);
+	quids::rules::qcgd::utils::print(*state);
 
 	if (rank == 0)
 		for (int i = 0; i < local_state.num_object; ++i) {
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 
 	if (rank == 0) {
 		std::cout << "initial state:\n";
-		iqds::rules::qcgd::utils::print(*state);
+		quids::rules::qcgd::utils::print(*state);
 		std::cout << "\n";
 	}
 
@@ -93,25 +93,25 @@ int main(int argc, char* argv[]) {
 		for (auto [local_n_iter, is_rule, modifier, rule, _, __] : rules)
 			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
-					iqds::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
+					quids::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 
 					std::swap(state, buffer);
 
 					mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 				} else
-					iqds::simulate(*state, modifier);
+					quids::simulate(*state, modifier);
 	}
 	for (int i = 0; i < reversed_n_iter; ++i) {
 		for (auto [local_n_iter, is_rule, _, __, modifier, rule] : rules | std::views::reverse)
 			for (int j = 0; j < local_n_iter; ++j)
 				if (is_rule) {
-					iqds::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
+					quids::mpi::simulate(*state, rule, *buffer, sy_it, MPI_COMM_WORLD, max_num_object, real_mid_step_function);
 
 					std::swap(state, buffer);
 
 					mid_step_function(*state, *buffer, sy_it, MPI_COMM_WORLD);
 				} else
-					iqds::simulate(*state, modifier);
+					quids::simulate(*state, modifier);
 	}
 
 #ifdef LESS_DEBUG
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 	state->gather_objects(MPI_COMM_WORLD);
 	
 	if (rank == 0)
-		iqds::rules::qcgd::utils::print(*state);
+		quids::rules::qcgd::utils::print(*state);
 
 	MPI_Finalize();
 	return 0;
