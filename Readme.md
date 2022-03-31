@@ -195,6 +195,7 @@ squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
 squeue -u $USER | grep "weak_e" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
+
 # ---------------------------
 # ---------------------------
 # command to replicate results on plafrim
@@ -207,6 +208,7 @@ squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scance
 # compile
 # ---------------------------
 
+
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
@@ -214,10 +216,10 @@ make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
-
 # ---------------------------
 # scaling test
 # ---------------------------
+
 
 # single node scaling
 ./mpi_scaling.sh -u \
@@ -243,7 +245,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 # multi-node scaling
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4 \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -265,14 +267,13 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 11,reversed_n_iter=6,seed=0\|11\|step\;split_merge -o sm_bora_
+  -a 11,reversed_n_iter=5,seed=0\|11\|step\;split_merge -o sm_bora_
 
 
 # get results from multi-node
 ./csv-from-tmp.py   
 ./csv-from-tmp.py weak_ec_bora_
 ./csv-from-tmp.py sm_bora_
-
 
 
 # ---------------------------
@@ -297,7 +298,6 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # ---------------------------
 # stability tests
 # ---------------------------
-
 
 
 # single node multi-rule stability test
@@ -333,8 +333,6 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
 
 
-
-
 # ---------------------------
 # ---------------------------
 # command to replicate results on Ruche
@@ -346,6 +344,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # ---------------------------
 # compile
 # ---------------------------
+
 
 module purge
 module load gcc/11.2.0/gcc-4.8.5
@@ -359,5 +358,5 @@ make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
 # scaling tests
 # ---------------------------
 
-# no scaling test done on Ruche were included...
+# no scaling test done on Ruche were included in the paper...
 ```
