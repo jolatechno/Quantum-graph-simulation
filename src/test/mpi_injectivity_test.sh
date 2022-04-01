@@ -90,8 +90,17 @@ for rule in $rule; do
 			command="mpi_ping_pong_test.out ${n_iter},reversed_n_iter=${n_iter},seed=${seed}\|${size}\|step\;${rule},theta=0.25,phi=0.125,xi=-0.125"
 			res=$(eval $runner $command 2> ${temp_file})
 
+			exit_code=$?
+
 			# delete core-dump file to free-up memory
 			rm -f core.*
+
+			# check for complition
+			if [ "$exit_code" != 0 ]; then
+				>&2 echo -e "\n\n\n\n\n${command} (failed !):"
+				>&2 echo -e "${res}\n\n"
+				>&2 cat ${temp_file}
+			fi
 
 			n_line=$(echo "${res}" | wc -l)
 

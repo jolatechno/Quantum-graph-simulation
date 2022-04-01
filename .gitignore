@@ -52,3 +52,7 @@ oneTBB/
 
 # tmp results
 tmp/
+
+# slurm outputs
+*.err
+*.out
