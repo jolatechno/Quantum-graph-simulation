@@ -8,17 +8,17 @@ print_usage() {
   -t: numer of thread per task (default = 1)
   -p: number of task (default = 1)
 
-	-s: minimum size (default = 1)
-	-S: maxium size (default = 5)
+  -s: minimum size (default = 1)
+  -S: maxium size (default = 5)
 
-	-n: number of iterations (default = 4)
+  -n: number of iterations (default = 4)
 
-	-r: minimum random seed (default = 0)
-	-R: maxium random seed (default = 10)
+  -r: minimum random seed (default = 0)
+  -R: maxium random seed (default = 10)
 
-	-m: test split merge rule (default : test all three rules)
-	-e: test erase create rule
-	-c: test coin rule
+  -m: test split merge rule (default : test all three rules)
+  -e: test erase create rule
+  -c: test coin rule
 "
 }
 

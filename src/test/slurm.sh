@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+#SBATCH --exclusive
 #SBATCH -J injectivity_test
 #SBATCH --time=0-2:00:00 --exclusive
-#SBATCH -o %j.out
-#SBATCH -e %j.err
+#SBATCH -o injectivity_results_%j.out
+#SBATCH -e injectivity_results_%j.err
 
 NUM_HWTHREADS=$(lscpu -p | grep -c "^[0-9]")
 
