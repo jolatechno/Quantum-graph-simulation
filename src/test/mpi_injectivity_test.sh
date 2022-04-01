@@ -5,7 +5,7 @@ print_usage() {
   -h: shows this help menu
   -v: enable verbose
 
-  -t: numer of thread per task (default = 1)
+  -t: number of thread per task (default = 1)
   -p: number of task (default = 1)
 
   -s: minimum size (default = 1)

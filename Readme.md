@@ -192,7 +192,7 @@ The following commands
 ```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
-squeue -u $USER | grep "weak_e" | awk '{print $1}' | xargs scancel
+squeue -u $USER | grep "rand_" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 
@@ -261,7 +261,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 11,reversed_n_iter=4,seed=0\|15\|step\;erase_create -o weak_ec_bora_
+  -a 9,reversed_n_iter=5,simple_truncate=0,seed=0\|17\|step\;erase_create -o weak_ec_bora_
 ./mpi_scaling.sh -u \
   -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -269,13 +269,37 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 11,reversed_n_iter=5,seed=0\|11\|step\;split_merge -o sm_bora_
+  -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o sm_bora_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py   
+./csv-from-tmp.py strong_ec_bora_
 ./csv-from-tmp.py weak_ec_bora_
 ./csv-from-tmp.py sm_bora_
+
+
+# accuracy compaison (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
+  -a 9,reversed_n_iter=5,simple_truncate=1,seed=0\|17\|step\;erase_create -o simple_long_weak_ec_bora_
+./mpi_scaling.sh -u \
+  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
+  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_sm_bora_
+
+
+# get results from multi-node (still inside src/omp_mpi_scaling_test)
+./csv-from-tmp.py simple_long_weak_ec_bora_
+./csv-from-tmp.py simple_sm_bora_
 
 
 # ---------------------------
@@ -336,17 +360,28 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 # ---------------------------
-# multi-node injectivity test
+# injectivity tests
 # ---------------------------
 
 
 cd src/test
 
+# compilation (in src/test)
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
+make CFLAGS="-march=skylake" CXX=mpic++
 
+
+# simple single node openmp injectivity test (still in src/test)
+./injectivity_test.sh -v
+
+
+# simple single node mpi injectivty test (still in src/test) with NUM_THREAD threads per task and NUM_TASK tasks (with NUM_THREAD*NUM_TASK <= #CPU Cores)
+./mpi_injectivity_test.sh -v -t NUM_THREAD -p NUM_TASK
+
+
+# multi-node mpi injectivity test
 MODULES=compiler/gcc/11.2.0,mpi/openmpi/4.0.1 n_per_node=36 n_threads=1 args="-v -s 6 -S 14 -n 8" sbatch -N 10 -C bora slurm.sh
 
 
