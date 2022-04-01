@@ -220,10 +220,10 @@ int main(int argc, char* argv[]) {
 
 	/* print results as json */
 	if (rank == 0) {
-		printf("\t\"avg_step_time\" : {");
-		for (auto it = avg_step_duration.begin();;) {
+		printf("\t\"max_step_time\" : {");
+		for (auto it = max_step_duration.begin();;) {
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), it->second);
-			if (++it != avg_step_duration.end()) {
+			if (++it != max_step_duration.end()) {
 				printf(", ");
 			} else
 				break;

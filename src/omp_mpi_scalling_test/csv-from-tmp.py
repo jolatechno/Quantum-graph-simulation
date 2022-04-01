@@ -37,6 +37,17 @@ translator = {
     "normalize" : ["object-generation"],
 }
 
+# to convert avg step time list to max step time, for retro-compatibility
+def avg_to_max(avg_step_time, imabalance):
+	results = {}
+	for key in avg_step_time.keys():
+		# solve for max: m = (max - avg)/max
+		# => m*max = max - avg
+		# => (1 - m)*max = avg
+		# => max = avg / (1 - m)
+		results[key] = avg_step_time[key] / (1 - imabalance[key]/100)
+	return results
+
 def accumulate_steptime(indict):
 	outdict = starting.copy()
 
@@ -127,7 +138,12 @@ for i, key in enumerate(keys):
 
 	string += f"{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
 
-	avg_step_time = accumulate_steptime(this_step["avg_step_time"])
+	avg_step_time = {}
+	if "max_step_time" in this_step.keys():
+		avg_step_time = accumulate_steptime(this_step["max_step_time"])
+	else:
+		avg_step_time = accumulate_steptime(avg_to_max(this_step["avg_step_time"], this_step["relative_inbalance"]))
+	
 	for name in ordered_keys:
 		string += "," + str(avg_step_time[name])
 
