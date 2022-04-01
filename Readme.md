@@ -347,7 +347,7 @@ module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
 make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 
-MODULES=compiler/gcc/11.2.0,mpi/openmpi/4.0.1 n_per_node=36 n_threads=1 args="-v -s 6 -S 25 -n 20" sbatch -N 1 -C bora slurm.sh
+MODULES=compiler/gcc/11.2.0,mpi/openmpi/4.0.1 n_per_node=36 n_threads=1 args="-v -s 6 -S 14 -n 8" sbatch -N 10 -C bora slurm.sh
 
 
 # ---------------------------
