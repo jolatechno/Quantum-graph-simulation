@@ -18,13 +18,13 @@ starting = {
 translator = {
 	"num_child" : ["pre-symbolic-iteration"], 
 	"prepare_index" : ["pre-symbolic-iteration"], 
-	"equalize_child" : ["communication", "pre-symbolic-iteration"], 
+	"equalize_child" : ["communication"], #["communication", "pre-symbolic-iteration"], 
 	"truncate_symbolic - prepare" : ["pre-symbolic-iteration"],
 	"truncate_symbolic" : ["pre-symbolic-iteration"],
 
 	"symbolic_iteration" : ["symbolic-iteration"], 
 
-	"compute_collisions - com" : ["communication", "collisions"], 
+	"compute_collisions - com" : ["communication"], #["communication", "collisions"], 
     "compute_collisions - finalize" : ["collisions"], 
     "compute_collisions - insert" : ["collisions"], 
     "compute_collisions - prepare" : ["collisions"], 
