@@ -32,7 +32,7 @@ _n\_iter_ and _graph\_size_ should be integer describing respectivly the number 
 The _options_ are:
  - `seed` : the random seed used to generate random objects. If not given, selected as random.
  - `reversed_n_iters` : number of iteration to do with the inverse transformation (only used in certain files, for injectivity testing, default is _n\_iter_ when used).
- - `max_num_object` : representing the maximum number of object to keep. `0` represents auto-truncation (keeping the maximum number of graph within memory limits), `-1` represent no truncation (can cause crashes when running out of memory). The default is `0`.
+ - `max_num_object` : representing the maximum number of object to keep per shared memory node. `0` represents auto-truncation (keeping the maximum number of graph within memory limits), `-1` represent no truncation (can cause crashes when running out of memory). The default is `0`.
  - `safety_margin` : representing `quids::safety_margin` (see the Readme from [jolatechno/QuIDS](https://github.com/jolatechno/QuIDS)).
  - `tolerance` : representing `quids::tolerance`.
  - `simple_truncation` : representing `quids::simple_truncation`.
@@ -247,7 +247,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 # multi-node scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -255,7 +255,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
   -a 13,reversed_n_iter=6,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -263,7 +263,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
   -a 9,reversed_n_iter=5,simple_truncate=0,seed=0\|17\|step\;erase_create -o weak_ec_bora_
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -280,7 +280,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 # accuracy compaison (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -288,7 +288,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
   -a 9,reversed_n_iter=5,simple_truncate=1,seed=0\|17\|step\;erase_create -o simple_long_weak_ec_bora_
 ./mpi_scaling.sh -u \
-  -N 41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -334,7 +334,10 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-bode multi-rule stability test (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 2,4,8,16 \
+#./mpi_scaling.sh -u -N 2,4,8,16 \
+# -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+./mpi_scaling.sh -u \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,6 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
@@ -349,7 +352,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
-  -a 20,seed=0\|20\|step\;erase_create -o test_long_ec_
+  -a 10,seed=0\|30\|step\;erase_create -o test_very_long_ec_
 ./mpi_scaling.sh -u -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \

@@ -40,7 +40,7 @@ echo -e "\n===== job results ====\n"
 
 
 if [ "$use_mpi" = "true" ]; then
-    ./scaling_test.sh -m "${MPI_ARGS}" -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
+    ./scaling_test.sh -G "${max_total_object}" -m "${MPI_ARGS}" -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 else
     indent() { sed 's/^/    /'; }
 
@@ -48,6 +48,12 @@ else
     IFS=', ' read -r -a n_per_node <<< "${n_per_node}"
 
     temp_file=$(mktemp)
+
+    num_object=$(($max_total_object / $SLURM_JOB_NUM_NODES))
+
+    args_left=${rule%%,*}
+    args_right=${rule#*,}
+    rule="${args_left},max_num_object=${num_object},${args_right}"
 
     command="./${NAME} ${rule}"
     echo "{"

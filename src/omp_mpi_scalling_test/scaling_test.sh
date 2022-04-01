@@ -9,6 +9,7 @@ print_usage() {
 	-t: list of number of threads to test (ex: 1,2,5, default:number_of_available_thread)
 	-n: corresponding list of number of mpi nodes (deafult:1)
 	-m: additional mpirun args
+	-G: if not provided, maximum number of object in total (default: 0=\"auto-truncation\").
 
 	-N: total number of node
 "
@@ -23,8 +24,9 @@ args=
 file="scaling_test.out"
 mpirun_args=
 timeLimit=5
+max_total_object=0
 
-while getopts 'f:a:n:ht:m:N:' flag; do
+while getopts 'f:a:n:ht:m:N:G:' flag; do
   case "$flag" in
   	h) print_usage
        exit 1 ;;
@@ -34,12 +36,19 @@ while getopts 'f:a:n:ht:m:N:' flag; do
 		t) IFS=', ' read -r -a n_threads <<< "${OPTARG}" ;;
 		n) IFS=', ' read -r -a n_nodes <<< "${OPTARG}" ;;
 		N) total_n_nodes="${OPTARG}";;
+		G) max_total_object="${OPTARG}";;
     *) print_usage
        exit 1 ;;
   esac
 done
 
 temp_file=$(mktemp)
+
+num_object=$(($max_total_object / $total_n_nodes))
+
+args_left=${args%%,*}
+args_right=${args#*,}
+args="${args_left},max_num_object=${num_object},${args_right}"
 
 command="./${file} ${args}"
 echo "{"
