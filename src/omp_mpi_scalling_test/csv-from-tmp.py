@@ -15,19 +15,19 @@ starting = {
 	"communication" : 0.0
 }
 
+# set to false to exlude comm from the rest of the dissection
+sum_equal_one = True
+
 translator = {
 	"num_child" : ["pre-symbolic-iteration"], 
 	"prepare_index" : ["pre-symbolic-iteration"], 
-	#"equalize_child" : ["communication", "pre-symbolic-iteration"], 
-	"equalize_child" : ["communication"],
+	"equalize_child" : ["communication"] if sum_equal_one else ["communication", "pre-symbolic-iteration"],
 	"truncate_symbolic - prepare" : ["pre-symbolic-iteration"],
 	"truncate_symbolic" : ["pre-symbolic-iteration"],
 
 	"symbolic_iteration" : ["symbolic-iteration"], 
 
-	"compute_collisions - com" : ["communication", "collisions"], 
-	#"compute_collisions - com" : ["communication"],
-
+	"compute_collisions - com" : ["communication"] if sum_equal_one else ["communication", "collisions"],
     "compute_collisions - finalize" : ["collisions"], 
     "compute_collisions - insert" : ["collisions"], 
     "compute_collisions - prepare" : ["collisions"], 

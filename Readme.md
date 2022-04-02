@@ -192,7 +192,7 @@ The following commands
 ```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
-squeue -u $USER | grep " strong_s" | awk '{print $1}' | xargs scancel
+squeue -u $USER | grep " strong_e" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 
@@ -258,7 +258,8 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,simple_truncate=0,max_num_object=-1,seed=0\|14\|step\;erase_create -o strong_ec_bora_
+  -G -100 \
+  -a 13,reversed_n_iter=6,simple_truncate=0,seed=0\|14\|step\;erase_create -o strong_ec_
 
 
 # multi-node artificialy limited strong scaling (still inside src/omp_mpi_scaling_test)
@@ -270,7 +271,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_split_merge --time=0-00:10" \
   -G 33000000 \
-  -a 16,reversed_n_iter=9,simple_truncate=0,seed=0\|14\|step\;split_merge -o strong_sm_bora_
+  -a 16,reversed_n_iter=9,simple_truncate=0,seed=0\|14\|step\;split_merge -o strong_sm_
 
 
 # multi-node weak scaling (still inside src/omp_mpi_scaling_test)
@@ -281,7 +282,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 9,reversed_n_iter=5,simple_truncate=0,seed=0\|17\|step\;erase_create -o weak_ec_bora_
+  -a 9,reversed_n_iter=5,simple_truncate=0,seed=0\|17\|step\;erase_create -o weak_ec_
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -289,7 +290,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o weak_sm_bora_
+  -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o weak_sm_
 
 
 # multi-bode multi-rule scaling test (still inside src/omp_mpi_scaling_test)
@@ -300,15 +301,15 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
-  -a 5,simple_truncate=0,seed=0\|15\|step\;erase_create\;step\;split_merge -o weak_birule_bora_
+  -a 5,simple_truncate=0,seed=0\|15\|step\;erase_create\;step\;split_merge -o weak_birule_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_bora_
-./csv-from-tmp.py strong_sm_bora_
-./csv-from-tmp.py weak_ec_bora_
-./csv-from-tmp.py weak_sm_bora_
-./csv-from-tmp.py weak_birule_bora_
+./csv-from-tmp.py strong_ec_
+./csv-from-tmp.py strong_sm_
+./csv-from-tmp.py weak_ec_
+./csv-from-tmp.py weak_sm_
+./csv-from-tmp.py weak_birule_
 
 
 # accuracy compaison (still inside src/omp_mpi_scaling_test)
@@ -319,7 +320,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
-  -a 9,reversed_n_iter=5,simple_truncate=1,seed=0\|17\|step\;erase_create -o simple_weak_ec_bora_
+  -a 9,reversed_n_iter=5,simple_truncate=1,seed=0\|17\|step\;erase_create -o simple_weak_ec_
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -327,12 +328,12 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_sm_bora_
+  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_sm_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py simple_weak_ec_bora_
-./csv-from-tmp.py simple_sm_bora_
+./csv-from-tmp.py simple_weak_ec_
+./csv-from-tmp.py simple_sm_
 
 
 # ---------------------------
@@ -355,7 +356,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 # ---------------------------
-# stability tests
+# other demanding stability tests
 # ---------------------------
 
 
@@ -381,6 +382,16 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
   -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
+
+# multi-bode multi-rule stability test (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u \
+  -N 2,4,8,16 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J test_bi_rule --time=0-2:00" \
+  -a 10,simple_truncate=0,seed=0\|20\|step\;erase_create\;step\;split_merge -o test_birule_
 
 
 # ---------------------------
