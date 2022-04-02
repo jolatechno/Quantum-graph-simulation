@@ -192,7 +192,7 @@ The following commands
 ```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
-squeue -u $USER | grep " strong_e" | awk '{print $1}' | xargs scancel
+squeue -u $USER | grep " strong_s" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 
@@ -289,7 +289,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J split_merge --time=0-00:5" \
+  -s "-C bora --exclusive -J weak_split_merge --time=0-00:5" \
   -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o weak_sm_
 
 
@@ -328,12 +328,12 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_sm_
+  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_weak_sm_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
 ./csv-from-tmp.py simple_weak_ec_
-./csv-from-tmp.py simple_sm_
+./csv-from-tmp.py simple_weak_sm_
 
 
 # ---------------------------
