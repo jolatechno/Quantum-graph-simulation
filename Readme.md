@@ -250,7 +250,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # ---------------------------
 
 
-# multi-node strong scaling (still inside src/omp_mpi_scaling_test)
+# multi-node (true) strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
   -n 36 -t 1 \
@@ -262,7 +262,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -a 13,reversed_n_iter=6,simple_truncate=0,seed=0\|14\|step\;erase_create -o strong_ec_
 
 
-# multi-node artificialy limited strong scaling (still inside src/omp_mpi_scaling_test)
+# multi-node (artificialy limited) strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -272,7 +272,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -s "-C bora --exclusive -J strong_split_merge --time=0-00:10" \
   -G 33000000 \
   -a 16,reversed_n_iter=9,simple_truncate=0,seed=0\|14\|step\;split_merge -o strong_sm_
-
+  
 
 # multi-node weak scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
@@ -293,14 +293,14 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o weak_sm_
 
 
-# multi-bode multi-rule scaling test (still inside src/omp_mpi_scaling_test)
+# multi-bode multi-rule weak scaling test (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J bi_rule --time=0-2:00" \
+  -s "-C bora --exclusive -J weak_birule --time=0-2:00" \
   -a 5,simple_truncate=0,seed=0\|15\|step\;erase_create\;step\;split_merge -o weak_birule_
 
 
@@ -364,7 +364,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 ./mpi_scaling.sh -u -n 64 -t 1 \
   -f zonda_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -s " -J bi_rule -C zonda --exclusive --time=0-2:00" \
+  -s " -J test_birule -C zonda --exclusive --time=0-2:00" \
   -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
 
 # multi-node stability test (still inside src/omp_mpi_scaling_test)

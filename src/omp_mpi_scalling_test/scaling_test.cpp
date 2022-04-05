@@ -230,10 +230,10 @@ int main(int argc, char* argv[]) {
 		}
 
 		printf("\n\t},\n\n\t\"relative_inbalance\" : {");
-		for (auto it = max_step_duration.begin();;) {
-			double relative_inbalance = (it->second - avg_step_duration[it->first])/it->second*100;
+		for (auto it = avg_step_duration.begin();;) {
+			double relative_inbalance = (max_step_duration[it->first] - it->second)/it->second;
 			printf("\n\t\t\"%s\" : %f", it->first.c_str(), relative_inbalance);
-			if (++it != max_step_duration.end()) {
+			if (++it != avg_step_duration.end()) {
 				printf(", ");
 			} else
 				break;
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
 			total_max += it->second;
 			total_avg += avg_step_duration[it->first];
 		}
-		double total_imbalance = (total_max - total_avg)/total_max*100;
+		double total_imbalance = (total_max - total_avg)/total_avg;
 		printf("\n\t},\n\t\"total_relative_inbalance\" : %f,", total_imbalance);
 
 
