@@ -37,6 +37,7 @@ The _options_ are:
  - `tolerance` : representing `quids::tolerance`.
  - `simple_truncation` : representing `quids::simple_truncation`.
  - `load_balancing_bucket_per_thread` : representing `quids::load_balancing_bucket_per_thread`.
+ - `align` : represents `quids::align_byte_length`.
  - `min_equalize_size` : representing `quids::mpi::min_equalize_size` (only interpreted when MPI is used).
  - `equalize_inbalance` : representing `quids::mpi::equalize_inbalance` (only interpreted when MPI is used).
 

@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
 		for (int i = 0; i < local_state.num_object; ++i) {
 			std::complex<PROBA_TYPE> mag;
-			size_t size;
+			uint size;
 			char const *object_begin;
 			local_state.get_object(i, object_begin, size, mag);
 			state->append(object_begin, object_begin + size, mag);
