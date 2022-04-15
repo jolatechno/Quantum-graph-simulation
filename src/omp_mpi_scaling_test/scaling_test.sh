@@ -44,11 +44,10 @@ done
 
 temp_file=$(mktemp)
 
-num_object=-1
-if (($max_total_object > -1)); then
-    num_object=$(($max_total_object / $SLURM_JOB_NUM_NODES))
+num_object=$max_total_object
+if (($num_object > -1)); then
+	num_object=$(($num_object / $SLURM_JOB_NUM_NODES))
 fi
-echo "$max_total_object, $num_object"
 
 args_left=${args%%,*}
 args_right=${args#*,}
