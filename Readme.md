@@ -255,24 +255,22 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # multi-node (true) strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
-  -n 36 -t 1 \
+  -n 36 -t 1 -G -1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
-  -G -1 \
   -a 13,reversed_n_iter=6,simple_truncate=0,seed=0\|14\|step\;erase_create -o strong_ec_
 
 
 # multi-node (artificialy limited) strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
+  -n 36 -t 1 -G 33000000 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_split_merge --time=0-00:10" \
-  -G 33000000 \
   -a 16,reversed_n_iter=9,simple_truncate=0,seed=0\|14\|step\;split_merge -o strong_sm_
   
 
