@@ -38,6 +38,11 @@ echo "“Srun arguments: ” ${MPI_ARGS}"
 
 echo -e "\n===== job results ====\n"
 
+num_object=-1
+if (($max_total_object > -1)); then
+    num_object=$(($max_total_object / $SLURM_JOB_NUM_NODES))
+fi
+echo "$max_total_object, $num_object"
 
 if [ "$use_mpi" = "true" ]; then
     ./scaling_test.sh -G "${max_total_object}" -m "${MPI_ARGS}" -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
@@ -48,11 +53,6 @@ else
     IFS=', ' read -r -a n_per_node <<< "${n_per_node}"
 
     temp_file=$(mktemp)
-
-    num_object=-1
-    if (($max_total_object > -1)); then
-        num_object=$(($max_total_object / $SLURM_JOB_NUM_NODES))
-    fi
 
     args_left=${rule%%,*}
     args_right=${rule#*,}
