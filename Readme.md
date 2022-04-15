@@ -37,7 +37,7 @@ The _options_ are:
  - `tolerance` : representing `quids::tolerance`.
  - `simple_truncation` : representing `quids::simple_truncation`.
  - `load_balancing_bucket_per_thread` : representing `quids::load_balancing_bucket_per_thread`.
- - `align` : represents `quids::align_byte_length`.
+ - `align` : represents `quids::align_byte_length` (the amount to which objects should be alligned)
  - `min_equalize_size` : representing `quids::mpi::min_equalize_size` (only interpreted when MPI is used).
  - `equalize_inbalance` : representing `quids::mpi::equalize_inbalance` (only interpreted when MPI is used).
 
@@ -109,7 +109,7 @@ mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
 
 ## Obtaining scaling results
 
-The compilable file used to obtain scaling results is [src/omp_mpi_scalling_test/scaling_test.cpp](./src/omp_mpi_scalling_test/). After compiling it using `make CXX=mpic++`, actual scaling results are obtained using the [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, which get passed the following arguments:
+The compilable file used to obtain scaling results is [src/omp_mpi_scaling_test/scaling_test.cpp](./src/omp_mpi_scaling_test/). After compiling it using `make CXX=mpic++`, actual scaling results are obtained using the [src/omp_mpi_scaling_test/scaling_test.sh](./src/omp_mpi_scaling_test/) script, which get passed the following arguments:
  - `-h`: simple help infos.
  - `-f`: compiled file used, default is `scaling_test.out`.
  - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_\|_graph\_size_\|_rules_). Note that `reversed_n_iter` is used set the iteration at which we start measuring performance (to let the program generate enough graphs at first). Default is `0`.
@@ -128,12 +128,12 @@ Note that the output (after separating `stderr` from `stdout`) will be formated 
 
 ### Slurm integration
 
-To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/) is used (which simply calls [src/omp_mpi_scalling_test/scaling_test.sh](./src/omp_mpi_scalling_test/) script, and stores the results in `src/omp_mpi_scalling_test/tmp`). It get passed the following arguments:
+To obtain scaling results for different number of nodes, using slurm [src/omp_mpi_scaling_test/mpi_scaling.sh](./src/omp_mpi_scaling_test/) is used (which simply calls [src/omp_mpi_scaling_test/scaling_test.sh](./src/omp_mpi_scaling_test/) script, and stores the results in `src/omp_mpi_scaling_test/tmp`). It get passed the following arguments:
  - `-h`: simple help infos.
  - `-a`: argument passed to `scaling_test.out`, similar to `-a` for `scaling_test.sh`. `reversed_n_iter` is also used set the iteration at which we start measuring performance. Default is `0`.
  - `-M`: comma-separated list of modules to be loaded.
- - `-u`: if true, uses `mpirun` through [scaling_test.sh](./src/omp_mpi_scalling_test/), otherwise uses `slurm`.
- - `-f`, `-t`, `-n` and `-m`: same as [scaling_test.sh](./src/omp_mpi_scalling_test/).
+ - `-u`: if true, uses `mpirun` through [scaling_test.sh](./src/omp_mpi_scaling_test/), otherwise uses `slurm`.
+ - `-f`, `-t`, `-n` and `-m`: same as [scaling_test.sh](./src/omp_mpi_scaling_test/).
  - `-N`: list of number of nodes to ask from sbatch (example `1,2,4` default is `1`).
  - `-s`: additional arguments to pass to sbatch (to ask for specific nodes for example).
  - `-o`: base name of the output files (default is `out_`, so the results for _n_ ranks will be _res\_n.out_ and _res\_n.err_).
@@ -146,9 +146,9 @@ For example, to test the scaling on 1,2,4 and 6 nodes for 1 rank times 6 threads
 
 #### Data processing
 
-The [src/omp_mpi_scalling_test/csv-from-tmp.py](./src/omp_mpi_scalling_test/) script (requiering python 3) simply takes a base name (`-o` argument of [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/)) and returns a csv formated compilation of the results obtained by using [src/omp_mpi_scalling_test/mpi_scaling.sh](./src/omp_mpi_scalling_test/).
+The [src/omp_mpi_scaling_test/csv-from-tmp.py](./src/omp_mpi_scaling_test/) script (requiering python 3) simply takes a base name (`-o` argument of [src/omp_mpi_scaling_test/mpi_scaling.sh](./src/omp_mpi_scaling_test/)) and returns a csv formated compilation of the results obtained by using [src/omp_mpi_scaling_test/mpi_scaling.sh](./src/omp_mpi_scaling_test/).
 
-Similarly, [src/omp_mpi_scalling_test/mem-csv-from-file.py](./src/omp_mpi_scalling_test/) is used to process the memory usage evolution of a single file into a csv format. The argument provided should simply be the name of the file ("`-o`" base name, number of node, and `.out` extension).
+Similarly, [src/omp_mpi_scaling_test/mem-csv-from-file.py](./src/omp_mpi_scaling_test/) is used to process the memory usage evolution of a single file into a csv format. The argument provided should simply be the name of the file ("`-o`" base name, number of node, and `.out` extension).
 
 ## Reproducing injectivity test
 
@@ -215,6 +215,7 @@ cd src/omp_mpi_scaling_test
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
+make CXX=mpic++
 make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
@@ -335,6 +336,30 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
 ./csv-from-tmp.py simple_weak_ec_
 ./csv-from-tmp.py simple_weak_sm_
+
+
+# ---------------------------
+# alignment test
+# ---------------------------
+
+
+# comparison with without alignment (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u \
+  -N 35,20,8,2,1 \
+  -n 24 -t 1 \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
+  -a 10,reversed_n_iter=5,align=0,seed=0\|14\|step\;split_merge -o align_weak_sm_
+./mpi_scaling.sh -u \
+  -N 35,20,8,2,1 \
+  -n 24 -t 1 \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
+  -a 10,reversed_n_iter=5,align=8,seed=0\|14\|step\;split_merge -o no_align_weak_sm_
+
+# get results from comparison with without alignment (still inside src/omp_mpi_scaling_test)
+./csv-from-tmp.py align_weak_sm_
+./csv-from-tmp.py no_align_weak_sm_
 
 
 # ---------------------------
