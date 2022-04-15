@@ -52,7 +52,7 @@ else
     num_object=-1
     if (($max_total_object > -1)); then
         num_object=$(($max_total_object / $SLURM_JOB_NUM_NODES))
-    else
+    fi
 
     args_left=${rule%%,*}
     args_right=${rule#*,}
