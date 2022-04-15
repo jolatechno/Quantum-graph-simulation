@@ -22,10 +22,7 @@ All compiled file get passed a spacial argument describing exactly the simulatio
 
 _n\_iter_,_option1_=x,_option2_=y...|_graph\_size1_,_graph\_option1=x,...;_graph\_size2_,...|_rule1_,_rule1\_option1_=x...;_rule2_,...
 
-__IMPORTANT:__ Note that the characters "|" and ";" are used by the program are sparator, but are also characters recognize by bash, so they should be backspace escaped to not be interpreted by bash.
-
-_n\_iter_ and _graph\_size_ should be integer describing respectivly the number of iter and the initial graph size of the simulation.
-
+where _n\_iter_ and _graph\_size_ are integers describing respectivly the number of iter and the initial graph size of the simulation.
 
 ### General options
 
@@ -72,19 +69,19 @@ Implemented _rules_ (all described in further details in [TO LINK](https://googl
 So to simulate 2 iteration of `step` followed by `erase_create` with a single starting graph with 12 nodes, and with a safety margin of `0.5`, the following argument is passed:
 
 ```bash
-./executable_file 2,safety_margin=0.5\|12\|step\;erase_create
+./executable_file "2,safety_margin=0.5|12|step;erase_create"
 ```
 
 To simulate 2 iteration of `step` followed by `split_merge` with one starting graph with 12 nodes and 2 starting graphs with 14 nodes and a pure imaginary magnitutde, the following argument is passed:
 
 ```bash
-./executable_file 2\|12\;14,n_graphs=2,imag=1,real=0\|step\;split_merge
+./executable_file "2|12;14,n_graphs=2,imag=1,real=0|step;split_merge"
 ```
 
 To simulate 2 iteration, starting with a single graph of size 12, and applying `step` two times followed by `coin` with `theta=0.125`, the following argument is passed:
 
 ```bash
-./executable_file 2\|12\|step,n_iter=2\;split_merge,theta=0.125
+./executable_file "2|12|step,n_iter=2;split_merge,theta=0.125"
 ```
 
 ## Running a simple test
@@ -94,7 +91,7 @@ The [src/test/ping_pong_test.ccp](./src/test/) file (later used for injectivity 
 After compiling it using `make ping_pong_test`, you can run it, for example for 4 iterations of `step` followed by `split_merge` starting with a single graph of size 12 using the following command:
 
 ```bash
-./pin_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
+./pin_pong_test.out "4,reversed_n_iters=0|12|step;split_merge"
 ```
 
 ### Using MPI
@@ -104,7 +101,7 @@ The [src/test/mpi_ping_pong_test.ccp](./src/test/) file has the same function as
 After compiling it using `make CXX=mpic++ mpi_ping_pong_test`, you can run it, for example with 8 processes (see [mpirun(1) man page](https://www.open-mpi.org/doc/v4.0/man1/mpirun.1.php) for more info on mpirun), for 4 iterations of `step` followed by `split_merge` starting with a single graph of size 12 using the following command:
 
 ```bash
-mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
+mpirun -n 8 "mpi_ping_pong_test.out 4,reversed_n_iters=0|12|step;split_merge"
 ```
 
 ## Obtaining scaling results
@@ -112,7 +109,7 @@ mpirun -n 8 mpi_ping_pong_test.out 4,reversed_n_iters=0\|12\|step\;split_merge
 The compilable file used to obtain scaling results is [src/omp_mpi_scaling_test/scaling_test.cpp](./src/omp_mpi_scaling_test/). After compiling it using `make CXX=mpic++`, actual scaling results are obtained using the [src/omp_mpi_scaling_test/scaling_test.sh](./src/omp_mpi_scaling_test/) script, which get passed the following arguments:
  - `-h`: simple help infos.
  - `-f`: compiled file used, default is `scaling_test.out`.
- - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_\|_graph\_size_\|_rules_). Note that `reversed_n_iter` is used set the iteration at which we start measuring performance (to let the program generate enough graphs at first). Default is `0`.
+ - `-a`: argument passed to `scaling_test.out`, in the form described above (_n\_iter_|_graph\_size_|_rules_). Note that `reversed_n_iter` is used set the iteration at which we start measuring performance (to let the program generate enough graphs at first). Default is `0`.
  - `-t`: list of the number of threads to test (ex: `1,2,6` the default is the number_of available threads).
  - `-n`: list of the number of mpi rank to spawn per node (ex: `6,3,1` default is `1`).
  - `-m`: additionals arguments for `mpirun`.
@@ -121,7 +118,7 @@ The compilable file used to obtain scaling results is [src/omp_mpi_scaling_test/
 For example, to test the scaling on 5 nodes for 1 rank times 6 threads, 3 ranks time 2 threads, and 6 ranks times 1 threads for 3 iteration of `step` followed by `erase_create` starting with a single graph of 12 nodes, the command will be:
 
 ```bash
-./scaling_test.sh -N 5 -t 6,2,1 -n 1,3,6 -a 4,reversed_n_iters=0\|12\|step\;split_merge
+./scaling_test.sh -N 5 -t 6,2,1 -n 1,3,6 -a "4,reversed_n_iters=0|12|step;split_merge"
 ```
 
 Note that the output (after separating `stderr` from `stdout`) will be formated as a json.
@@ -141,7 +138,7 @@ To obtain scaling results for different number of nodes, using slurm [src/omp_mp
 For example, to test the scaling on 1,2,4 and 6 nodes for 1 rank times 6 threads, 3 ranks time 2 threads, and 6 ranks times 1 threads for 3 iteration of `step` followed by `erase_create` starting with a single graph of 12 nodes, the command will be:
 
 ```bash
-./mpi_scaling.sh -N 1,2,4,6 -t 6,2,1 -n 1,3,6 -a 4,reversed_n_iters=0\|12\|step\;split_merge
+./mpi_scaling.sh -N 1,2,4,6 -t 6,2,1 -n 1,3,6 -a "4,reversed_n_iters=0|12|step;split_merge"
 ```
 
 #### Data processing
@@ -172,10 +169,10 @@ Injectivity testing for multiple graphs is done using [src/test/mpi_injectivity_
 
 ## Obtaining QCGD dynamic evolution
 
-Actual QCGDs simulations are supported (only using MPI) by the [src/simulation/quantum_iterations.cpp](./src/simulation/) file, which can be compiled using `make CXX=mpic++`, and simply takes the same arguments as [src/test/mpi_ping_pong_test.ccp](./src/test/) or [src/test/mpi_ping_pong_test.ccp](./src/test/), and prints out a json-formated list of the average values after each application of a rule. For example:
+Actual QCGDs simulations are supported (only using MPI) by the [src/simulation/quantum_iterations.cpp](./src/simulation/) file, which can be compiled using `make CXX=mpic++`, and simply takes the same arguments as [src/test/mpi_ping_pong_test.ccp](./src/test/) or [src/test/mpi_ping_pong_test.ccp](./src/test/), and prints out a json-formated list of the average values after each application of a rule. For example (for 8 processes):
 
 ```bash
-mpirun -n 8 quantum_iterations.out 4\|12\|step\;split_merge
+mpirun -n 8 quantum_iterations.out "4|12|step;split_merge"
 ```
 
 # Experiment used in the paper:
@@ -221,34 +218,8 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 # ---------------------------
-# single-node scaling test
-# ---------------------------
-
-
-# single node scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -n 64,32,16,8,4,2,1 \
-  -t 1,1,1,1,1,1,1 \
-  -f zonda_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -s " -J erase_create -C zonda --exclusive --time=0-5:00" \
-  -a 8,reversed_n_iter=4,simple_truncate=0,max_num_object=2000000,seed=0\|15\|step\;erase_create -o res_ec_
-./mpi_scaling.sh -u \
-  -n 64,32,16,8,4,2,1 \
-  -t 1,1,1,1,1,1,1 \
-  -f zonda_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -s " -J split_merge -C zonda --exclusive --time=0-5:00" \
-  -a 8,reversed_n_iter=4,simple_truncate=0,max_num_object=20000000,seed=0\|15\|step\;split_merge -o res_sm_
-
-
-# get results from single node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py res_ec_
-./csv-from-tmp.py res_sm_
-
-
-# ---------------------------
 # multi-node scaling test
+# used for Fig 3-6 in the paper
 # ---------------------------
 
 
@@ -260,7 +231,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
-  -a 13,reversed_n_iter=6,simple_truncate=0,seed=0\|14\|step\;erase_create -o strong_ec_
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
 
 
 # multi-node (artificialy limited) strong scaling (still inside src/omp_mpi_scaling_test)
@@ -271,7 +242,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_split_merge --time=0-00:10" \
-  -a 16,reversed_n_iter=9,simple_truncate=0,seed=0\|14\|step\;split_merge -o strong_sm_
+  -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
   
 
 # multi-node weak scaling (still inside src/omp_mpi_scaling_test)
@@ -282,7 +253,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a 9,reversed_n_iter=5,simple_truncate=0,seed=0\|17\|step\;erase_create -o weak_ec_
+  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -290,7 +261,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,simple_truncate=0,seed=0\|14\|step\;split_merge -o weak_sm_
+  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
 
 
 # multi-bode multi-rule weak scaling test (still inside src/omp_mpi_scaling_test)
@@ -301,7 +272,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_birule --time=0-2:00" \
-  -a 5,simple_truncate=0,seed=0\|15\|step\;erase_create\;step\;split_merge -o weak_birule_
+  -a "5,seed=0|15|step;erase_create;step;split_merge" -o weak_birule_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
@@ -312,7 +283,33 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 ./csv-from-tmp.py weak_birule_
 
 
-# accuracy compaison (still inside src/omp_mpi_scaling_test)
+# ---------------------------
+# memory usage test
+# used for Fig 7 in the paper
+# ---------------------------
+
+
+# 4-node memory usage test (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u \
+  -N 4 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
+  -a "18,reversed_n_iter=0,seed=0|11|step;split_merge" -o mem_test_
+
+# get results
+./mem-csv-from-file.py mem_test_4.out
+
+
+# ---------------------------
+# accuracy comparison between simple truncation and probabilistic truncation
+# used for Fig 8 in the paper
+# ---------------------------
+
+
+# multi-node scaling accuracy comparison (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -320,7 +317,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
-  -a 9,reversed_n_iter=5,simple_truncate=1,seed=0\|17\|step\;erase_create -o simple_weak_ec_
+  -a "9,reversed_n_iter=5,simple_truncate=1,seed=0|17|step;erase_create" -o simple_weak_ec_
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
@@ -328,7 +325,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,simple_truncate=1,seed=0\|14\|step\;split_merge -o simple_weak_sm_
+  -a "10,reversed_n_iter=5,simple_truncate=1,seed=0|14|step;split_merge" -o simple_weak_sm_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
@@ -347,36 +344,17 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -n 24 -t 1 \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,align=0,seed=0\|14\|step\;split_merge -o align_weak_sm_
+  -a "10,reversed_n_iter=5,align=8,seed=0|14|step;split_merge" -o align_weak_sm_
 ./mpi_scaling.sh -u \
   -N 35,20,8,2,1 \
   -n 24 -t 1 \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a 10,reversed_n_iter=5,align=8,seed=0\|14\|step\;split_merge -o no_align_weak_sm_
+  -a "10,reversed_n_iter=5,align=0,seed=0|14|step;split_merge" -o no_align_weak_sm_
 
 # get results from comparison with without alignment (still inside src/omp_mpi_scaling_test)
 ./csv-from-tmp.py align_weak_sm_
 ./csv-from-tmp.py no_align_weak_sm_
-
-
-# ---------------------------
-# memory usage test
-# ---------------------------
-
-
-# 4-node memory usage test (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 4 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
-  -a 18,reversed_n_iter=0,seed=0\|11\|step\;split_merge -o mem_test_
-
-# get results
-./mem-csv-from-file.py mem_test_4.out
 
 
 # ---------------------------
@@ -389,7 +367,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -f zonda_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -s " -J test_birule -C zonda --exclusive --time=0-2:00" \
-  -a 5,seed=0\|15\|step\;erase_create\;step\;split_merge -o test_birule_
+  -a "5,seed=0|15|step;erase_create;step;split_merge" -o test_birule_
 
 # multi-node stability test (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u -N 2,4,8,16 \
@@ -398,14 +376,14 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J ec_long --time=0-2:00" \
-  -a 10,seed=0\|30\|step\;erase_create -o test_very_long_ec_
+  -a "10,seed=0|30|step;erase_create" -o test_very_long_ec_
 ./mpi_scaling.sh -u -N 2,4,8,16 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J sm_long --time=0-2:00" \
-  -a 20,seed=0\|30\|step\;split_merge -o test_long_sm_
+  -a "20,seed=0|30|step;split_merge" -o test_long_sm_
 
 # multi-bode multi-rule stability test (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
@@ -415,7 +393,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J test_bi_rule --time=0-2:00" \
-  -a 10,simple_truncate=0,seed=0\|20\|step\;erase_create\;step\;split_merge -o test_birule_
+  -a "10,seed=0|20|step;erase_create;step;split_merge" -o test_birule_
 
 
 # ---------------------------
@@ -429,7 +407,7 @@ cd src/test
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-march=skylake" CXX=mpic++
+make CXX=mpic++
 
 
 # simple single node openmp injectivity test (still in src/test)
