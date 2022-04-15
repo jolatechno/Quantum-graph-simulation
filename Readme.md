@@ -260,7 +260,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
-  -G -100 \
+  -G -1 \
   -a 13,reversed_n_iter=6,simple_truncate=0,seed=0\|14\|step\;erase_create -o strong_ec_
 
 

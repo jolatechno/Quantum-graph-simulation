@@ -15,7 +15,7 @@ print_usage() {
 	-N: list of number of nodes (the above list will run for EACH node, deafult:1)
 
 	-s: additional sbatch arguments
-	-o: base name of the output file (default=\"res_\")
+	-o: base name of the output file (default=\"out_\")
 "
 }
 
