@@ -45,7 +45,7 @@ fi
 echo "$max_total_object, $num_object"
 
 if [ "$use_mpi" = "true" ]; then
-    ./scaling_test.sh -G "${max_total_object}" -m "${MPI_ARGS}" -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
+    ./scaling_test.sh -G "${num_object}" -m "${MPI_ARGS}" -N ${SLURM_JOB_NUM_NODES} -n ${n_per_node} -t ${n_threads} -a ${rule} -f ${NAME}
 else
     indent() { sed 's/^/    /'; }
 
