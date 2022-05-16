@@ -212,7 +212,6 @@ cd src/omp_mpi_scaling_test
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CXX=mpic++
 make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
 make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
@@ -253,7 +252,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
+  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_new_
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
