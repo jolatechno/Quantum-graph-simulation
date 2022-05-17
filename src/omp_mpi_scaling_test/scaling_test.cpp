@@ -4,6 +4,8 @@
 #include <time.h>
 #include <map>
 
+#include <limits>
+
 #include <iostream>
 
 #include "../QuIDS/src/quids_mpi.hpp"
@@ -206,6 +208,12 @@ int main(int argc, char* argv[]) {
 						max_num_object_after_selection += mpi_buffer;
 						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 						avg_num_object_after_selection += mpi_buffer/size;
+
+#ifdef SKIP_BALANCE
+						MPI_Allreduce(&state->num_object, &mpi_buffer, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);
+						if (mpi_buffer != 0)
+							quids::mpi::equalize_inbalance = std::numeric_limits<PROBA_TYPE>::infinity();
+#endif
 
 						total_num_object += state->get_total_num_object(MPI_COMM_WORLD);
 						total_proba *= std::pow(state->total_proba, 1/(double)(n_iter - reversed_n_iter));

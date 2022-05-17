@@ -283,6 +283,49 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 
 
 # ---------------------------
+# test of the impact of load balancing
+# used for Fig xx in the paper
+# ---------------------------
+
+
+module purge
+module load compiler/gcc/11.2.0
+module load mpi/openmpi/4.0.1
+make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
+make CFLAGS="-DSKIP_BALANCE -obora_scaling_test_NoBalance.out -march=skylake" CXX=mpic++
+make CFLAGS="-DSKIP_LB_LIM -obora_scaling_test_NoElimLB.out -march=skylake" CXX=mpic++
+make CFLAGS="-DSKIP_LB_LIM -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=skylake" CXX=mpic++
+
+# 29-node test of the impact of load balancing on high collision rate (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u -N 12,24 -n 36 -t 1 -G -1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o ec_fullLB_
+./mpi_scaling.sh -u -N 12,24 -n 36 -t 1 -G -1 \
+  -f bora_scaling_test_NoBalance.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o ec_elimLB_
+./mpi_scaling.sh -u -N 12,24 -n 36 -t 1 -G -1 \
+  -f bora_scaling_test_NoElimLB.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o ec_BALANCE_
+./mpi_scaling.sh -u -N 12,24 -n 36 -t 1 -G -1 \
+  -f bora_scaling_test_NoLB.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o ec_noLB_
+
+# get results of impact of load balancing test (still inside src/omp_mpi_scaling_test)
+./csv-from-tmp.py ec_fullLB_
+./csv-from-tmp.py ec_elimLB_
+./csv-from-tmp.py ec_BALANCE_
+./csv-from-tmp.py ec_noLB_
+
+
+# ---------------------------
 # memory usage test
 # used for Fig 7 in the paper
 # ---------------------------
