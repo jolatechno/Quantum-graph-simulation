@@ -22,6 +22,7 @@ translator = {
 	"num_child" : ["pre-symbolic-iteration"], 
 	"prepare_index" : ["pre-symbolic-iteration"], 
 	"equalize_child" : ["communication"] if sum_equal_one else ["communication", "pre-symbolic-iteration"],
+	"equalize_object" : ["communication"] if sum_equal_one else ["communication", "pre-symbolic-iteration"],
 	"truncate_symbolic - prepare" : ["pre-symbolic-iteration"],
 	"truncate_symbolic" : ["pre-symbolic-iteration"],
 
