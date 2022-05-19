@@ -83,7 +83,7 @@ for dirpath, dirs, files in os.walk("tmp"):
   	for filename in fnmatch.filter(files, match + "*.out"):
   		with open("tmp/" + filename, "r") as file:
   			try:
-  				num_node = int(filename.split(".")[0].split(match)[1])
+  				num_node = int(filename.split(".")[0].split(match[-1])[-1])
 
 	  			txt_file = file.read()
 	  			json_file = "{" + "{".join(txt_file.split("{")[1:]).replace("nan", "0.0")
