@@ -60,7 +60,7 @@ fi
 for n_node in "${n_nodes[@]}"; do
 	file_base="tmp/${base_name}${n_node}"
 	if [ -f "${file_base}.out" ]; then
-		echo "skipping ${n_nodes} nodes as \"${file_base}.out\" already exists"
+		echo "skipping ${n_node} nodes as \"${file_base}.out\" already exists"
 	else
 		max_total_object="${max_total_object}" use_mpi="${use_mpi}" n_per_node=${n_per_nodes} n_threads=${n_threads} rule=${args} NAME=${file} MPI_ARGS="${mpirun_args}" MODULES="${modules}" sbatch ${sbatch_args} --output=${file_base}.out --error=${file_base}.err -N ${n_node} slurm.sh
 	fi
