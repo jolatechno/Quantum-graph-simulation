@@ -190,7 +190,8 @@ The following commands
 ```bash
 # to clear slurm queue
 squeue -u $USER | awk '{print $1}' | tail -n+2 | xargs scancel
-squeue -u $USER | grep "bir" | awk '{print $1}' | xargs scancel
+rm tmp/*
+squeue -u $USER | grep "14 (" | awk '{print $1}' | xargs scancel
 squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scancel
 
 
@@ -212,8 +213,8 @@ cd src/omp_mpi_scaling_test
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
-make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
+make CFLAGS="-march=skylake -obora_scaling_test.out"  CXX=mpic++
+make CFLAGS="-march=znver2  -ozonda_scaling_test.out" CXX=mpic++
 
 
 # ---------------------------
@@ -271,7 +272,7 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
   -s "-C bora --exclusive -J weak_birule --time=0-2:00" \
-  -a "5,seed=0|15|step;erase_create;step;split_merge" -o weak_birule_
+  -a "5,reversed_n_iter=2,seed=0|15|step;erase_create;step;split_merge" -o weak_birule_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
@@ -291,24 +292,24 @@ make CFLAGS="-ozonda_scaling_test.out -march=znver2" CXX=mpic++
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-obora_scaling_test.out -march=skylake" CXX=mpic++
-make CFLAGS="-DSKIP_BALANCE -obora_scaling_test_NoBalance.out -march=skylake" CXX=mpic++
-make CFLAGS="-DSKIP_ELIM_LB -obora_scaling_test_NoElimLB.out -march=skylake" CXX=mpic++
-make CFLAGS="-DSKIP_ELIM_LB -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=skylake" CXX=mpic++
+make CFLAGS="-march=skylake                           -obora_scaling_test.out"         CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_BALANCE            -obora_scaling_test_CCP.out"     CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_CCP                -obora_scaling_test_Balance.out" CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.out"    CXX=mpic++
 
-# 29-node test of the impact of load balancing on high collision rate strong scaling (still inside src/omp_mpi_scaling_test)
+# 35-node test of the impact of load balancing on high collision rate strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_NoBalance.out \
+  -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_elimLB_
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_NoElimLB.out \
+  -f bora_scaling_test_Balance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_Balance_
@@ -318,19 +319,19 @@ make CFLAGS="-DSKIP_ELIM_LB -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=s
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_noLB_
 
-# 29-node test of the impact of load balancing on high collision rate weak scaling (still inside src/omp_mpi_scaling_test)
+# 35-node test of the impact of load balancing on high collision rate weak scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoBalance.out \
+  -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_elimLB_
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
+  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoElimLB.out \
+  -f bora_scaling_test_Balance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_Balance_
@@ -340,19 +341,19 @@ make CFLAGS="-DSKIP_ELIM_LB -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=s
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_noLB_
 
-# 29-node test of the impact of load balancing on low collision rate weak scaling (still inside src/omp_mpi_scaling_test)
+# 35-node test of the impact of load balancing on low collision rate weak scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoBalance.out \
+  -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_elimLB_
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
+  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoElimLB.out \
+  -f bora_scaling_test_Balance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_Balance_
@@ -363,18 +364,9 @@ make CFLAGS="-DSKIP_ELIM_LB -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=s
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_noLB_
 
 # get results of impact of load balancing test (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_fullLB_
-./csv-from-tmp.py strong_ec_elimLB_
-./csv-from-tmp.py strong_ec_Balance_
-./csv-from-tmp.py strong_ec_noLB_
-./csv-from-tmp.py weak_ec_fullLB_
-./csv-from-tmp.py weak_ec_elimLB_
-./csv-from-tmp.py weak_ec_Balance_
-./csv-from-tmp.py weak_ec_noLB_
-./csv-from-tmp.py weak_sm_fullLB_
-./csv-from-tmp.py weak_sm_elimLB_
-./csv-from-tmp.py weak_sm_Balance_
-./csv-from-tmp.py weak_sm_noLB_
+./csv-from-tmp.py strong_ec_*_
+./csv-from-tmp.py weak_ec_*_
+./csv-from-tmp.py weak_sm_*_
 
 
 # ---------------------------

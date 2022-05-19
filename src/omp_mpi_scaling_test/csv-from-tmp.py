@@ -130,8 +130,6 @@ keys = list(results.keys())
 n_threads = [string_to_key(key) for key in keys]
 n_threads.sort(key=functools.cmp_to_key(compare))
 
-keys = [",".join([str(x) for x in key]) for key in n_threads]
-
 command = command.split(" ")[1]
 
 n_iter = (command.split("|")[0]).split(",")[0]
