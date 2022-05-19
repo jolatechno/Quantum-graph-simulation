@@ -41,6 +41,12 @@ translator = {
     "normalize" : ["object-generation"],
 }
 
+results = {}
+command = "no_file_provided 0|0|"
+
+match = "out_" if len(sys.argv) == 1 else sys.argv[1]
+print_match = "*" in match
+
 def accumulate_steptime(indict):
 	outdict = starting.copy()
 
@@ -59,32 +65,49 @@ def prod(List):
 	return res
 
 def string_to_key(str):
-	keys = [int(i) for i in str.split(",")]
-	if len(keys) == 2:
-		keys.append(1)
-	return keys
+	if not print_match:
+		keys = [int(i) for i in str.split(",")]
+		if len(keys) == 2:
+			keys.append(1)
+		return keys
+	else:
+		keys = [str.split(",")[0]] + [int(i) for i in str.split(",")[1:]]
+		if len(keys) == 3:
+			keys.append(1)
+		return keys
 
 def compare(item1, item2):
-	if prod(item1) != prod(item2):
-		return prod(item2) - prod(item1)
+	if not print_match:
+		if prod(item1) != prod(item2):
+			return prod(item2) - prod(item1)
 
-	if item1[2] != item2[2]:
-		return item2[2] - item1[2]
+		if item1[2] != item2[2]:
+			return item2[2] - item1[2]
 
-	return item2[0] - item1[0]
+		return item2[0] - item1[0]
+	else:
+		if item1[0] < item2[0]:
+			return 1
+		if item1[0] > item2[0]:
+			return -1
 
+		if prod(item1[1:]) != prod(item2[1:]):
+			return prod(item2) - prod(item1)
 
-results = {}
-command = "no_file_provided 0|0|"
+		if item1[3] != item2[3]:
+			return item2[3] - item1[3]
 
-match = "out_" if len(sys.argv) == 1 else sys.argv[1]
+		return item2[1] - item1[1]
 
 for dirpath, dirs, files in os.walk("tmp"): 
   	for filename in fnmatch.filter(files, match + "*.out"):
   		with open("tmp/" + filename, "r") as file:
   			print(f"openning \"{ filename }\"", file=sys.stderr)
   			try:
-  				num_node = int(filename.split(".")[0].split(match[-1])[-1])
+  				file_base = filename.split(".")[0]
+  				num_node = file_base.split(match[-1])[-1]
+  				file_base = file_base[:-len(num_node)]
+  				num_node = int(num_node)
 
 	  			txt_file = file.read()
 	  			json_file = "{" + "{".join(txt_file.split("{")[1:]).replace("nan", "0.0")
@@ -94,6 +117,8 @@ for dirpath, dirs, files in os.walk("tmp"):
 
 	  			for key in json_dict["results"].keys():
 	  				name = key + "," + str(num_node)
+	  				if print_match:
+	  					name = '"' + file_base + '"' + name
 	  				results[name] = json_dict["results"][key]
 
 	  		except Exception as err:
@@ -116,7 +141,10 @@ print("", file=sys.stderr)
 print("\"#n iters\",\"initial #n node\",\"rule\"")
 print(n_iter + "," + n_node + ",\"" + rule + "\"\n")
 
-string = "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"\",\"#n object\",\"#n symb. object\",\"total_proba\",\"\",\"execution time\",\""
+string = ""
+if print_match:
+	string += "\"file_base\","
+string += "\"#n thread per rank\",\"#n task per node\",\"#n node\",\"\",\"#n object\",\"#n symb. object\",\"total_proba\",\"\",\"execution time\",\""
 string += "\",\"".join(ordered_keys) + "\""
 string += ",\"\",\"time inbalance\",\"NoO inbalance\",\"NoO symb. inbalance\""
 print(string)
