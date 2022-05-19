@@ -134,7 +134,7 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  			command = json_dict["command"]
 
 	  			for key in json_dict["results"].keys():
-	  				name = '"' + file_base + '",' + name
+	  				name = '"' + file_base + '",' + key + "," + str(num_node)
 	  				results[name] = json_dict["results"][key]
 
 	  		except Exception as err:
