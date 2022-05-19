@@ -107,13 +107,18 @@ for dirpath, dirs, files in os.walk("tmp"):
   			try:
   				file_base = filename.split(".")[0]
   				num_node = file_base.split(match[-1])[-1]
-  				file_base = file_base[:-len(num_node)]
 
-  				# braek if not a number
-  				if num_node[0] not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-  					print(f"not taking \"{filename}\" into account", file=sys.stderr)
-  					continue
+  				# brake if not a number
+  				if !print_match:
+  					if file_base.split(match)[1][0] not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
+	  					print(f"not taking \"{filename}\" into account", file=sys.stderr)
+	  					continue
+
+  				file_base = file_base[:-len(num_node)]
   				num_node = int(num_node)
+
+
+
 
 	  			txt_file = file.read()
 	  			json_file = "{" + "{".join(txt_file.split("{")[1:]).replace("nan", "0.0")
