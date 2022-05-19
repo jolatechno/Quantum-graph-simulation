@@ -65,16 +65,10 @@ def prod(List):
 	return res
 
 def string_to_key(str):
-	if not print_match:
-		keys = [""] + [int(i) for i in str.split(",")]
-		if len(keys) == 2:
-			keys.append(1)
-		return keys
-	else:
-		keys = [str.split(",")[0]] + [int(i) for i in str.split(",")[1:]]
-		if len(keys) == 3:
-			keys.append(1)
-		return keys
+	keys = [str.split(",")[0]] + [int(i) for i in str.split(",")[1:]]
+	if len(keys) == 3:
+		keys.append(1)
+	return keys
 
 def key_to_string(key):
 	return ",".join(['"' + key[0] + '"'] + [str(i) for i in key[1:]])
