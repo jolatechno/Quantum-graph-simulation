@@ -82,6 +82,7 @@ match = "out_" if len(sys.argv) == 1 else sys.argv[1]
 for dirpath, dirs, files in os.walk("tmp"): 
   	for filename in fnmatch.filter(files, match + "*.out"):
   		with open("tmp/" + filename, "r") as file:
+  			print(f"openning \"{ filename }\"", file=sys.stderr)
   			try:
   				num_node = int(filename.split(".")[0].split(match[-1])[-1])
 
@@ -96,7 +97,7 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  				results[name] = json_dict["results"][key]
 
 	  		except Exception as err:
-	  			print(filename, err)
+	  			print(filename, err, file=sys.stderr)
 
 keys = list(results.keys())
 
@@ -111,6 +112,7 @@ n_iter = (command.split("|")[0]).split(",")[0]
 n_node = command.split("|")[1]
 rule = command.split("|")[2].replace(";", "_")
 
+print("", file=sys.stderr)
 print("\"#n iters\",\"initial #n node\",\"rule\"")
 print(n_iter + "," + n_node + ",\"" + rule + "\"\n")
 
