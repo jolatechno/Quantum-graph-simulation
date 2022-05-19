@@ -94,8 +94,8 @@ def get_match(str):
 	begin = match.split("*")[0]
 	end = match.split("*")[-1]
 
-	match_ = str.split(begin)[1:].join(begin)
-	match_ = match_.split(end)[:-1].join(end)
+	match_ = begin.join(str.split(begin)[1:])
+	match_ = end.join(str.split(end)[:-1])
 
 	return match_
 
