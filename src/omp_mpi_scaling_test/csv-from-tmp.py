@@ -92,7 +92,7 @@ def compare(item1, item2):
 			return -1
 
 		if prod(item1[1:]) != prod(item2[1:]):
-			return prod(item2) - prod(item1)
+			return prod(item2[1:]) - prod(item1[1:])
 
 		if item1[3] != item2[3]:
 			return item2[3] - item1[3]
