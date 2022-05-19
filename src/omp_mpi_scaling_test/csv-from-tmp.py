@@ -108,6 +108,10 @@ for dirpath, dirs, files in os.walk("tmp"):
   				file_base = filename.split(".")[0]
   				num_node = file_base.split(match[-1])[-1]
   				file_base = file_base[:-len(num_node)]
+
+  				# braek if not a number
+  				if num_node[0] not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
+  					continue
   				num_node = int(num_node)
 
 	  			txt_file = file.read()
