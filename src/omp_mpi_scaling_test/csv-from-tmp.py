@@ -66,7 +66,7 @@ def prod(List):
 
 def string_to_key(str):
 	if not print_match:
-		keys = [int(i) for i in str.split(",")]
+		keys = [""] + [int(i) for i in str.split(",")]
 		if len(keys) == 2:
 			keys.append(1)
 		return keys
@@ -77,27 +77,18 @@ def string_to_key(str):
 		return keys
 
 def compare(item1, item2):
-	if not print_match:
-		if prod(item1) != prod(item2):
-			return prod(item2) - prod(item1)
+	if item1[0] < item2[0]:
+		return 1
+	if item1[0] > item2[0]:
+		return -1
 
-		if item1[2] != item2[2]:
-			return item2[2] - item1[2]
+	if prod(item1[1:]) != prod(item2[1:]):
+		return prod(item2[1:]) - prod(item1[1:])
 
-		return item2[0] - item1[0]
-	else:
-		if item1[0] < item2[0]:
-			return 1
-		if item1[0] > item2[0]:
-			return -1
+	if item1[3] != item2[3]:
+		return item2[3] - item1[3]
 
-		if prod(item1[1:]) != prod(item2[1:]):
-			return prod(item2[1:]) - prod(item1[1:])
-
-		if item1[3] != item2[3]:
-			return item2[3] - item1[3]
-
-		return item2[1] - item1[1]
+	return item2[1] - item1[1]
 
 for dirpath, dirs, files in os.walk("tmp"): 
   	for filename in fnmatch.filter(files, match + "*.out"):
@@ -152,14 +143,17 @@ print(string)
 for i, key in enumerate(keys):
 	string = "";
 
-	n_thread, n_task, n_node = n_threads[i]
+	base_name, n_thread, n_task, n_node = n_threads[i]
 	total_n_task = n_task*n_node
 	this_step = results[key]
 
 	NoO_inbalance = (this_step['max_num_object'] - this_step['avg_num_object'])/this_step['avg_num_object']
 	NoO_symb_inbalance = (this_step['max_symbolic_num_object'] - this_step['avg_symbolic_num_object'])/this_step['avg_symbolic_num_object']
 
-	string += f"{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
+	if print_match:
+		string += f"\"{base_name}\",{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
+	else:
+		string += f"{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
 
 	avg_step_time = accumulate_steptime(this_step["max_step_time"])
 	for name in ordered_keys:
