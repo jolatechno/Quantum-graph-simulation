@@ -77,7 +77,7 @@ def string_to_key(str):
 		return keys
 
 def key_to_string(key):
-	return ",".join([key[0]] + [str(i) for i in key[1:]])
+	return ",".join(['"' + key[0] + '"'] + [str(i) for i in key[1:]])
 
 def compare(item1, item2):
 	if item1[0] < item2[0]:
