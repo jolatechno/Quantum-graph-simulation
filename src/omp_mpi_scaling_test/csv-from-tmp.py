@@ -117,8 +117,12 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  					print(f"\tnot taking \"{filename}\" into account", file=sys.stderr)
 	  					continue
 
+	  				file_base = ""
+
   				file_base = file_base[:-len(num_node)]
   				num_node = int(num_node)
+
+
 
 
 
@@ -130,9 +134,7 @@ for dirpath, dirs, files in os.walk("tmp"):
 	  			command = json_dict["command"]
 
 	  			for key in json_dict["results"].keys():
-	  				name = key + "," + str(num_node)
-	  				if print_match:
-	  					name = '"' + file_base + '",' + name
+	  				name = '"' + file_base + '",' + name
 	  				results[name] = json_dict["results"][key]
 
 	  		except Exception as err:
