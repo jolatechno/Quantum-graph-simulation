@@ -90,6 +90,15 @@ def compare(item1, item2):
 
 	return item2[1] - item1[1]
 
+def get_match(str):
+	begin = match.split("*")[0]
+	end = match.split("*")[-1]
+
+	match_ = str.split(begin)[1:].join(begin)
+	match_ = match_.split(end)[:-1].join(end)
+
+	return match_
+
 for dirpath, dirs, files in os.walk("tmp"): 
   	for filename in fnmatch.filter(files, match + "*.out"):
   		with open("tmp/" + filename, "r") as file:
@@ -151,7 +160,7 @@ for i, key in enumerate(keys):
 	NoO_symb_inbalance = (this_step['max_symbolic_num_object'] - this_step['avg_symbolic_num_object'])/this_step['avg_symbolic_num_object']
 
 	if print_match:
-		string += f"\"{base_name}\",{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
+		string += f"{get_match(base_name)},{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
 	else:
 		string += f"{n_thread},{n_task},{n_node},,{this_step['num_object']},{this_step['avg_symbolic_num_object']*total_n_task},{this_step['total_proba']:e},,{this_step['total']}"
 

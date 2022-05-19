@@ -297,66 +297,66 @@ make CFLAGS="-DSKIP_ELIM_LB -obora_scaling_test_NoElimLB.out -march=skylake" CXX
 make CFLAGS="-DSKIP_ELIM_LB -DSKIP_BALANCE -obora_scaling_test_NoLB.out -march=skylake" CXX=mpic++
 
 # 29-node test of the impact of load balancing on high collision rate strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 -G 0 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_fullLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 -G 0 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test_NoBalance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_elimLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 -G 0 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test_NoElimLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_Balance_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 -G 0 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test_NoLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_noLB_
 
 # 29-node test of the impact of load balancing on high collision rate weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_fullLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoBalance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_elimLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoElimLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_Balance_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_noLB_
 
 # 29-node test of the impact of load balancing on low collision rate weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_fullLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoBalance.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J elimLB --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_elimLB_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoElimLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_Balance_
-./mpi_scaling.sh -u -N 26,35 -n 36 -t 1 \
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_NoLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
