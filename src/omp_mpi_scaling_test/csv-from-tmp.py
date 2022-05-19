@@ -76,6 +76,9 @@ def string_to_key(str):
 			keys.append(1)
 		return keys
 
+def key_to_string(key):
+	return ",".join(key)
+
 def compare(item1, item2):
 	if item1[0] < item2[0]:
 		return 1
@@ -111,7 +114,7 @@ for dirpath, dirs, files in os.walk("tmp"):
   				# brake if not a number
   				if not print_match:
   					if file_base.split(match)[1][0] not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
-	  					print(f"not taking \"{filename}\" into account", file=sys.stderr)
+	  					print(f"\tnot taking \"{filename}\" into account", file=sys.stderr)
 	  					continue
 
   				file_base = file_base[:-len(num_node)]
@@ -139,6 +142,8 @@ keys = list(results.keys())
 
 n_threads = [string_to_key(key) for key in keys]
 n_threads.sort(key=functools.cmp_to_key(compare))
+
+keys = [key_to_string(key) for key in n_threads]
 
 command = command.split(" ")[1]
 
