@@ -292,10 +292,11 @@ make CFLAGS="-march=znver2  -ozonda_scaling_test.out" CXX=mpic++
 module purge
 module load compiler/gcc/11.2.0
 module load mpi/openmpi/4.0.1
-make CFLAGS="-march=skylake                           -obora_scaling_test.out"         CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_BALANCE            -obora_scaling_test_CCP.out"     CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_CCP                -obora_scaling_test_Balance.out" CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.out"    CXX=mpic++
+make CFLAGS="-march=skylake                                                -obora_scaling_test.out"            CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_BALANCE                                 -obora_scaling_test_work_steal.out" CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_WORK_STEALING                           -obora_scaling_test_balance.out"    CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING            -obora_scaling_test_CCP.out"        CXX=mpic++
+make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING -DSKIP_CCP -obora_scaling_test_noLB.out"       CXX=mpic++
 
 # 35-node test of the impact of load balancing on high collision rate strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
@@ -304,17 +305,22 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.o
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
+  -f bora_scaling_test_work_steal.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_work_steal_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
+  -f bora_scaling_test_balance.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
+  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_balance_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
   -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_Balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_Balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_NoLB.out \
+  -f bora_scaling_test_noLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_noLB_
@@ -326,17 +332,22 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.o
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
+  -f bora_scaling_test_work_steal.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
+  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_work_steal_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
+  -f bora_scaling_test_balance.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
+  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_balance_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_Balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_Balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoLB.out \
+  -f bora_scaling_test_noLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_noLB_
@@ -348,17 +359,22 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.o
   -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_fullLB_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
+  -f bora_scaling_test_work_steal.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
+  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_work_steal_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
+  -f bora_scaling_test_balance.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
+  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_balance_
+./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
   -f bora_scaling_test_CCP.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_CCP_
 ./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_Balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_Balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_NoLB.out \
+  -f bora_scaling_test_noLB.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_noLB_
@@ -367,28 +383,6 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_CCP -obora_scaling_test_NoLB.o
 ./csv-from-tmp.py strong_ec_*_
 ./csv-from-tmp.py weak_ec_*_
 ./csv-from-tmp.py weak_sm_*_
-
-# 35-node test of the impact of load balancing on low collision rate strong scaling - probably useless (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 33000000 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o strong_sm_fullLB_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 33000000 \
-  -f bora_scaling_test_CCP.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o strong_sm_CCP_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 33000000 \
-  -f bora_scaling_test_Balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o strong_sm_Balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 33000000 \
-  -f bora_scaling_test_NoLB.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o strong_sm_noLB_
 
 # ---------------------------
 # memory usage test
