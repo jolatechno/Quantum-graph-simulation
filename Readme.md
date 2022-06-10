@@ -264,28 +264,66 @@ make CFLAGS="-march=znver2  -ozonda_scaling_test.out" CXX=mpic++
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
 
 
-# multi-bode multi-rule weak scaling test (still inside src/omp_mpi_scaling_test)
+# get results from multi-node (still inside src/omp_mpi_scaling_test)
+./csv-from-tmp.py strong_ec_
+./csv-from-tmp.py strong_sm_
+./csv-from-tmp.py weak_ec_
+./csv-from-tmp.py weak_sm_
+
+
+# ---------------------------
+# accuracy comparison between simple truncation and probabilistic truncation
+# used for Fig 8 in the paper
+# ---------------------------
+
+
+# multi-node scaling accuracy comparison (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -u \
   -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
   -n 36 -t 1 \
   -f bora_scaling_test.out \
   -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
   -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J weak_birule --time=0-2:00" \
-  -a "5,reversed_n_iter=2,seed=0|15|step;erase_create;step;split_merge" -o weak_birule_
+  -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
+  -a "9,reversed_n_iter=5,simple_truncate=1,seed=0|17|step;erase_create" -o simple_weak_ec_
+./mpi_scaling.sh -u \
+  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
+  -a "10,reversed_n_iter=5,simple_truncate=1,seed=0|14|step;split_merge" -o simple_weak_sm_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_
-./csv-from-tmp.py strong_sm_
-./csv-from-tmp.py weak_ec_
-./csv-from-tmp.py weak_sm_
-./csv-from-tmp.py weak_birule_
+./csv-from-tmp.py simple_weak_ec_
+./csv-from-tmp.py simple_weak_sm_
+
+
+# ---------------------------
+# memory usage test
+# used for Fig 7 in the paper
+# ---------------------------
+
+
+# 4-node memory usage test (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -u \
+  -N 4 \
+  -n 36 -t 1 \
+  -f bora_scaling_test.out \
+  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
+  -m "--mca mtl psm2" \
+  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
+  -a "18,reversed_n_iter=0,seed=0|11|step;split_merge" -o mem_test_
+
+# get results
+./mem-csv-from-file.py mem_test_4.out
 
 
 # ---------------------------
 # test of the impact of load balancing
-# used for Fig xx in the paper
+# used for Table II in the paper
 # ---------------------------
 
 
@@ -383,79 +421,6 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING -DSKIP_CCP -obor
 ./csv-from-tmp.py strong_ec_*_
 ./csv-from-tmp.py weak_ec_*_
 ./csv-from-tmp.py weak_sm_*_
-
-# ---------------------------
-# memory usage test
-# used for Fig 7 in the paper
-# ---------------------------
-
-
-# 4-node memory usage test (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 4 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
-  -a "18,reversed_n_iter=0,seed=0|11|step;split_merge" -o mem_test_
-
-# get results
-./mem-csv-from-file.py mem_test_4.out
-
-
-# ---------------------------
-# accuracy comparison between simple truncation and probabilistic truncation
-# used for Fig 8 in the paper
-# ---------------------------
-
-
-# multi-node scaling accuracy comparison (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
-  -a "9,reversed_n_iter=5,simple_truncate=1,seed=0|17|step;erase_create" -o simple_weak_ec_
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a "10,reversed_n_iter=5,simple_truncate=1,seed=0|14|step;split_merge" -o simple_weak_sm_
-
-
-# get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py simple_weak_ec_
-./csv-from-tmp.py simple_weak_sm_
-
-
-# ---------------------------
-# alignment test
-# ---------------------------
-
-
-# comparison with without alignment (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 35,20,8,2,1 \
-  -n 24 -t 1 \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a "10,reversed_n_iter=5,align=8,seed=0|14|step;split_merge" -o align_weak_sm_
-./mpi_scaling.sh -u \
-  -N 35,20,8,2,1 \
-  -n 24 -t 1 \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a "10,reversed_n_iter=5,align=0,seed=0|14|step;split_merge" -o no_align_weak_sm_
-
-# get results from comparison with without alignment (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py align_weak_sm_
-./csv-from-tmp.py no_align_weak_sm_
 
 
 # ---------------------------
