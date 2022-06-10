@@ -431,6 +431,15 @@ make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING -DSKIP_CCP -obor
 ./csv-from-tmp.py weak_sm_*_
 
 
+
+
+# ---------------------------
+# ---------------------------
+# simple stability and validations test from here
+# not included in the paper
+# ---------------------------
+# ---------------------------
+
 # ---------------------------
 # other demanding stability tests
 # ---------------------------
