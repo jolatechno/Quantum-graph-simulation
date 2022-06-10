@@ -501,37 +501,6 @@ MODULES=compiler/gcc/11.2.0,mpi/openmpi/4.0.1 n_per_node=36 n_threads=1 args="-v
 
 # ---------------------------
 # ---------------------------
-# command to replicate results on Ruche
-#   '-> cluster info page: https://mesocentre.pages.centralesupelec.fr/user_doc/ruche/01_cluster_overview/
-# ---------------------------
-# ---------------------------
-
-
-# ---------------------------
-# compile
-# ---------------------------
-
-
-module purge
-module load gcc/11.2.0/gcc-4.8.5
-#module load intel-mpi/2019.9.304/intel-20.0.4.304
-module load openmpi/4.1.1/gcc-11.2.0
-
-make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
-
-
-# ---------------------------
-# scaling tests
-# ---------------------------
-
-# no scaling test done on Ruche were included in the paper...
-
-
-
-
-
-# ---------------------------
-# ---------------------------
 # commands offten used when running experiments
 # ---------------------------
 # ---------------------------
