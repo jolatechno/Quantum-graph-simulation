@@ -63,7 +63,9 @@ Similarly, [src/omp_mpi_scaling_test/mem-csv-from-file.py](./src/omp_mpi_scaling
 
 ## Reproducing injectivity test
 
-Injectivity testing for multiple graphs is done using [src/test/injectivity_test.sh](./src/test/) script (relying on [src/test/ping_pong_test.ccp](./src/test/) which should be compiled using `make ping_pong_test`). It takes the following arguments (not detailing other less usefull debuging flags):
+Injectivity testing correspond to running the `ping_pong_test` on a variety of starting graph state/size and rules to insure that the state after the ping-pong is the same as the starting state. 
+
+Injectivity testing is done using [src/test/injectivity_test.sh](./src/test/) script (relying on [src/test/ping_pong_test.ccp](./src/test/) which should be compiled using `make ping_pong_test`). It takes the following arguments (not detailing other less usefull debuging flags):
  - `-h`: show help infos.
  - `-v`: show verbose.
  - `-n`: number of iteration, default is `4`.
