@@ -564,17 +564,17 @@ make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
 ./mpi_scaling.sh -N 4,6,8,10,13,16,20,23 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
 ./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
   -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
 
 
@@ -582,17 +582,17 @@ make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
 ./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
   -n 40 -t 1 -G 33000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
   -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
 ./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
   -n 40 -t 1 -G 33000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
   -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 33000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
   -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
   
 
@@ -600,33 +600,33 @@ make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
 ./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
 ./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
   -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
 
 ./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
 ./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -s "-p cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
+  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
   -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
 
 

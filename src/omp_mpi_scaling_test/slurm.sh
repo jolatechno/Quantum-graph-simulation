@@ -21,20 +21,20 @@ export GOMP_CPU_AFFINITY=0-${NUM_HWTHREADS}
 
 echo -e "\n===== my job information ====\n"
 
-echo “Node List: ” $SLURM_NODELIST
-echo “Number of Nodes: ” $SLURM_JOB_NUM_NODES
-echo “my jobID: ” $SLURM_JOB_ID
-echo “Partition: ” $SLURM_JOB_PARTITION
-echo “submit directory:” $SLURM_SUBMIT_DIR
-echo “submit host:” $SLURM_SUBMIT_HOST
-echo “In the directory: $PWD”
-echo “As the user: $USER”
+echo "Node List:        $SLURM_NODELIST"
+echo "Number of Nodes:  $SLURM_JOB_NUM_NODES"
+echo "my jobID:         $SLURM_JOB_ID"
+echo "Partition:        $SLURM_JOB_PARTITION"
+echo "submit directory: $SLURM_SUBMIT_DIR"
+echo "submit host:      $SLURM_SUBMIT_HOST"
+echo "In the directory: $PWD"
+echo "As the user:      $USER"
 
-echo -e "\n“Program name: ” ${NAME}"
-echo "n“Program parameters: ” ${rule}"
-echo "“Number of thread list: ” ${n_threads}"
-echo "“Number of task per nodes list: ” ${n_per_node}"
-echo "“Srun arguments: ” ${MPI_ARGS}"
+echo -e "\nProgram name:             ${NAME}"
+echo "Program parameters:            ${rule}"
+echo "Number of thread list:         ${n_threads}"
+echo "Number of task per nodes list: ${n_per_node}"
+echo "Srun arguments:                ${MPI_ARGS}"
 
 echo -e "\n===== job results ====\n"
 
