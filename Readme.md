@@ -549,85 +549,99 @@ squeue -u $USER | grep "QOSMaxCpuPerUserLimit" | awk '{print $1}' | xargs scance
 
 module purge
 module load gcc/11.2.0/gcc-4.8.5
-#module load intel-mpi/2019.9.304/intel-20.0.4.304
-module load openmpi/4.1.1/gcc-11.2.0
+#module load mpich/3.3.2/gcc-9.2.0
+module load intel-mpi/2019.9.304/intel-20.0.4.304
+#module load openmpi/4.1.1/gcc-11.2.0
 
-make CFLAGS="-march=cascadelake" CXX=mpic++ #CXX=mpigxx
+make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX=mpic++ #CXX=mpicxx
 
 
 # ---------------------------
 # scaling tests
 # ---------------------------
 
+# multi-node strong scaling (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -N 1,2,4,6,8,10,14,16,20,24 \
+  -n 40 -t 1 -G 900000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
 
-# multi-node (true) strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -N 4,6,8,10,13,16,20,23 \
-  -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
+./mpi_scaling.sh -N 20,24 \
+  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_l --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_long_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
+  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_prod,cpu_scale --exclusive -J s_ec_l --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_long_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
-  -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J strong_erase_create --time=0-01:00" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
+  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_scale --exclusive -J s_ec_l --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_long_
 
 
-# multi-node (artificialy limited) strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
-  -n 40 -t 1 -G 33000000 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
-  -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
-  -n 40 -t 1 -G 33000000 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
-  -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
+# multi-node strong scaling (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -N 1,2,4,6,8,10,14,16,20,24 \
+  -n 40 -t 1 -G 20000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
+
+./mpi_scaling.sh -N 20,24 \
+  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
+  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_prod,cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
-  -n 40 -t 1 -G 33000000 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J strong_split_merge --time=0-01:00" \
-  -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
+  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
   
 
 # multi-node weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
+./mpi_scaling.sh -N 1,2,4,6,8,10,14,16,20,24 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J w_ec --time=0-01:00" \
+  -a "12,reversed_n_iter=7,seed=0|18|step;erase_create" -o weak_ec_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_prod,cpu_scale --exclusive -J w_ec --time=0-01:00" \
+  -a "12,reversed_n_iter=7,seed=0|17|step;erase_create" -o weak_ec_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J weak_erase_create --time=0-01:00" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_scale --exclusive -J w_ec --time=0-01:00" \
+  -a "12,reversed_n_iter=7,seed=0|17|step;erase_create" -o weak_ec_
 
-./mpi_scaling.sh -N 1,2,4,6,8,10,13,16,20,23 \
+
+# multi-node weak scaling (still inside src/omp_mpi_scaling_test)
+./mpi_scaling.sh -N 1,2,4,6,8,10,14,16,20,24 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
-./mpi_scaling.sh -N 26,30,33,36,40,43,46,50 \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J w_sm --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o weak_sm_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_prod,cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_prod,cpu_scale --exclusive -J w_sm --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o weak_sm_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 0 -f scaling_test.out \
-  -M gcc/11.2.0/gcc-4.8.5,openmpi/4.1.1/gcc-11.2.0 \
-  -m "--mpi=pmi2" -s "-p cpu_scale --exclusive -J weak_split_merge --time=0-01:00" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_scale --exclusive -J w_sm --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o weak_sm_
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
