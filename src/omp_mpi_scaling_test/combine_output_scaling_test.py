@@ -94,8 +94,10 @@ output = {
 	"total_num_symbolic" : [],
 	"accuracy" : [],
 
+	"min_memory_usage" : [],
 	"avg_memory_usage" : [],
 	"max_memory_usage" : [],
+	"accuracy_evolution" : [],
 
 	"proportions" : {
 		key : [] for key in ordered_keys
@@ -146,8 +148,10 @@ for filename in filenames:
 				output["total_num_symbolic"].append(json_dict["results"][key]["avg_symbolic_num_object"]*num_node*num_jobs)
 				output["accuracy"].append(json_dict["results"][key]["total_proba"])
 
+				output["min_memory_usage"].append(json_dict["results"][key]["min_memory_usage"])
 				output["avg_memory_usage"].append(json_dict["results"][key]["avg_memory_usage"])
 				output["max_memory_usage"].append(json_dict["results"][key]["max_memory_usage"])
+				output["accuracy_evolution"].append(json_dict["results"][key]["step_accuracy"])
 
 				avg_step_time = accumulate_steptime(json_dict["results"][key]["max_step_time"])
 				for name in ordered_keys:

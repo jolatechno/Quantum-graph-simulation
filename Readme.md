@@ -206,238 +206,6 @@ The following commands
 
 ### Plafrim
 
-#### Scalling tests
-
-```bash
-# ---------------------------
-# ---------------------------
-# command to replicate results on plafrim
-#   '-> cluster info page: https://plafrim-users.gitlabpages.inria.fr/doc/#hardware
-# ---------------------------
-# ---------------------------
-
-
-# ---------------------------
-# compile
-# ---------------------------
-
-
-cd src/omp_mpi_scaling_test
-
-module purge
-module load compiler/gcc/11.2.0
-module load mpi/openmpi/4.0.1
-make CFLAGS="-march=skylake -obora_scaling_test.out"  CXX=mpic++
-make CFLAGS="-march=znver2  -ozonda_scaling_test.out" CXX=mpic++
-
-
-# ---------------------------
-# multi-node scaling test
-# used for Fig 3-6 in the paper
-# ---------------------------
-
-
-# multi-node (true) strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,3 \
-  -n 36 -t 1 -G 0 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J strong_erase_create --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_
-
-
-# multi-node (artificialy limited) strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 -G 33000000 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J strong_split_merge --time=0-00:10" \
-  -a "16,reversed_n_iter=9,seed=0|14|step;split_merge" -o strong_sm_
-  
-
-# multi-node weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J weak_erase_create --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J weak_split_merge --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_
-
-
-# get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_
-./csv-from-tmp.py strong_sm_
-./csv-from-tmp.py weak_ec_
-./csv-from-tmp.py weak_sm_
-
-
-# ---------------------------
-# accuracy comparison between simple truncation and probabilistic truncation
-# used for Fig 8 in the paper
-# ---------------------------
-
-
-# multi-node scaling accuracy comparison (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J simp_weak_erase_create --time=0-00:5" \
-  -a "9,reversed_n_iter=5,simple_truncate=1,seed=0|17|step;erase_create" -o simple_weak_ec_
-./mpi_scaling.sh -u \
-  -N 43,42,41,38,35,32,29,26,23,20,18,16,14,12,10,8,6,4,2,1 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J simp_split_merge --time=0-00:5" \
-  -a "10,reversed_n_iter=5,simple_truncate=1,seed=0|14|step;split_merge" -o simple_weak_sm_
-
-
-# get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py simple_weak_ec_
-./csv-from-tmp.py simple_weak_sm_
-
-
-# ---------------------------
-# memory usage test
-# used for Fig 7 in the paper
-# ---------------------------
-
-
-# 4-node memory usage test (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u \
-  -N 4 \
-  -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" \
-  -s "-C bora --exclusive -J memory_test --time=0-00:8" \
-  -a "18,reversed_n_iter=0,seed=0|11|step;split_merge" -o mem_test_
-
-# get results
-./mem-csv-from-file.py mem_test_4.out
-
-
-# ---------------------------
-# test of the impact of load balancing
-# used for Table II in the paper
-# ---------------------------
-
-
-module purge
-module load compiler/gcc/11.2.0
-module load mpi/openmpi/4.0.1
-make CFLAGS="-march=skylake                                                -obora_scaling_test.out"            CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_BALANCE                                 -obora_scaling_test_work_steal.out" CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_WORK_STEALING                           -obora_scaling_test_balance.out"    CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING            -obora_scaling_test_CCP.out"        CXX=mpic++
-make CFLAGS="-march=skylake -DSKIP_BALANCE -DSKIP_WORK_STEALING -DSKIP_CCP -obora_scaling_test_noLB.out"       CXX=mpic++
-
-# 35-node test of the impact of load balancing on high collision rate strong scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_fullLB_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_work_steal.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_work_steal_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_CCP.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_CCP_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 -G 0 \
-  -f bora_scaling_test_noLB.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
-  -a "13,reversed_n_iter=6,seed=0|14|step;erase_create" -o strong_ec_noLB_
-
-# 35-node test of the impact of load balancing on high collision rate weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_fullLB_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_work_steal.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_work_steal_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_CCP.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_CCP_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_noLB.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
-  -a "9,reversed_n_iter=5,seed=0|17|step;erase_create" -o weak_ec_noLB_
-
-# 35-node test of the impact of load balancing on low collision rate weak scaling (still inside src/omp_mpi_scaling_test)
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J fullLB --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_fullLB_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_work_steal.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J WS --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_work_steal_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_balance.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J balance --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_balance_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_CCP.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J CCP --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_CCP_
-./mpi_scaling.sh -u -N 35 -n 36 -t 1 \
-  -f bora_scaling_test_noLB.out \
-  -M compiler/gcc/11.2.0,mpi/openmpi/4.0.1 \
-  -m "--mca mtl psm2" -s "-C bora --exclusive -J noLB --time=0-00:5" \
-  -a "10,reversed_n_iter=5,seed=0|14|step;split_merge" -o weak_sm_noLB_
-
-# get results of impact of load balancing test (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_*_
-./csv-from-tmp.py weak_ec_*_
-./csv-from-tmp.py weak_sm_*_
-
-```
-
 #### Validation tests
 
 ```bash
@@ -560,11 +328,22 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
 # scaling tests
 # ---------------------------
 
+
 # multi-node strong scaling (still inside src/omp_mpi_scaling_test)
 ./mpi_scaling.sh -N 1,2,4,6,8,10,14,16,20,24 \
   -n 40 -t 1 -G 900000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
+  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
+  -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
+./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
+  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
   -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
 
 ./mpi_scaling.sh -N 20,24 \
@@ -590,6 +369,17 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
+./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
+  -n 40 -t 1 -G 20000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
+./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
+  -n 40 -t 1 -G 20000000 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
+  -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
+  
 
 ./mpi_scaling.sh -N 20,24 \
   -n 40 -t 1 -G 450000000 -f scaling_test.out \
@@ -651,4 +441,32 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
 ./combine_output_scaling_test.py strong_sm_long_
 ./combine_output_scaling_test.py weak_ec_
 ./combine_output_scaling_test.py weak_sm_
+
+
+# commands to plot (inside of Quantum-graph-simulation-plots/python_post_processing):
+./plot_accuracy_weak_scaling.py ../data/weak_sm_combined.json.out
+./plot_accuracy_weak_scaling.py ../data/weak_ec_combined.json.out
+./plot_proportions.py ../data/weak_sm_combined.json.out
+./plot_proportions.py ../data/weak_ec_combined.json.out
+./plot_weak_scaling.py ../data/weak_sm_combined.json.out
+./plot_weak_scaling.py ../data/weak_ec_combined.json.out
+./plot_proportions.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out
+./plot_proportions.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out
+./plot_strong_scaling.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out
+./plot_strong_scaling.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out
+
+
+# ---------------------------
+# memory usage test
+# used for Fig 7 in the paper
+# ---------------------------
+
+
+./mpi_scaling.sh -N 10 \
+  -n 40 -t 1 -G 0 -f scaling_test.out \
+  -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
+  -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J mem --time=0-01:00" \
+  -a "17,reversed_n_iter=0,seed=0|17|step;erase_create" -o memory_test_
+
+./combine_output_scaling_test.py memory_test_
 ```
