@@ -91,6 +91,7 @@ output = {
 
 	"exec_time" : [],
 	"total_num_objects" : [],
+	"total_num_symbolic" : [],
 	"accuracy" : [],
 
 	"avg_memory_usage" : [],
@@ -142,6 +143,7 @@ for filename in filenames:
 
 				output["exec_time"].append(json_dict["results"][key]["total"])
 				output["total_num_objects"].append(json_dict["results"][key]["num_object"])
+				output["total_num_symbolic"].append(json_dict["results"][key]["avg_symbolic_num_object"]*num_node*num_jobs)
 				output["accuracy"].append(json_dict["results"][key]["total_proba"])
 
 				output["avg_memory_usage"].append(json_dict["results"][key]["avg_memory_usage"])
@@ -156,7 +158,6 @@ for filename in filenames:
 
 
 output_str = json.dumps(output, indent=4)
-print(output_str)
 
 isExist = os.path.exists("out")
 if not isExist:
