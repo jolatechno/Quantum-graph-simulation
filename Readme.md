@@ -645,8 +645,10 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
 
 
 # get results from multi-node (still inside src/omp_mpi_scaling_test)
-./csv-from-tmp.py strong_ec_
-./csv-from-tmp.py strong_sm_
-./csv-from-tmp.py weak_ec_
-./csv-from-tmp.py weak_sm_
+./combine_output_scaling_test.py strong_ec_short_
+./combine_output_scaling_test.py strong_ec_long_
+./combine_output_scaling_test.py strong_sm_short_
+./combine_output_scaling_test.py strong_sm_long_
+./combine_output_scaling_test.py weak_ec_
+./combine_output_scaling_test.py weak_sm_
 ```

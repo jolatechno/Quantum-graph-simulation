@@ -93,6 +93,8 @@ output = {
 	"total_num_objects" : [],
 	"accuracy" : [],
 
+	"avg_memory_usage" : [],
+	"max_memory_usage" : [],
 
 	"proportions" : {
 		key : [] for key in ordered_keys
@@ -141,6 +143,9 @@ for filename in filenames:
 				output["exec_time"].append(json_dict["results"][key]["total"])
 				output["total_num_objects"].append(json_dict["results"][key]["num_object"])
 				output["accuracy"].append(json_dict["results"][key]["total_proba"])
+
+				output["avg_memory_usage"].append(json_dict["results"][key]["avg_memory_usage"])
+				output["max_memory_usage"].append(json_dict["results"][key]["max_memory_usage"])
 
 				avg_step_time = accumulate_steptime(json_dict["results"][key]["max_step_time"])
 				for name in ordered_keys:
