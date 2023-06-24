@@ -336,22 +336,22 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
   -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
   -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
 ./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
-  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -n 40 -t 1 -G 900000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
+  -s "-p cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
   -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
-  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+  -n 40 -t 1 -G 900000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
+  -s "-p cpu_scale --exclusive -J s_ec_s --time=0-01:00" \
   -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_short_
 
-./mpi_scaling.sh -N 20,24 \
-  -n 40 -t 1 -G 18000000 -f scaling_test.out \
+./mpi_scaling.sh -N 20 \
+  -n 1,2,5,10,20,40 -t 1,1,1,1,1,1 -G 18000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_ec_l --time=0-01:00" \
   -a "15,reversed_n_iter=10,seed=0|16|step;erase_create" -o strong_ec_long_
-./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
+./mpi_scaling.sh -N 24,26,30,34,36,40,44,46,50 \
   -n 40 -t 1 -G 18000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -s "-p cpu_prod,cpu_scale --exclusive -J s_ec_l --time=0-01:00" \
@@ -372,27 +372,27 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
 ./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
   -n 40 -t 1 -G 20000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
+  -s "-p cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
   -n 40 -t 1 -G 20000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
-  -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
+  -s "-p cpu_scale --exclusive -J s_sm_s --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_short_
   
 
-./mpi_scaling.sh -N 20,24 \
-  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+./mpi_scaling.sh -N 20 \
+  -n 1,2,5,10,20,40 -t 1,1,1,1,1,1 -G 400000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -m "--mpi=pmi2" -s "-p cpu_short,cpu_med,cpu_prod,cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
-./mpi_scaling.sh -N 26,30,34,36,40,44,46,50 \
-  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+./mpi_scaling.sh -N 24,26,30,34,36,40,44,46,50 \
+  -n 40 -t 1 -G 400000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -s "-p cpu_prod,cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
 ./mpi_scaling.sh -N 55,60,65,60,65,70,75,80,85,90,95,100 \
-  -n 40 -t 1 -G 450000000 -f scaling_test.out \
+  -n 40 -t 1 -G 400000000 -f scaling_test.out \
   -M gcc/11.2.0/gcc-4.8.5,intel-mpi/2019.9.304/intel-20.0.4.304 \
   -s "-p cpu_scale --exclusive -J s_sm_l --time=0-01:00" \
   -a "16,reversed_n_iter=10,seed=0|15|step;split_merge" -o strong_sm_long_
