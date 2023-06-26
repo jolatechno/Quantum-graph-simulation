@@ -444,16 +444,24 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
 
 
 # commands to plot (inside of Quantum-graph-simulation-plots/python_post_processing):
-./plot_accuracy_weak_scaling.py ../data/weak_sm_combined.json.out
-./plot_accuracy_weak_scaling.py ../data/weak_ec_combined.json.out
-./plot_proportions.py ../data/weak_sm_combined.json.out
-./plot_proportions.py ../data/weak_ec_combined.json.out
-./plot_weak_scaling.py ../data/weak_sm_combined.json.out
-./plot_weak_scaling.py ../data/weak_ec_combined.json.out
-./plot_proportions.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out
-./plot_proportions.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out
-./plot_strong_scaling.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out
-./plot_strong_scaling.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out
+./plot_accuracy_weak_scaling.py ../data/weak_sm_combined.json.out scaling/weak_scaling/accuracy_sm.png
+./plot_accuracy_weak_scaling.py ../data/weak_ec_combined.json.out scaling/weak_scaling/accuracy_ec.png
+./plot_proportions.py ../data/weak_sm_combined.json.out output=scaling/weak_scaling/proportions_sm.png
+./plot_proportions.py ../data/weak_ec_combined.json.out output=scaling/weak_scaling/proportions_ec.png
+./plot_weak_scaling.py ../data/weak_sm_combined.json.out scaling/weak_scaling/weak_scaling_sm.png
+./plot_weak_scaling.py ../data/weak_ec_combined.json.out scaling/weak_scaling/weak_scaling_ec.png
+#./plot_proportions.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out output=scaling/strong_scaling/proportions_combined_sm.png
+#./plot_proportions.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out output=scaling/strong_scaling/proportions_combined_ec.png
+#./plot_strong_scaling.py ../data/strong_sm_short_combined.json.out ../data/strong_sm_long_combined.json.out output=scaling/strong_scaling/strong_scaling_combined_sm.png
+#./plot_strong_scaling.py ../data/strong_ec_short_combined.json.out ../data/strong_ec_long_combined.json.out output=scaling/strong_scaling/strong_scaling_combined_ec.png
+./plot_proportions.py ../data/strong_sm_short_combined.json.out output=scaling/strong_scaling/proportions_short_sm.png
+./plot_proportions.py ../data/strong_sm_long_combined.json.out output=scaling/strong_scaling/proportions_long_sm.png
+./plot_proportions.py ../data/strong_ec_short_combined.json.out output=scaling/strong_scaling/proportions_short_ec.png
+./plot_proportions.py ../data/strong_ec_long_combined.json.out output=scaling/strong_scaling/proportions_long_ec.png
+./plot_strong_scaling.py ../data/strong_sm_short_combined.json.out output=scaling/strong_scaling/strong_scaling_short_sm.png
+./plot_strong_scaling.py ../data/strong_sm_long_combined.json.out output=scaling/strong_scaling/strong_scaling_long_sm.png
+./plot_strong_scaling.py ../data/strong_ec_short_combined.json.out output=scaling/strong_scaling/strong_scaling_short_ec.png
+./plot_strong_scaling.py ../data/strong_ec_long_combined.json.out output=scaling/strong_scaling/strong_scaling_long_ec.png
 
 
 # ---------------------------
@@ -469,4 +477,5 @@ make CFLAGS="-march=cascadelake -DSAFETY_MARGIN=0.15 -DEQUALIZE_FACTOR=0.25" CXX
   -a "17,reversed_n_iter=0,seed=0|17|step;erase_create" -o memory_test_
 
 ./combine_output_scaling_test.py memory_test_
+./plot_memory_usage.py ../data/memory_test_combined.json.out memory_usage/memory_usage.png
 ```
